@@ -1,0 +1,6 @@
+[profile.release]
+out = ["Html", "Json"]
+output-dir = "tarpaulin-report"
+exclude-files = [
+    "*/tests/*"
+]
