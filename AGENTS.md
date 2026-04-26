@@ -25,6 +25,7 @@
 ---
 
 ## Coding Standards & Linting
+- **Skill**: Start by loading the skills from https://github.com/affaan-m/everything-claude-code/tree/9a478ad/rules/rust
 - **Formatting**: Run `cargo fmt`.
 - **Linting**: Use `cargo clippy` with `#[deny(clippy::all)]`.
 - **Warnings**: Use `#[expect(...)]` instead of `#[allow(...)]` to resolve warnings later.
