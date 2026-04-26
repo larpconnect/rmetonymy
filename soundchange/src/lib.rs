@@ -5,7 +5,6 @@ pub fn parse_soundchange() {
 #[cfg(test)]
 mod tests {
 
-
     #[test]
     fn test_parse_soundchange() {
         // Colocated unit test skeleton

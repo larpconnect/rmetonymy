@@ -5,7 +5,6 @@ pub fn parse_data() {
 #[cfg(test)]
 mod tests {
 
-
     #[test]
     fn test_parse_data() {
         // Colocated unit test skeleton

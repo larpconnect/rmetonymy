@@ -5,7 +5,6 @@ pub fn parse_ipa() {
 #[cfg(test)]
 mod tests {
 
-
     #[test]
     fn test_parse_ipa() {
         // Colocated unit test skeleton

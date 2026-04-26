@@ -5,7 +5,6 @@ pub fn load_language() {
 #[cfg(test)]
 mod tests {
 
-
     #[test]
     fn test_load_language() {
         // Colocated unit test skeleton
