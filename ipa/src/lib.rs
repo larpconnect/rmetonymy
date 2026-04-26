@@ -4,10 +4,10 @@ pub fn parse_ipa() {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
 
     #[test]
     fn test_parse_ipa() {
-        // Colocated unit test skeleton
-        assert!(true);
+        parse_ipa();
     }
 }
