@@ -66,7 +66,7 @@ This repository implements the standardized Agent Skill Files protocol to modula
 
 ## Specific Directives
 - **Ownership/Memory**: Prefer `&str` for reading, `String` for modifying, and `Cow<&str>` for conditional modification.
-  - Prefer `Cow<'a, str>` for types that are frequently passed between the parser and the database layer to minimize allocations
+  - Prefer `Cow<'a, str>` for types that are frequently passed between the parser and the data layer to minimize allocations
 - **Async/Await**: Use `tokio` as the default runtime unless specified.
 - **Errors**: Prefer `thiserror` for libraries and `anyhow` for applications.
   - **Application Level**: Use `anyhow` (or `miette` for pretty printing) in `main.rs` and within the top level of the repl and batch systems to handle errors.
@@ -147,7 +147,7 @@ This repository implements the standardized Agent Skill Files protocol to modula
 - **Inputs:** All external data from APIs or users MUST be validated via `serde` with `#[serde(deny_unknown_fields)]`.
 - **Tools:** The agent is restricted from using tools that navigate outside the project directory or access the network unless explicitly permitted.
 - **Supply Chain:** Run `cargo audit` after adding any new crate. This is mandatory after `cargo add`.
-- If the agent logs database results for debugging, it must use a redaction wrapper. Wrap sensitive fields in `secrecy::SecretString` so they are masked as *** in logs.
+- If the agent logs results for debugging, it must use a redaction wrapper. Wrap sensitive fields in `secrecy::SecretString` so they are masked as *** in logs.
 
 ---
 
