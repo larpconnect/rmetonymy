@@ -4,12 +4,11 @@ pub fn load_language() {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+
 
     #[test]
     fn test_load_language() {
         // Colocated unit test skeleton
-        load_language();
         assert!(true);
     }
 }

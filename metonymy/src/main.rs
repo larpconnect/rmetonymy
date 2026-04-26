@@ -2,7 +2,7 @@ use anyhow::Result;
 use clap::Parser;
 
 #[derive(Parser)]
-#[command(author, version, about, long_about = None)]
+#[command(version, about)]
 struct Cli {
     /// Optional command line argument
     #[arg(short, long)]

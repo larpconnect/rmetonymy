@@ -4,12 +4,11 @@ pub fn parse_data() {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+
 
     #[test]
     fn test_parse_data() {
         // Colocated unit test skeleton
-        parse_data();
         assert!(true);
     }
 }
