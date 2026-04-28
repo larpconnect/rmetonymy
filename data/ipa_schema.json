@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/ipa-schema.json",
+  "title": "International Phonetic Alphabet (IPA) Schema",
+  "description": "A flat mapping of phonetic symbols to their distinctive features, categorical descriptors, and modifiers. Literal UTF-8 characters are strictly enforced.",
+  "type": "object",
+  "patternProperties": {
+    "^.+$": {
+      "$ref": "#/$defs/entry"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "entry": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["phoneme", "modifier", "vowel", "consonant"]
+        },
+        "features": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[+-][a-z_]+$"
+          },
+          "description": "List of binary SPE features (e.g., '+nasal', '-voice')."
+        },
+        "place": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of categorical descriptors for place of articulation (e.g., ['velar', 'alveolar'])."
+        },
+        "manner": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of categorical descriptors for manner of articulation (e.g., ['stop'])."
+        },
+        "aliases": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of aliases or equivalent symbols (e.g., ['g'] for 'ɡ'). Must use literal UTF-8."
+        },
+        "added_features": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[+-][a-z_]+$"
+          },
+          "description": "Features added by this modifier (e.g., '+nasalized')."
+        },
+        "removed_features": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[+-][a-z_]+$"
+          },
+          "description": "Features explicitly removed or inverted by this modifier."
+        }
+      },
+      "required": ["type"],
+      "additionalProperties": false
+    }
+  }
+}
