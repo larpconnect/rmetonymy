@@ -11,6 +11,8 @@ clap.workspace = true
 [dev-dependencies]
 tokio.workspace = true
 cucumber.workspace = true
+assert_cmd = "2.2.1"
+predicates = "3.1.4"
 
 [[test]]
 name = "cucumber"
