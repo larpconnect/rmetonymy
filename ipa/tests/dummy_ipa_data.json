@@ -1,0 +1,36 @@
+{
+  "n": {
+    "type": "consonant",
+    "features": ["+nasal", "+voice", "+coronal", "+anterior"],
+    "place": ["alveolar"],
+    "manner": ["nasal"],
+    "aliases": []
+  },
+  "ɡ": {
+    "type": "consonant",
+    "features": ["-nasal", "+voice", "-coronal", "+high", "+back"],
+    "place": ["velar"],
+    "manner": ["stop"],
+    "aliases": ["g"]
+  },
+  "˜": {
+    "type": "modifier",
+    "added_features": ["+nasalized"],
+    "removed_features": [],
+    "aliases": ["~"]
+  },
+  "t͡ʃ": {
+    "type": "consonant",
+    "features": ["-nasal", "-voice", "+coronal", "-anterior", "+delayed_release"],
+    "place": ["postalveolar"],
+    "manner": ["affricate"],
+    "aliases": ["ʧ", "t͜ʃ"]
+  },
+  "ɫ": {
+    "type": "consonant",
+    "features": ["-nasal", "+voice", "+coronal", "+anterior", "+lateral", "+back"],
+    "place": ["alveolar", "velar"],
+    "manner": ["lateral", "approximant"],
+    "aliases": []
+  }
+}
