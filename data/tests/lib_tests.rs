@@ -117,5 +117,8 @@ fn test_validate_ipa_data_multiple_errors() {
         }
     });
     let result = validate_ipa_data(&invalid_data);
-    assert!(result.is_err());
+    let errs = result.unwrap_err();
+    assert!(errs.len() > 1);
+    assert!(errs.iter().any(|e| e.contains("invalid_type")));
+    assert!(errs.iter().any(|e| e.contains("another_invalid")));
 }
