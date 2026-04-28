@@ -22,17 +22,12 @@ impl IpaSystem {
 
         let mut alias_map = HashMap::new();
         for (canonical_sym, entry) in &dataset {
-            match entry {
-                IpaEntry::Phoneme(data) | IpaEntry::Consonant(data) | IpaEntry::Vowel(data) => {
-                    for alias in &data.aliases {
-                        alias_map.insert(alias.clone(), canonical_sym.clone());
-                    }
-                }
-                IpaEntry::Modifier(data) => {
-                    for alias in &data.aliases {
-                        alias_map.insert(alias.clone(), canonical_sym.clone());
-                    }
-                }
+            let aliases = match entry {
+                IpaEntry::Phoneme(d) | IpaEntry::Consonant(d) | IpaEntry::Vowel(d) => &d.aliases,
+                IpaEntry::Modifier(d) => &d.aliases,
+            };
+            for alias in aliases {
+                alias_map.insert(alias.clone(), canonical_sym.clone());
             }
         }
 
@@ -40,11 +35,11 @@ impl IpaSystem {
     }
 
     /// Resolves a symbol or alias to its canonical symbol representation.
-    pub fn resolve_alias<'a>(&'a self, symbol: &'a str) -> Option<&'a str> {
-        if self.dataset.contains_key(symbol) {
-            return Some(symbol);
-        }
-        self.alias_map.get(symbol).map(|s| s.as_str())
+    pub fn resolve_alias(&self, symbol: &str) -> Option<&str> {
+        self.dataset
+            .get_key_value(symbol)
+            .map(|(k, _)| k.as_str())
+            .or_else(|| self.alias_map.get(symbol).map(|s| s.as_str()))
     }
 
     /// Retrieves the entry for a given symbol, resolving aliases automatically.

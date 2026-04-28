@@ -46,15 +46,14 @@ pub const IPA_SCHEMA_JSON: &str = include_str!("../ipa_schema.json");
 
 /// Validate a JSON value against the IPA schema.
 pub fn validate_ipa_data(data: &Value) -> Result<(), Vec<String>> {
-    let schema_json: Value =
-        serde_json::from_str(IPA_SCHEMA_JSON).expect("Compiled schema must be valid JSON");
+    static VALIDATOR: std::sync::LazyLock<jsonschema::Validator> = std::sync::LazyLock::new(|| {
+        let schema_json: Value =
+            serde_json::from_str(IPA_SCHEMA_JSON).expect("Compiled schema must be valid JSON");
+        jsonschema::validator_for(&schema_json)
+            .expect("Compiled schema must be a valid JSON Schema")
+    });
 
-    let schema = jsonschema::validator_for(&schema_json)
-        .expect("Compiled schema must be a valid JSON Schema");
-
-    if let Err(errors) = schema.validate(data) {
-        // Validation returns a single ValidationError or ValidationErrors wrapper.
-        // We will just use its Display implementation.
+    if let Err(errors) = VALIDATOR.validate(data) {
         return Err(vec![errors.to_string()]);
     }
 
@@ -63,11 +62,12 @@ pub fn validate_ipa_data(data: &Value) -> Result<(), Vec<String>> {
 
 /// Helper function to parse a JSON string, validate it, and deserialize it into our structures.
 pub fn parse_and_validate(json_str: &str) -> Result<IpaDataset, String> {
-    let raw_data: Value =
-        serde_json::from_str(json_str).map_err(|e| format!("JSON parsing error: {}", e))?;
+    let raw_data: Value = serde_json::from_str(json_str)
+        .map_err(|e| format!("JSON parsing error: {}", e))?;
 
     validate_ipa_data(&raw_data)
         .map_err(|errs| format!("Schema validation failed:\n{}", errs.join("\n")))?;
 
-    serde_json::from_value(raw_data).map_err(|e| format!("Deserialization error: {}", e))
+    serde_json::from_value(raw_data)
+        .map_err(|e| format!("Deserialization error: {}", e))
 }
