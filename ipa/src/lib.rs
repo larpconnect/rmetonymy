@@ -1,4 +1,4 @@
-use data::{IpaDataset, IpaEntry, PhonemeData, parse_and_validate};
+use data::{IpaDataset, IpaEntry, PhonemeData, SpeFeature, parse_and_validate};
 use std::collections::HashMap;
 use thiserror::Error;
 
@@ -63,7 +63,7 @@ impl IpaSystem {
     }
 
     /// Dynamically combines a base phoneme and a modifier to produce an updated feature set.
-    pub fn combine_with_modifier(&self, base: &str, modifier: &str) -> Option<Vec<String>> {
+    pub fn combine_with_modifier(&self, base: &str, modifier: &str) -> Option<Vec<SpeFeature>> {
         let base_data = self.get_phoneme_data(base)?;
 
         let modifier_entry = self.get_entry(modifier)?;
