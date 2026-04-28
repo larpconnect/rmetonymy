@@ -21,14 +21,14 @@
   },
   "t͡ʃ": {
     "type": "consonant",
-    "features": ["-nasal", "-voice", "+coronal", "-anterior", "+delayed_release"],
+    "features": ["+coronal", "+delayed_release"],
     "place": ["postalveolar"],
     "manner": ["affricate"],
     "aliases": ["ʧ", "t͜ʃ"]
   },
   "ɫ": {
     "type": "consonant",
-    "features": ["-nasal", "+voice", "+coronal", "+anterior", "+lateral", "+back"],
+    "features": ["+voice", "+coronal", "+anterior", "+lateral", "+back"],
     "place": ["alveolar", "velar"],
     "manner": ["lateral", "approximant"],
     "aliases": []
