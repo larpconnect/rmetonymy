@@ -110,8 +110,10 @@ pub fn validate_ipa_data(data: &Value) -> Result<(), Vec<String>> {
             .expect("Compiled schema must be a valid JSON Schema")
     });
 
-    if let Err(errors) = VALIDATOR.validate(data) {
-        return Err(vec![errors.to_string()]);
+    if !VALIDATOR.is_valid(data) {
+        let errors = VALIDATOR.iter_errors(data);
+        let err_strings: Vec<String> = errors.map(|e| e.to_string()).collect();
+        return Err(err_strings);
     }
 
     Ok(())

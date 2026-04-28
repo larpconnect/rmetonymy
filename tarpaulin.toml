@@ -4,5 +4,6 @@ output-dir = "tarpaulin-report"
 exclude-files = [
     "*/tests/*"
 ]
-fail-under = 80
+fail-under = 90
 branch = true
+count = true
