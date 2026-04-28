@@ -1,6 +1,8 @@
-[profile.release]
+[profile.default]
 out = ["Html", "Json"]
 output-dir = "tarpaulin-report"
 exclude-files = [
     "*/tests/*"
 ]
+fail-under = 80
+branch = true
