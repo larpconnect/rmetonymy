@@ -12,8 +12,6 @@ trigger_conditions:
   - "Discussions regarding algebraic data types, error handling, or domain modeling for linguistics."
 tool_dependencies:
   - "cargo (build, test, clippy, fmt)"
-  - "rust-analyzer"
-  - "proptest (for property-based testing)"
 ---
 
 # Role Overview
