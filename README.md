@@ -25,7 +25,7 @@ cargo build
 To run the software:
 
 ```bash
-cargo run -- [arguments]
+cargo run -p metonymy -- [arguments]
 ```
 
 To run tests across the workspace:
