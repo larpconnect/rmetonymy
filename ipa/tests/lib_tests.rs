@@ -80,9 +80,23 @@ fn test_combine_with_modifier_success() {
         }
     }"#;
     let system = ipa::IpaSystem::new(json_data).unwrap();
-    let combined = system.combine_with_modifier("p", "h").expect("Combination should succeed");
+    let combined = system
+        .combine_with_modifier("p", "h")
+        .expect("Combination should succeed");
 
-    assert!(combined.iter().any(|f| matches!(f, data::SpeFeature::Plus(s) if s == "bilabial")));
-    assert!(combined.iter().any(|f| matches!(f, data::SpeFeature::Plus(s) if s == "aspirated")));
-    assert!(!combined.iter().any(|f| matches!(f, data::SpeFeature::Minus(s) if s == "voice")));
+    assert!(
+        combined
+            .iter()
+            .any(|f| matches!(f, data::SpeFeature::Plus(s) if s == "bilabial"))
+    );
+    assert!(
+        combined
+            .iter()
+            .any(|f| matches!(f, data::SpeFeature::Plus(s) if s == "aspirated"))
+    );
+    assert!(
+        !combined
+            .iter()
+            .any(|f| matches!(f, data::SpeFeature::Minus(s) if s == "voice"))
+    );
 }
