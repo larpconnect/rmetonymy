@@ -13,7 +13,7 @@ fn test_spe_feature_deserialize_valid() {
 #[test]
 fn test_spe_feature_deserialize_invalid() {
     let result: Result<SpeFeature, _> = serde_json::from_value(json!("nasal"));
-    result.expect_err("expected error");
+    result.expect_err("Deserializing a plain string as SpeFeature should fail (missing +/- prefix)");
 }
 
 #[test]
