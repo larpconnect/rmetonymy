@@ -62,7 +62,7 @@ fn test_parse_and_validate_success() {
         }
     }"#;
     let result = parse_and_validate(json_str);
-    result.expect("expected ok");
+    result.expect("Valid IPA JSON should be successfully parsed and validated");
 }
 
 #[test]
