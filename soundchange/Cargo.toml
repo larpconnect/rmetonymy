@@ -6,3 +6,6 @@ edition = "2024"
 [dependencies]
 language = { path = "../language" }
 thiserror.workspace = true
+
+[lints]
+workspace = true

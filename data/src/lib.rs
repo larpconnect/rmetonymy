@@ -20,8 +20,7 @@ impl<'de> Deserialize<'de> for SpeFeature {
             Ok(SpeFeature::Minus(feature.to_string()))
         } else {
             Err(serde::de::Error::custom(format!(
-                "Feature {} must start with '+' or '-'",
-                s
+                "Feature {s} must start with '+' or '-'"
             )))
         }
     }
@@ -45,7 +44,7 @@ impl std::str::FromStr for SpeFeature {
         } else if let Some(feature) = s.strip_prefix('-') {
             Ok(SpeFeature::Minus(feature.to_string()))
         } else {
-            Err(format!("Feature {} must start with '+' or '-'", s))
+            Err(format!("Feature {s} must start with '+' or '-'"))
         }
     }
 }
@@ -53,8 +52,8 @@ impl std::str::FromStr for SpeFeature {
 impl std::fmt::Display for SpeFeature {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            SpeFeature::Plus(s) => write!(f, "+{}", s),
-            SpeFeature::Minus(s) => write!(f, "-{}", s),
+            SpeFeature::Plus(s) => write!(f, "+{s}"),
+            SpeFeature::Minus(s) => write!(f, "-{s}"),
         }
     }
 }
@@ -101,6 +100,8 @@ pub type IpaDataset = HashMap<String, IpaEntry>;
 /// Include the JSON schema directly at compile time.
 pub const IPA_SCHEMA_JSON: &str = include_str!("../ipa_schema.json");
 
+/// # Errors
+/// Returns `Err` if the validation against `ipa_schema.json` fails.
 /// Validate a JSON value against the IPA schema.
 pub fn validate_ipa_data(data: &Value) -> Result<(), Vec<String>> {
     static VALIDATOR: std::sync::LazyLock<jsonschema::Validator> = std::sync::LazyLock::new(|| {
@@ -119,13 +120,15 @@ pub fn validate_ipa_data(data: &Value) -> Result<(), Vec<String>> {
     Ok(())
 }
 
+/// # Errors
+/// Returns `Err` if JSON parsing or deserialization fails, or if validation against `ipa_schema.json` fails.
 /// Helper function to parse a JSON string, validate it, and deserialize it into our structures.
 pub fn parse_and_validate(json_str: &str) -> Result<IpaDataset, String> {
     let raw_data: Value =
-        serde_json::from_str(json_str).map_err(|e| format!("JSON parsing error: {}", e))?;
+        serde_json::from_str(json_str).map_err(|e| format!("JSON parsing error: {e}"))?;
 
     validate_ipa_data(&raw_data)
         .map_err(|errs| format!("Schema validation failed:\n{}", errs.join("\n")))?;
 
-    serde_json::from_value(raw_data).map_err(|e| format!("Deserialization error: {}", e))
+    serde_json::from_value(raw_data).map_err(|e| format!("Deserialization error: {e}"))
 }

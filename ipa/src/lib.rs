@@ -17,6 +17,8 @@ pub struct IpaSystem {
 }
 
 impl IpaSystem {
+    /// # Errors
+    /// Returns `Err` if JSON parsing or validation fails.
     pub fn new(json_data: &str) -> Result<Self, IpaError> {
         let dataset = parse_and_validate(json_data).map_err(IpaError::ParseError)?;
 
@@ -35,14 +37,16 @@ impl IpaSystem {
     }
 
     /// Resolves a symbol or alias to its canonical symbol representation.
+    #[must_use]
     pub fn resolve_alias(&self, symbol: &str) -> Option<&str> {
         self.dataset
             .get_key_value(symbol)
             .map(|(k, _)| k.as_str())
-            .or_else(|| self.alias_map.get(symbol).map(|s| s.as_str()))
+            .or_else(|| self.alias_map.get(symbol).map(std::string::String::as_str))
     }
 
     /// Retrieves the entry for a given symbol, resolving aliases automatically.
+    #[must_use]
     pub fn get_entry(&self, symbol: &str) -> Option<&IpaEntry> {
         if let Some(canonical) = self.dataset.get(symbol) {
             return Some(canonical);
@@ -53,6 +57,7 @@ impl IpaSystem {
 
     /// Retrieves features, place, and manner for a phoneme.
     /// Returns None if the symbol is a modifier or not found.
+    #[must_use]
     pub fn get_phoneme_data(&self, symbol: &str) -> Option<&PhonemeData> {
         match self.get_entry(symbol)? {
             IpaEntry::Phoneme(data) | IpaEntry::Consonant(data) | IpaEntry::Vowel(data) => {
@@ -63,13 +68,13 @@ impl IpaSystem {
     }
 
     /// Dynamically combines a base phoneme and a modifier to produce an updated feature set.
+    #[must_use]
     pub fn combine_with_modifier(&self, base: &str, modifier: &str) -> Option<Vec<SpeFeature>> {
         let base_data = self.get_phoneme_data(base)?;
 
         let modifier_entry = self.get_entry(modifier)?;
-        let mod_data = match modifier_entry {
-            IpaEntry::Modifier(data) => data,
-            _ => return None,
+        let IpaEntry::Modifier(mod_data) = modifier_entry else {
+            return None;
         };
 
         let mut features = base_data.features.clone();

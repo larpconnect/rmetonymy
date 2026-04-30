@@ -1,4 +1,3 @@
-use anyhow::Result;
 use clap::Parser;
 
 #[derive(Parser)]
@@ -9,7 +8,7 @@ struct Cli {
     verbose: bool,
 }
 
-fn main() -> Result<()> {
+fn main() {
     let cli = Cli::parse();
 
     if cli.verbose {
@@ -20,6 +19,4 @@ fn main() -> Result<()> {
 
     // Wire in the submodules eventually
     soundchange::parse_soundchange();
-
-    Ok(())
 }
