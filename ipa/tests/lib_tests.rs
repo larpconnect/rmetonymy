@@ -3,7 +3,7 @@ use ipa::IpaSystem;
 #[test]
 fn test_get_phoneme_data_not_found() {
     let json_data = r"{}";
-    let system = IpaSystem::new(json_data).expect("failed to unwrap");
+    let system = IpaSystem::new(json_data).expect("IpaSystem should initialize correctly with empty JSON");
     assert!(system.get_phoneme_data("p").is_none());
 }
 
