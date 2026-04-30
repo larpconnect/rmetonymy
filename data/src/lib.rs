@@ -100,9 +100,10 @@ pub type IpaDataset = HashMap<String, IpaEntry>;
 /// Include the JSON schema directly at compile time.
 pub const IPA_SCHEMA_JSON: &str = include_str!("../ipa_schema.json");
 
+/// Validate a JSON value against the IPA schema.
+///
 /// # Errors
 /// Returns `Err` if the validation against `ipa_schema.json` fails.
-/// Validate a JSON value against the IPA schema.
 pub fn validate_ipa_data(data: &Value) -> Result<(), Vec<String>> {
     static VALIDATOR: std::sync::LazyLock<jsonschema::Validator> = std::sync::LazyLock::new(|| {
         let schema_json: Value =
@@ -120,9 +121,10 @@ pub fn validate_ipa_data(data: &Value) -> Result<(), Vec<String>> {
     Ok(())
 }
 
+/// Helper function to parse a JSON string, validate it, and deserialize it into our structures.
+///
 /// # Errors
 /// Returns `Err` if JSON parsing or deserialization fails, or if validation against `ipa_schema.json` fails.
-/// Helper function to parse a JSON string, validate it, and deserialize it into our structures.
 pub fn parse_and_validate(json_str: &str) -> Result<IpaDataset, String> {
     let raw_data: Value =
         serde_json::from_str(json_str).map_err(|e| format!("JSON parsing error: {e}"))?;

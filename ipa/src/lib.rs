@@ -17,6 +17,8 @@ pub struct IpaSystem {
 }
 
 impl IpaSystem {
+    /// Creates a new `IpaSystem` from a JSON string.
+    ///
     /// # Errors
     /// Returns `Err` if JSON parsing or validation fails.
     pub fn new(json_data: &str) -> Result<Self, IpaError> {
