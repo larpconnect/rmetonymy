@@ -17,3 +17,6 @@ predicates = "3.1.4"
 [[test]]
 name = "cucumber"
 harness = false
+
+[lints]
+workspace = true
