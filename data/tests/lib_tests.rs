@@ -3,27 +3,27 @@ use serde_json::json;
 
 #[test]
 fn test_spe_feature_deserialize_valid() {
-    let plus_feature: SpeFeature = serde_json::from_value(json!("+nasal")).unwrap();
+    let plus_feature: SpeFeature = serde_json::from_value(json!("+nasal")).expect("Valid '+nasal' feature should deserialize");
     assert_eq!(plus_feature, SpeFeature::Plus("nasal".to_string()));
 
-    let minus_feature: SpeFeature = serde_json::from_value(json!("-voice")).unwrap();
+    let minus_feature: SpeFeature = serde_json::from_value(json!("-voice")).expect("failed to unwrap");
     assert_eq!(minus_feature, SpeFeature::Minus("voice".to_string()));
 }
 
 #[test]
 fn test_spe_feature_deserialize_invalid() {
     let result: Result<SpeFeature, _> = serde_json::from_value(json!("nasal"));
-    assert!(result.is_err());
+    result.expect_err("Deserializing a plain string as SpeFeature should fail (missing +/- prefix)");
 }
 
 #[test]
 fn test_spe_feature_serialize() {
     let plus_feature = SpeFeature::Plus("nasal".to_string());
-    assert_eq!(serde_json::to_value(plus_feature).unwrap(), json!("+nasal"));
+    assert_eq!(serde_json::to_value(plus_feature).expect("failed to unwrap"), json!("+nasal"));
 
     let minus_feature = SpeFeature::Minus("voice".to_string());
     assert_eq!(
-        serde_json::to_value(minus_feature).unwrap(),
+        serde_json::to_value(minus_feature).expect("failed to unwrap"),
         json!("-voice")
     );
 }
@@ -31,14 +31,14 @@ fn test_spe_feature_serialize() {
 #[test]
 fn test_spe_feature_from_str() {
     assert_eq!(
-        "+nasal".parse::<SpeFeature>().unwrap(),
+        "+nasal".parse::<SpeFeature>().expect("failed to unwrap"),
         SpeFeature::Plus("nasal".to_string())
     );
     assert_eq!(
-        "-voice".parse::<SpeFeature>().unwrap(),
+        "-voice".parse::<SpeFeature>().expect("failed to unwrap"),
         SpeFeature::Minus("voice".to_string())
     );
-    assert!("invalid".parse::<SpeFeature>().is_err());
+    "invalid".parse::<SpeFeature>().expect_err("expected error");
 }
 
 #[test]
@@ -62,13 +62,13 @@ fn test_parse_and_validate_success() {
         }
     }"#;
     let result = parse_and_validate(json_str);
-    assert!(result.is_ok());
+    result.expect("Valid IPA JSON should be successfully parsed and validated");
 }
 
 #[test]
 fn test_parse_and_validate_invalid_json() {
     let result = parse_and_validate("{ invalid json ");
-    assert!(result.is_err());
+    result.expect_err("expected error");
 }
 
 #[test]
@@ -80,7 +80,7 @@ fn test_parse_and_validate_invalid_schema() {
         }
     }"#;
     let result = parse_and_validate(json_str);
-    assert!(result.is_err());
+    result.expect_err("expected error");
 }
 
 #[test]
@@ -91,7 +91,7 @@ fn test_validate_ipa_data_invalid() {
         }
     });
     let result = validate_ipa_data(&invalid_data);
-    assert!(result.is_err());
+    result.expect_err("expected error");
 }
 
 #[test]
@@ -103,7 +103,7 @@ fn test_parse_and_validate_deserialization_error() {
         }
     }"#;
     let result = parse_and_validate(json_str);
-    assert!(result.is_err());
+    result.expect_err("expected error");
 }
 
 #[test]
@@ -117,7 +117,7 @@ fn test_validate_ipa_data_multiple_errors() {
         }
     });
     let result = validate_ipa_data(&invalid_data);
-    let errs = result.unwrap_err();
+    let errs = result.expect_err("expected err");
     assert!(errs.len() > 1);
     assert!(errs.iter().any(|e| e.contains("invalid_type")));
     assert!(errs.iter().any(|e| e.contains("another_invalid")));
