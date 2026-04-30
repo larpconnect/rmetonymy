@@ -24,7 +24,7 @@ fn test_resolve_alias() {
 fn test_get_features() {
     let system = IpaSystem::new(DUMMY_DATA).expect("Failed to initialize IPA system");
 
-    let n_data = system.get_phoneme_data("n").expect("failed to unwrap");
+    let n_data = system.get_phoneme_data("n").expect("Phoneme 'n' should be present in the IPA system");
     assert_eq!(
         n_data.features,
         vec![
