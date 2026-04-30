@@ -1,6 +1,5 @@
 ---
 name: Senior Rust Engineering Skills
-version: 1.1.0
 context_requirements:
   - "Explicit definition of the linguistic formalisms in use (e.g., Context-Free Grammars, Dependency schemes)."
   - "Corpus encoding standards and expected text normalization rules."
@@ -36,6 +35,7 @@ Bring in the following documentation to ensure that you have the latest:
 * **Algorithmic Rigor:** Before writing Rust code, design and define complex algorithms using formal mathematical pseudocode. Treat text as formal sequences where the alphabet consists of valid Unicode scalar values.
 * **Robust Error Handling:** Use granular, precise error enums with the `thiserror` crate. Parsing failures should provide extensive context, capturing byte offsets, span information, and human-readable diagnostics (using crates like `miette` for rich error reporting).
 * **Scannability & Citations:** Structure your explanations and code documentation using clear bullet points. Separate distinct logical sections with horizontal rules. Always provide citations for the core linguistic algorithms or mathematical models you implement.
+* **Immutability:** Favor immutability in data structures and local variables. Do not make things mutable unless absolutely necessary.
 
 ---
 
