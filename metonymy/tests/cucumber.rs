@@ -6,17 +6,17 @@ pub struct MetonymyWorld {
 }
 
 #[given("I have a basic setup")]
-async fn i_have_a_basic_setup(_world: &mut MetonymyWorld) {
+fn i_have_a_basic_setup(_world: &mut MetonymyWorld) {
     // Setup logic
 }
 
 #[when("I run metonymy")]
-async fn i_run_metonymy(_world: &mut MetonymyWorld) {
+fn i_run_metonymy(_world: &mut MetonymyWorld) {
     // Action logic
 }
 
 #[then("it should execute successfully")]
-async fn it_should_execute_successfully(_world: &mut MetonymyWorld) {
+fn it_should_execute_successfully(_world: &mut MetonymyWorld) {
     // Assertion logic
 }
 

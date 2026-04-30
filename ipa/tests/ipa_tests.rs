@@ -24,7 +24,7 @@ fn test_resolve_alias() {
 fn test_get_features() {
     let system = IpaSystem::new(DUMMY_DATA).expect("Failed to initialize IPA system");
 
-    let n_data = system.get_phoneme_data("n").unwrap();
+    let n_data = system.get_phoneme_data("n").expect("failed to unwrap");
     assert_eq!(
         n_data.features,
         vec![
@@ -38,7 +38,7 @@ fn test_get_features() {
     assert_eq!(n_data.manner, vec!["nasal"]);
 
     // Alias works for getting features
-    let g_data = system.get_phoneme_data("g").unwrap();
+    let g_data = system.get_phoneme_data("g").expect("failed to unwrap");
     assert_eq!(
         g_data.features,
         vec![
