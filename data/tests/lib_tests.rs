@@ -3,7 +3,7 @@ use serde_json::json;
 
 #[test]
 fn test_spe_feature_deserialize_valid() {
-    let plus_feature: SpeFeature = serde_json::from_value(json!("+nasal")).expect("failed to unwrap");
+    let plus_feature: SpeFeature = serde_json::from_value(json!("+nasal")).expect("Valid '+nasal' feature should deserialize");
     assert_eq!(plus_feature, SpeFeature::Plus("nasal".to_string()));
 
     let minus_feature: SpeFeature = serde_json::from_value(json!("-voice")).expect("failed to unwrap");
