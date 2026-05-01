@@ -1,4 +1,5 @@
 [package]
+license = "MIT OR Apache-2.0"
 name = "soundchange"
 version = "0.1.0"
 edition = "2024"
@@ -9,3 +10,6 @@ thiserror.workspace = true
 
 [lints]
 workspace = true
+
+[dev-dependencies]
+proptest = "1.11.0"

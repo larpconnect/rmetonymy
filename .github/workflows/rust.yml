@@ -22,3 +22,7 @@ jobs:
       run: cargo clippy -- -D warnings
     - name: Run tests
       run: cargo test --verbose
+    - name: cargo-mutants
+      run: cargo install cargo-mutants cargo-deny && cargo mutants
+    - name: cargo-deny
+      run: cargo deny check

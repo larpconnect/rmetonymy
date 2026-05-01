@@ -1,4 +1,5 @@
 [package]
+license = "MIT OR Apache-2.0"
 name = "metonymy"
 version = "0.1.0"
 edition = "2024"
@@ -13,6 +14,7 @@ tokio.workspace = true
 cucumber.workspace = true
 assert_cmd = "2.2.1"
 predicates = "3.1.4"
+proptest = "1.11.0"
 
 [[test]]
 name = "cucumber"
