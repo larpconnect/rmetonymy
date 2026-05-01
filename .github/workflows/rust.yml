@@ -23,6 +23,6 @@ jobs:
     - name: Run tests
       run: cargo test --verbose
     - name: cargo-mutants
-      run: cargo install cargo-mutants cargo-deny && cargo mutants
+      run: cargo install cargo-mutants && cargo mutants
     - name: cargo-deny
-      run: cargo deny check
+      run: cargo install cargo-deny && cargo deny check
