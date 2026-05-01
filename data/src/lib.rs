@@ -1,11 +1,13 @@
+pub mod feature;
+
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::Value;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum SpeFeature {
-    Plus(String),
-    Minus(String),
+    Plus(crate::feature::Feature),
+    Minus(crate::feature::Feature),
 }
 
 impl<'de> Deserialize<'de> for SpeFeature {
@@ -14,10 +16,16 @@ impl<'de> Deserialize<'de> for SpeFeature {
         D: Deserializer<'de>,
     {
         let s = String::deserialize(deserializer)?;
-        if let Some(feature) = s.strip_prefix('+') {
-            Ok(SpeFeature::Plus(feature.to_string()))
-        } else if let Some(feature) = s.strip_prefix('-') {
-            Ok(SpeFeature::Minus(feature.to_string()))
+        if let Some(feature_str) = s.strip_prefix('+') {
+            let feature =
+                serde_json::from_value(serde_json::Value::String(feature_str.to_string()))
+                    .map_err(serde::de::Error::custom)?;
+            Ok(SpeFeature::Plus(feature))
+        } else if let Some(feature_str) = s.strip_prefix('-') {
+            let feature =
+                serde_json::from_value(serde_json::Value::String(feature_str.to_string()))
+                    .map_err(serde::de::Error::custom)?;
+            Ok(SpeFeature::Minus(feature))
         } else {
             Err(serde::de::Error::custom(format!(
                 "Feature {s} must start with '+' or '-'"
@@ -39,10 +47,16 @@ impl std::str::FromStr for SpeFeature {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if let Some(feature) = s.strip_prefix('+') {
-            Ok(SpeFeature::Plus(feature.to_string()))
-        } else if let Some(feature) = s.strip_prefix('-') {
-            Ok(SpeFeature::Minus(feature.to_string()))
+        if let Some(feature_str) = s.strip_prefix('+') {
+            let feature =
+                serde_json::from_value(serde_json::Value::String(feature_str.to_string()))
+                    .map_err(|e| format!("Invalid feature: {feature_str} - {e}"))?;
+            Ok(SpeFeature::Plus(feature))
+        } else if let Some(feature_str) = s.strip_prefix('-') {
+            let feature =
+                serde_json::from_value(serde_json::Value::String(feature_str.to_string()))
+                    .map_err(|e| format!("Invalid feature: {feature_str} - {e}"))?;
+            Ok(SpeFeature::Minus(feature))
         } else {
             Err(format!("Feature {s} must start with '+' or '-'"))
         }
@@ -51,10 +65,17 @@ impl std::str::FromStr for SpeFeature {
 
 impl std::fmt::Display for SpeFeature {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            SpeFeature::Plus(s) => write!(f, "+{s}"),
-            SpeFeature::Minus(s) => write!(f, "-{s}"),
-        }
+        let val = match self {
+            SpeFeature::Plus(feat) => serde_json::to_string(feat).map_or_else(
+                |_| "+unknown".to_string(),
+                |s| format!("+{}", s.trim_matches('"')),
+            ),
+            SpeFeature::Minus(feat) => serde_json::to_string(feat).map_or_else(
+                |_| "-unknown".to_string(),
+                |s| format!("-{}", s.trim_matches('"')),
+            ),
+        };
+        write!(f, "{val}")
     }
 }
 

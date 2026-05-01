@@ -1,27 +1,33 @@
-use data::{SpeFeature, parse_and_validate, validate_ipa_data};
+use data::{SpeFeature, feature::Feature, parse_and_validate, validate_ipa_data};
 use serde_json::json;
 
 #[test]
 fn test_spe_feature_deserialize_valid() {
-    let plus_feature: SpeFeature = serde_json::from_value(json!("+nasal")).expect("Valid '+nasal' feature should deserialize");
-    assert_eq!(plus_feature, SpeFeature::Plus("nasal".to_string()));
+    let plus_feature: SpeFeature =
+        serde_json::from_value(json!("+nasal")).expect("Valid '+nasal' feature should deserialize");
+    assert_eq!(plus_feature, SpeFeature::Plus(Feature::Nasal));
 
-    let minus_feature: SpeFeature = serde_json::from_value(json!("-voice")).expect("failed to unwrap");
-    assert_eq!(minus_feature, SpeFeature::Minus("voice".to_string()));
+    let minus_feature: SpeFeature =
+        serde_json::from_value(json!("-voice")).expect("failed to unwrap");
+    assert_eq!(minus_feature, SpeFeature::Minus(Feature::Voice));
 }
 
 #[test]
 fn test_spe_feature_deserialize_invalid() {
     let result: Result<SpeFeature, _> = serde_json::from_value(json!("nasal"));
-    result.expect_err("Deserializing a plain string as SpeFeature should fail (missing +/- prefix)");
+    result
+        .expect_err("Deserializing a plain string as SpeFeature should fail (missing +/- prefix)");
 }
 
 #[test]
 fn test_spe_feature_serialize() {
-    let plus_feature = SpeFeature::Plus("nasal".to_string());
-    assert_eq!(serde_json::to_value(plus_feature).expect("failed to unwrap"), json!("+nasal"));
+    let plus_feature = SpeFeature::Plus(Feature::Nasal);
+    assert_eq!(
+        serde_json::to_value(plus_feature).expect("failed to unwrap"),
+        json!("+nasal")
+    );
 
-    let minus_feature = SpeFeature::Minus("voice".to_string());
+    let minus_feature = SpeFeature::Minus(Feature::Voice);
     assert_eq!(
         serde_json::to_value(minus_feature).expect("failed to unwrap"),
         json!("-voice")
@@ -32,25 +38,19 @@ fn test_spe_feature_serialize() {
 fn test_spe_feature_from_str() {
     assert_eq!(
         "+nasal".parse::<SpeFeature>().expect("failed to unwrap"),
-        SpeFeature::Plus("nasal".to_string())
+        SpeFeature::Plus(Feature::Nasal)
     );
     assert_eq!(
         "-voice".parse::<SpeFeature>().expect("failed to unwrap"),
-        SpeFeature::Minus("voice".to_string())
+        SpeFeature::Minus(Feature::Voice)
     );
     "invalid".parse::<SpeFeature>().expect_err("expected error");
 }
 
 #[test]
 fn test_spe_feature_display() {
-    assert_eq!(
-        format!("{}", SpeFeature::Plus("nasal".to_string())),
-        "+nasal"
-    );
-    assert_eq!(
-        format!("{}", SpeFeature::Minus("voice".to_string())),
-        "-voice"
-    );
+    assert_eq!(format!("{}", SpeFeature::Plus(Feature::Nasal)), "+nasal");
+    assert_eq!(format!("{}", SpeFeature::Minus(Feature::Voice)), "-voice");
 }
 
 #[test]

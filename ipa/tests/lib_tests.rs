@@ -1,9 +1,11 @@
+use data::feature::Feature;
 use ipa::IpaSystem;
 
 #[test]
 fn test_get_phoneme_data_not_found() {
     let json_data = r"{}";
-    let system = IpaSystem::new(json_data).expect("IpaSystem should initialize correctly with empty JSON");
+    let system =
+        IpaSystem::new(json_data).expect("IpaSystem should initialize correctly with empty JSON");
     assert!(system.get_phoneme_data("p").is_none());
 }
 
@@ -87,16 +89,16 @@ fn test_combine_with_modifier_success() {
     assert!(
         combined
             .iter()
-            .any(|f| matches!(f, data::SpeFeature::Plus(s) if s == "bilabial"))
+            .any(|f| matches!(f, data::SpeFeature::Plus(Feature::Bilabial)))
     );
     assert!(
         combined
             .iter()
-            .any(|f| matches!(f, data::SpeFeature::Plus(s) if s == "aspirated"))
+            .any(|f| matches!(f, data::SpeFeature::Plus(Feature::Aspirated)))
     );
     assert!(
         !combined
             .iter()
-            .any(|f| matches!(f, data::SpeFeature::Minus(s) if s == "voice"))
+            .any(|f| matches!(f, data::SpeFeature::Minus(Feature::Voice)))
     );
 }
