@@ -1,4 +1,4 @@
-use data::SpeFeature;
+use data::{SpeFeature, feature::Feature};
 use ipa::IpaSystem;
 
 const DUMMY_DATA: &str = include_str!("dummy_ipa_data.json");
@@ -24,14 +24,16 @@ fn test_resolve_alias() {
 fn test_get_features() {
     let system = IpaSystem::new(DUMMY_DATA).expect("Failed to initialize IPA system");
 
-    let n_data = system.get_phoneme_data("n").expect("Phoneme 'n' should be present in the IPA system");
+    let n_data = system
+        .get_phoneme_data("n")
+        .expect("Phoneme 'n' should be present in the IPA system");
     assert_eq!(
         n_data.features,
         vec![
-            SpeFeature::Plus("nasal".to_string()),
-            SpeFeature::Plus("voice".to_string()),
-            SpeFeature::Plus("coronal".to_string()),
-            SpeFeature::Plus("anterior".to_string())
+            SpeFeature::Plus(Feature::Nasal),
+            SpeFeature::Plus(Feature::Voice),
+            SpeFeature::Plus(Feature::Coronal),
+            SpeFeature::Plus(Feature::Anterior)
         ]
     );
     assert_eq!(n_data.place, vec!["alveolar"]);
@@ -42,11 +44,11 @@ fn test_get_features() {
     assert_eq!(
         g_data.features,
         vec![
-            SpeFeature::Minus("nasal".to_string()),
-            SpeFeature::Plus("voice".to_string()),
-            SpeFeature::Minus("coronal".to_string()),
-            SpeFeature::Plus("high".to_string()),
-            SpeFeature::Plus("back".to_string())
+            SpeFeature::Minus(Feature::Nasal),
+            SpeFeature::Plus(Feature::Voice),
+            SpeFeature::Minus(Feature::Coronal),
+            SpeFeature::Plus(Feature::High),
+            SpeFeature::Plus(Feature::Back)
         ]
     );
     assert_eq!(g_data.place, vec!["velar"]);
@@ -64,8 +66,8 @@ fn test_combine_with_modifier() {
 
     // Original 'n' features were: ["+nasal", "+voice", "+coronal", "+anterior"]
     // Added by '˜': ["+nasalized"]
-    assert!(combined_features.contains(&SpeFeature::Plus("nasal".to_string())));
-    assert!(combined_features.contains(&SpeFeature::Plus("nasalized".to_string())));
+    assert!(combined_features.contains(&SpeFeature::Plus(Feature::Nasal)));
+    assert!(combined_features.contains(&SpeFeature::Plus(Feature::Nasalized)));
 
     // Combine using aliases
     let combined_features_alias = system
@@ -74,6 +76,6 @@ fn test_combine_with_modifier() {
 
     // Original 'ɡ' features were: ["-nasal", "+voice", "-coronal", "+high", "+back"]
     // Added by '~' (which is alias for '˜'): ["+nasalized"]
-    assert!(combined_features_alias.contains(&SpeFeature::Minus("nasal".to_string())));
-    assert!(combined_features_alias.contains(&SpeFeature::Plus("nasalized".to_string())));
+    assert!(combined_features_alias.contains(&SpeFeature::Minus(Feature::Nasal)));
+    assert!(combined_features_alias.contains(&SpeFeature::Plus(Feature::Nasalized)));
 }
