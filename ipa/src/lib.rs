@@ -2,6 +2,8 @@ use data::{IpaDataset, IpaEntry, PhonemeData, SpeFeature, parse_and_validate};
 use std::collections::HashMap;
 use thiserror::Error;
 
+pub const DEFAULT_IPA_JSON: &str = include_str!("../ipa.json");
+
 #[derive(Error, Debug)]
 pub enum IpaError {
     #[error("Symbol not found: {0}")]
@@ -14,6 +16,12 @@ pub struct IpaSystem {
     dataset: IpaDataset,
     /// Maps aliases directly to their canonical symbol representations for fast O(1) lookups.
     alias_map: HashMap<String, String>,
+}
+
+impl Default for IpaSystem {
+    fn default() -> Self {
+        Self::new(DEFAULT_IPA_JSON).expect("DEFAULT_IPA_JSON should be valid")
+    }
 }
 
 impl IpaSystem {
