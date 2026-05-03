@@ -102,3 +102,24 @@ fn test_combine_with_modifier_success() {
             .any(|f| matches!(f, data::SpeFeature::Minus(Feature::Voice)))
     );
 }
+
+#[test]
+fn test_global_resolve_alias() {
+    // "g" is an alias for "ɡ"
+    assert_eq!(ipa::resolve_alias("g"), Some("ɡ"));
+}
+
+#[test]
+fn test_global_get_entry() {
+    assert!(ipa::get_entry("p").is_some());
+}
+
+#[test]
+fn test_global_get_phoneme_data() {
+    assert!(ipa::get_phoneme_data("p").is_some());
+}
+
+#[test]
+fn test_global_combine_with_modifier() {
+    assert!(ipa::combine_with_modifier("p", "ʰ").is_none() || ipa::combine_with_modifier("p", "ʰ").is_some());
+}

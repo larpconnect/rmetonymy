@@ -6,10 +6,7 @@ use thiserror::Error;
 pub const DEFAULT_IPA_JSON: &str = include_str!("../ipa.json");
 
 pub static DEFAULT_SYSTEM: LazyLock<IpaSystem> = LazyLock::new(|| {
-    IpaSystem::new(DEFAULT_IPA_JSON).unwrap_or_else(|_| IpaSystem {
-        dataset: HashMap::new(),
-        alias_map: HashMap::new(),
-    })
+    IpaSystem::new(DEFAULT_IPA_JSON).expect("DEFAULT_IPA_JSON should be valid")
 });
 
 #[derive(Error, Debug)]
