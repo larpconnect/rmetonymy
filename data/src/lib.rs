@@ -119,15 +119,18 @@ pub const IPA_SCHEMA_JSON: &str = include_str!("../ipa_schema.json");
 /// # Errors
 /// Returns `Err` if the validation against `ipa_schema.json` fails.
 pub fn validate_ipa_data(data: &Value) -> Result<(), Vec<String>> {
-    static VALIDATOR: std::sync::LazyLock<jsonschema::Validator> = std::sync::LazyLock::new(|| {
-        let schema_json: Value =
-            serde_json::from_str(IPA_SCHEMA_JSON).expect("Compiled schema must be valid JSON");
-        jsonschema::validator_for(&schema_json)
-            .expect("Compiled schema must be a valid JSON Schema")
-    });
+    static VALIDATOR: std::sync::LazyLock<Result<jsonschema::Validator, String>> =
+        std::sync::LazyLock::new(|| {
+            let schema_json: Value = serde_json::from_str(IPA_SCHEMA_JSON)
+                .map_err(|e| format!("Failed to parse schema JSON: {e}"))?;
+            jsonschema::validator_for(&schema_json)
+                .map_err(|e| format!("Failed to compile JSON Schema: {e}"))
+        });
 
-    if !VALIDATOR.is_valid(data) {
-        let errors = VALIDATOR.iter_errors(data);
+    let validator = VALIDATOR.as_ref().map_err(|e| vec![e.clone()])?;
+
+    if !validator.is_valid(data) {
+        let errors = validator.iter_errors(data);
         let err_strings: Vec<String> = errors.map(|e| e.to_string()).collect();
         return Err(err_strings);
     }
