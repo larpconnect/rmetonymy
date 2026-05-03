@@ -10,6 +10,14 @@ fn test_get_phoneme_data_not_found() {
 }
 
 #[test]
+fn test_get_entry_not_found() {
+    let json_data = r"{}";
+    let system =
+        IpaSystem::new(json_data).expect("IpaSystem should initialize correctly with empty JSON");
+    assert!(system.get_entry("invalid_symbol").is_none());
+}
+
+#[test]
 fn test_get_phoneme_data_modifier() {
     let json_data = r#"{
         "h": {
@@ -121,5 +129,8 @@ fn test_global_get_phoneme_data() {
 
 #[test]
 fn test_global_combine_with_modifier() {
-    assert!(ipa::combine_with_modifier("p", "ʰ").is_none() || ipa::combine_with_modifier("p", "ʰ").is_some());
+    assert!(
+        ipa::combine_with_modifier("p", "ʰ").is_none()
+            || ipa::combine_with_modifier("p", "ʰ").is_some()
+    );
 }
