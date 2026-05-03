@@ -1,8 +1,16 @@
 use data::{IpaDataset, IpaEntry, PhonemeData, SpeFeature, parse_and_validate};
 use std::collections::HashMap;
+use std::sync::LazyLock;
 use thiserror::Error;
 
 pub const DEFAULT_IPA_JSON: &str = include_str!("../ipa.json");
+
+pub static DEFAULT_SYSTEM: LazyLock<IpaSystem> = LazyLock::new(|| {
+    IpaSystem::new(DEFAULT_IPA_JSON).unwrap_or_else(|_| IpaSystem {
+        dataset: HashMap::new(),
+        alias_map: HashMap::new(),
+    })
+});
 
 #[derive(Error, Debug)]
 pub enum IpaError {
@@ -12,6 +20,7 @@ pub enum IpaError {
     ParseError(String),
 }
 
+#[derive(Clone, Debug)]
 pub struct IpaSystem {
     dataset: IpaDataset,
     /// Maps aliases directly to their canonical symbol representations for fast O(1) lookups.
@@ -20,7 +29,7 @@ pub struct IpaSystem {
 
 impl Default for IpaSystem {
     fn default() -> Self {
-        Self::new(DEFAULT_IPA_JSON).expect("DEFAULT_IPA_JSON should be valid")
+        DEFAULT_SYSTEM.clone()
     }
 }
 
@@ -101,4 +110,29 @@ impl IpaSystem {
 
         Some(features)
     }
+}
+
+/// Resolves a symbol or alias to its canonical symbol representation using the default IPA system.
+#[must_use]
+pub fn resolve_alias(symbol: &str) -> Option<&str> {
+    DEFAULT_SYSTEM.resolve_alias(symbol)
+}
+
+/// Retrieves the entry for a given symbol, resolving aliases automatically, using the default IPA system.
+#[must_use]
+pub fn get_entry(symbol: &str) -> Option<&IpaEntry> {
+    DEFAULT_SYSTEM.get_entry(symbol)
+}
+
+/// Retrieves features, place, and manner for a phoneme using the default IPA system.
+/// Returns None if the symbol is a modifier or not found.
+#[must_use]
+pub fn get_phoneme_data(symbol: &str) -> Option<&PhonemeData> {
+    DEFAULT_SYSTEM.get_phoneme_data(symbol)
+}
+
+/// Dynamically combines a base phoneme and a modifier to produce an updated feature set using the default IPA system.
+#[must_use]
+pub fn combine_with_modifier(base: &str, modifier: &str) -> Option<Vec<SpeFeature>> {
+    DEFAULT_SYSTEM.combine_with_modifier(base, modifier)
 }
