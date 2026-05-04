@@ -4,6 +4,7 @@ use std::str::FromStr;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
+#[derive(PartialEq)]
 pub enum SoundClassKeyError {
     #[error(
         "Invalid sound class key: {0}. Must be an English capital letter (A-Z), a Greek capital letter (Α-Ω), or a Hebrew letter (א-ת), with an optional subscript digit ₀-₉."

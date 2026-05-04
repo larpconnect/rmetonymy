@@ -1,3 +1,4 @@
+use crate::phonotactics::PhonotacticPattern;
 use crate::sound_class::SoundClassKey;
 use ipa::IpaString;
 use serde::{Deserialize, Deserializer, Serialize};
@@ -59,6 +60,15 @@ where
 pub struct PhonologyConfig {
     #[serde(deserialize_with = "ensure_default_sound_classes")]
     pub sound_classes: BTreeMap<SoundClassKey, SoundClass>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub phonotactics: BTreeMap<String, WordTypeConfig>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct WordTypeConfig {
+    pub patterns: Vec<PhonotacticPattern>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub generator: Option<GeneratorConfig>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -138,6 +148,39 @@ mod tests {
         let class_c = phonology.get(&"C".parse::<SoundClassKey>().unwrap()).unwrap();
         assert!(class_c.values.is_empty());
         assert!(class_c.generator.is_none());
+    }
+
+    #[test]
+    fn test_phonotactics_deserialization() {
+        let json_str = r#"{
+            "id": "018f4a3e-6b9f-7a1a-9b1a-2b3c4d5e6f7a",
+            "name": {
+                "endonym": "p"
+            },
+            "metadata": {
+                "created_at": "2024-05-04T00:12:00Z"
+            },
+            "phonology": {
+                "sound_classes": {},
+                "phonotactics": {
+                    "noun.masculine": {
+                        "patterns": ["CVC", "CV(C)50%"],
+                        "generator": {
+                            "type": "Equiprobable"
+                        }
+                    }
+                }
+            }
+        }"#;
+
+        let config: LanguageConfig = serde_json::from_str(json_str).expect("Should deserialize");
+        let phonotactics = config.phonology.phonotactics;
+        assert_eq!(phonotactics.len(), 1);
+        let word_type = phonotactics.get("noun.masculine").unwrap();
+        assert_eq!(word_type.patterns.len(), 2);
+        assert_eq!(word_type.patterns[0].to_string(), "CVC");
+        assert_eq!(word_type.patterns[1].to_string(), "CV(C)50%");
+        assert_eq!(word_type.generator, Some(GeneratorConfig::Equiprobable));
     }
 
     #[test]
