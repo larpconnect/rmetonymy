@@ -132,5 +132,5 @@ pub fn get_phoneme_data(symbol: &str) -> Option<&PhonemeData> {
 pub fn combine_with_modifier(base: &str, modifier: &str) -> Option<Vec<SpeFeature>> {
     DEFAULT_SYSTEM.combine_with_modifier(base, modifier)
 }
-pub mod string;
-pub use string::IpaString;
+pub mod ipa_string;
+pub use ipa_string::IpaString;

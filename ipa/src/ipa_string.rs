@@ -37,17 +37,21 @@ impl FromStr for IpaString {
         }
 
         let mut i = 0;
-        let chars: Vec<char> = s.chars().collect();
-        while i < chars.len() {
+        let char_indices: Vec<(usize, char)> = s.char_indices().collect();
+        let char_len = char_indices.len();
+
+        while i < char_len {
             let mut matched = false;
-            for len in (1..=chars.len() - i).rev() {
-                if let Some(slice) = chars.get(i..i + len) {
-                    let substr: String = slice.iter().collect();
-                    if get_entry(&substr).is_some() {
-                        i += len;
-                        matched = true;
-                        break;
-                    }
+            for len in (1..=char_len - i).rev() {
+                let start_idx_bytes = char_indices.get(i).map_or(s.len(), |(idx, _)| *idx);
+                let end_idx_bytes = char_indices.get(i + len).map_or(s.len(), |(idx, _)| *idx);
+
+                if s.get(start_idx_bytes..end_idx_bytes)
+                    .is_some_and(|substr| get_entry(substr).is_some())
+                {
+                    i += len;
+                    matched = true;
+                    break;
                 }
             }
             if !matched {

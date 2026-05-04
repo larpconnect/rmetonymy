@@ -1,6 +1,6 @@
 use crate::sound_class::SoundClassKey;
 use ipa::IpaString;
-
+use serde::{Deserialize, Deserializer, Serialize};
 use std::collections::BTreeMap;
 use time::OffsetDateTime;
 use uuid::Uuid;
@@ -32,8 +32,6 @@ pub struct MetadataConfig {
     pub updated_at: Option<OffsetDateTime>,
 }
 
-use serde::{Deserialize, Deserializer, Serialize};
-
 fn ensure_default_sound_classes<'de, D>(
     deserializer: D,
 ) -> Result<BTreeMap<SoundClassKey, SoundClass>, D::Error>
@@ -44,7 +42,7 @@ where
 
     let defaults = ["C", "D", "L", "V"];
     for default_key in defaults {
-        // We unwrap here for parsing the hardcoded default keys, which are known to be valid
+        // Parse the hardcoded default keys, which are known to be valid
         let key = default_key
             .parse::<SoundClassKey>()
             .map_err(serde::de::Error::custom)?;
@@ -124,9 +122,7 @@ mod tests {
         let phonology = config.phonology.sound_classes;
 
         // Ensure explicit class is parsed
-        let class_a = phonology
-            .get(&"A".parse::<SoundClassKey>().unwrap())
-            .unwrap();
+        let class_a = phonology.get(&"A".parse::<SoundClassKey>().unwrap()).unwrap();
         assert_eq!(class_a.values, vec!["p", "t", "k"]);
         assert_eq!(
             class_a.generator,
@@ -139,9 +135,7 @@ mod tests {
         assert!(phonology.contains_key(&"L".parse::<SoundClassKey>().unwrap()));
         assert!(phonology.contains_key(&"V".parse::<SoundClassKey>().unwrap()));
 
-        let class_c = phonology
-            .get(&"C".parse::<SoundClassKey>().unwrap())
-            .unwrap();
+        let class_c = phonology.get(&"C".parse::<SoundClassKey>().unwrap()).unwrap();
         assert!(class_c.values.is_empty());
         assert!(class_c.generator.is_none());
     }
