@@ -1,13 +1,12 @@
 use data::{IpaDataset, IpaEntry, PhonemeData, SpeFeature, parse_and_validate};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::LazyLock;
 use thiserror::Error;
 
 pub const DEFAULT_IPA_JSON: &str = include_str!("../ipa.json");
 
-pub static DEFAULT_SYSTEM: LazyLock<IpaSystem> = LazyLock::new(|| {
-    IpaSystem::new(DEFAULT_IPA_JSON).expect("DEFAULT_IPA_JSON should be valid")
-});
+pub static DEFAULT_SYSTEM: LazyLock<IpaSystem> =
+    LazyLock::new(|| IpaSystem::new(DEFAULT_IPA_JSON).expect("DEFAULT_IPA_JSON should be valid"));
 
 #[derive(Error, Debug)]
 pub enum IpaError {
@@ -95,8 +94,10 @@ impl IpaSystem {
 
         let mut features = base_data.features.clone();
 
-        // Remove explicitly removed features
-        features.retain(|f| !mod_data.removed_features.contains(f));
+        if !mod_data.removed_features.is_empty() {
+            let removed_set: HashSet<_> = mod_data.removed_features.iter().collect();
+            features.retain(|f| !removed_set.contains(&f));
+        }
 
         // Add new features
         for new_f in &mod_data.added_features {
