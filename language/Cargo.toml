@@ -6,6 +6,10 @@ edition = "2024"
 [dependencies]
 ipa = { path = "../ipa" }
 thiserror.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+uuid.workspace = true
+time.workspace = true
 
 [lints]
 workspace = true

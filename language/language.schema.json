@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/language.schema.json",
+  "title": "Language Configuration",
+  "description": "Schema for defining a language configuration including phonology and sound classes.",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "UUIDv7 identifier for the language"
+    },
+    "name": {
+      "type": "object",
+      "properties": {
+        "endonym": {
+          "type": "string",
+          "description": "Endonym in IPA"
+        },
+        "exonym": {
+          "type": "string",
+          "description": "Exonym in IPA"
+        }
+      },
+      "required": ["endonym"]
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO8601 timestamp"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO8601 timestamp"
+        }
+      },
+      "required": ["created_at"]
+    },
+    "phonology": {
+      "type": "object",
+      "properties": {
+        "sound_classes": {
+          "type": "object",
+          "patternProperties": {
+            "^[A-Z\u0391-\u03A9\u05D0-\u05EA][\u2080-\u2089]?$": {
+              "$ref": "#/$defs/sound_class"
+            }
+          },
+          "additionalProperties": false,
+          "description": "Map of sound classes. C, D, L, V are considered present by default."
+        }
+      },
+      "required": ["sound_classes"]
+    }
+  },
+  "required": ["id", "name", "metadata", "phonology"],
+  "$defs": {
+    "sound_class": {
+      "type": "object",
+      "properties": {
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of string values for the sound class (standard phonemes, modified phonemes, groups, or other classes)"
+        },
+        "generator": {
+          "type": "object",
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "type": { "const": "Zipf" },
+                "a": { "type": "number" },
+                "b": { "type": "number" }
+              },
+              "required": ["type", "a", "b"]
+            },
+            {
+              "type": "object",
+              "properties": {
+                "type": { "const": "Equiprobable" }
+              },
+              "required": ["type"]
+            }
+          ]
+        }
+      },
+      "required": ["values"]
+    }
+  }
+}
