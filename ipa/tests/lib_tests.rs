@@ -121,5 +121,5 @@ fn test_global_get_phoneme_data() {
 
 #[test]
 fn test_global_combine_with_modifier() {
-    assert!(ipa::combine_with_modifier("p", "ʰ").is_none() || ipa::combine_with_modifier("p", "ʰ").is_some());
+    assert!(ipa::combine_with_modifier("p", "ʰ").is_none());
 }
