@@ -1,0 +1,51 @@
+--- language/src/phonotactics.rs
++++ language/src/phonotactics.rs
+@@ -17,6 +17,8 @@
+     ParseError(String),
+ }
+
++pub const DEFAULT_OPTIONAL_PROBABILITY: u8 = 20;
++
+ #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+ pub enum PhonotacticPattern {
+     Sequence(Vec<PhonotacticPattern>),
+@@ -37,7 +39,7 @@
+             Self::IpaSequence(ipa) => write!(f, "{ipa}"),
+             Self::OptionalGroup(pat, prob) => {
+                 write!(f, "({pat})")?;
+-                if *prob != 20 {
++                if *prob != DEFAULT_OPTIONAL_PROBABILITY {
+                     write!(f, "{prob}%")?;
+                 }
+                 Ok(())
+@@ -95,7 +97,7 @@
+                 elements.push(PhonotacticPattern::IpaSequence(ipa));
+             }
+             Rule::optional_group => {
+-                let mut prob = 20; // Default is 20%
++                let mut prob = DEFAULT_OPTIONAL_PROBABILITY;
+                 let mut inner_pattern = None;
+
+                 for opt_inner in inner.into_inner() {
+@@ -106,7 +108,7 @@
+                         Rule::probability => {
+                             let s = opt_inner.as_str();
+                             let s = s.strip_suffix('%').unwrap_or(s);
+-                            prob = s.parse::<u8>().unwrap_or(20);
++                            prob = s.parse::<u8>().unwrap_or(DEFAULT_OPTIONAL_PROBABILITY);
+                         }
+                         _ => {}
+                     }
+@@ -120,9 +122,8 @@
+         }
+     }
+
+-    if elements.len() == 1
+-        && let Some(el) = elements.pop()
+-    {
+-        Ok(el)
++    if elements.len() == 1 {
++        Ok(elements.pop().expect("Guaranteed to have 1 element"))
+     } else {
+         Ok(PhonotacticPattern::Sequence(elements))
+     }
