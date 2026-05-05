@@ -10,6 +10,8 @@ serde.workspace = true
 serde_json.workspace = true
 uuid.workspace = true
 time.workspace = true
+pest = "2.8.6"
+pest_derive = "2.8.6"
 
 [lints]
 workspace = true

@@ -1,3 +1,4 @@
+use crate::phonotactics::PhonotacticPattern;
 use crate::sound_class::SoundClassKey;
 use ipa::IpaString;
 use serde::{Deserialize, Deserializer, Serialize};
@@ -59,11 +60,20 @@ where
 pub struct PhonologyConfig {
     #[serde(deserialize_with = "ensure_default_sound_classes")]
     pub sound_classes: BTreeMap<SoundClassKey, SoundClass>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub phonotactics: BTreeMap<String, PhonotacticsConfig>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct SoundClass {
     pub values: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub generator: Option<GeneratorConfig>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct PhonotacticsConfig {
+    pub patterns: Vec<PhonotacticPattern>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub generator: Option<GeneratorConfig>,
 }
@@ -102,6 +112,16 @@ mod tests {
                             "b": 2.0
                         }
                     }
+                },
+                "phonotactics": {
+                    "noun.masculine": {
+                        "patterns": ["CV(C)", "CV(CV)"],
+                        "generator": {
+                            "type": "Zipf",
+                            "a": 1.5,
+                            "b": 1.0
+                        }
+                    }
                 }
             }
         }"#;
@@ -122,7 +142,9 @@ mod tests {
         let phonology = config.phonology.sound_classes;
 
         // Ensure explicit class is parsed
-        let class_a = phonology.get(&"A".parse::<SoundClassKey>().unwrap()).unwrap();
+        let class_a = phonology
+            .get(&"A".parse::<SoundClassKey>().unwrap())
+            .unwrap();
         assert_eq!(class_a.values, vec!["p", "t", "k"]);
         assert_eq!(
             class_a.generator,
@@ -135,9 +157,21 @@ mod tests {
         assert!(phonology.contains_key(&"L".parse::<SoundClassKey>().unwrap()));
         assert!(phonology.contains_key(&"V".parse::<SoundClassKey>().unwrap()));
 
-        let class_c = phonology.get(&"C".parse::<SoundClassKey>().unwrap()).unwrap();
+        let class_c = phonology
+            .get(&"C".parse::<SoundClassKey>().unwrap())
+            .unwrap();
         assert!(class_c.values.is_empty());
         assert!(class_c.generator.is_none());
+
+        let noun_masculine = config.phonology.phonotactics.get("noun.masculine").unwrap();
+        assert_eq!(
+            noun_masculine.patterns,
+            vec!["CV(C)".parse().unwrap(), "CV(CV)".parse().unwrap()]
+        );
+        assert_eq!(
+            noun_masculine.generator,
+            Some(GeneratorConfig::Zipf { a: 1.5, b: 1.0 })
+        );
     }
 
     #[test]

@@ -1,0 +1,32 @@
+// phonotactics.pest
+
+
+// A digit 0-9
+digit = _{ '0'..'9' }
+
+// Number followed by %, e.g., 50%
+probability = @{ digit{1, 2} ~ "%" }
+
+// A valid sound class base is an uppercase English letter, a Greek capital letter, or a Hebrew letter.
+// This is somewhat loose but follows the SoundClassKey logic. We use characters here.
+// Instead of perfectly validating the sound class here, we'll capture any valid characters for it.
+sound_class_base = _{ ASCII_ALPHA_UPPER | '\u{0391}'..'\u{03A9}' | '\u{05D0}'..'\u{05EA}' }
+subscript = _{ '\u{2080}'..'\u{2089}' }
+sound_class = @{ sound_class_base ~ subscript? }
+
+// Optional group: ( ... ) [probability]
+optional_group = { "(" ~ pattern ~ ")" ~ probability? }
+
+// For IPA characters, anything that isn't a parens, %, digit, or sound class base
+// Note that modifiers are just IPA characters
+ipa_char = _{ !( "(" | ")" | "%" | digit | sound_class_base | " " | "\t" | "\r" | "\n" ) ~ ANY }
+ipa_sequence = @{ ipa_char+ }
+
+// A pattern element is either an optional group, a sound class, or an IPA sequence
+pattern_element = _{ optional_group | sound_class | ipa_sequence }
+
+// The entire pattern
+pattern = { pattern_element+ }
+
+// Top-level rule
+main = { SOI ~ pattern ~ EOI }
