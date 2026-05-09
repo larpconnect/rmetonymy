@@ -1338,7 +1338,9 @@ dependencies = [
  "assert_cmd",
  "clap",
  "cucumber",
+ "ipa",
  "predicates",
+ "shlex",
  "soundchange",
  "tokio",
 ]

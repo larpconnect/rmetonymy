@@ -4,11 +4,13 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+ipa = { path = "../ipa" }
 soundchange = { path = "../soundchange" }
 anyhow.workspace = true
 clap.workspace = true
 
 [dev-dependencies]
+shlex = "1.3.0"
 tokio.workspace = true
 cucumber.workspace = true
 assert_cmd = "2.2.1"
