@@ -12,3 +12,8 @@ Feature: Lookup Subcommand
     Given I have a basic setup
     When I run metonymy with "lookup --phoneme xyz"
     Then the output should contain "not found"
+
+  Scenario: Looking up an affricate phoneme
+    Given I have a basic setup
+    When I run metonymy with "lookup --phoneme t͡s"
+    Then the output should contain "not found or could not combine"

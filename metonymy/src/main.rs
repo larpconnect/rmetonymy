@@ -45,10 +45,7 @@ fn handle_lookup(phoneme: &str, phone_config: Option<&PathBuf>) -> anyhow::Resul
 
     println!("Looking up phoneme: {phoneme}");
 
-    // Right now IpaString just validates that it's a sequence of IPA symbols
-    // Since IpaSystem doesn't have an IpaString -> Phoneme list parser out-of-the-box right now
-    // We'll just look up the entire string as a single phoneme/symbol first.
-
+    // Look up the exact string as a single phoneme/symbol first
     if let Some(data) = system.get_phoneme_data(phoneme) {
         println!("Base: {phoneme}");
         println!("Features: {:?}", data.features);
@@ -57,16 +54,36 @@ fn handle_lookup(phoneme: &str, phone_config: Option<&PathBuf>) -> anyhow::Resul
         return Ok(());
     }
 
-    // Fallback: Try looking up the first character as base, and the rest as modifiers.
-    // Note: This is a naive approach for the scope of the CLI command for now.
-    // A full IPA parser would be needed to handle multi-character affricates and diacritics.
-    let mut chars = phoneme.chars();
-    if let Some(base_char) = chars.next() {
-        let base = base_char.to_string();
-        let modifier = chars.collect::<String>();
+    // Fallback logic for affricates and diacritics
+    // We try to match the longest valid base phoneme prefix and then process the rest as modifiers.
+    let char_indices: Vec<(usize, char)> = phoneme.char_indices().collect();
+    let mut longest_base = None;
+    let mut longest_base_len_chars = 0;
 
-        if let Some(combined_features) = system.combine_with_modifier(&base, &modifier) {
-             if let Some(base_data) = system.get_phoneme_data(&base) {
+    for len in (1..=char_indices.len()).rev() {
+        let end_idx = char_indices.get(len).map_or(phoneme.len(), |&(idx, _)| idx);
+        let prefix = &phoneme[0..end_idx];
+        if system.get_phoneme_data(prefix).is_some() {
+            longest_base = Some(prefix);
+            longest_base_len_chars = len;
+            break;
+        }
+    }
+
+    if let Some(base) = longest_base {
+        let start_idx = char_indices.get(longest_base_len_chars).map_or(phoneme.len(), |&(idx, _)| idx);
+        let modifier = &phoneme[start_idx..];
+
+        if modifier.is_empty() {
+             // Handled by exact match above, but just in case
+             if let Some(base_data) = system.get_phoneme_data(base) {
+                 println!("Base: {base}");
+                 println!("Features: {:?}", base_data.features);
+                 println!("Place: {:?}", base_data.place);
+                 println!("Manner: {:?}", base_data.manner);
+             }
+        } else if let Some(combined_features) = system.combine_with_modifier(base, modifier) {
+             if let Some(base_data) = system.get_phoneme_data(base) {
                  println!("Base: {base}");
                  println!("Modifiers: {modifier}");
                  println!("Original Features: {:?}", base_data.features);
