@@ -71,30 +71,32 @@ fn handle_lookup(phoneme: &str, phone_config: Option<&PathBuf>) -> anyhow::Resul
     }
 
     if let Some(base) = longest_base {
-        let start_idx = char_indices.get(longest_base_len_chars).map_or(phoneme.len(), |&(idx, _)| idx);
+        let start_idx = char_indices
+            .get(longest_base_len_chars)
+            .map_or(phoneme.len(), |&(idx, _)| idx);
         let modifier = phoneme.get(start_idx..).unwrap_or("");
 
         if modifier.is_empty() {
-             // Handled by exact match above, but just in case
-             if let Some(base_data) = system.get_phoneme_data(base) {
-                 println!("Base: {base}");
-                 println!("Features: {:?}", base_data.features);
-                 println!("Place: {:?}", base_data.place);
-                 println!("Manner: {:?}", base_data.manner);
-             }
+            // Handled by exact match above, but just in case
+            if let Some(base_data) = system.get_phoneme_data(base) {
+                println!("Base: {base}");
+                println!("Features: {:?}", base_data.features);
+                println!("Place: {:?}", base_data.place);
+                println!("Manner: {:?}", base_data.manner);
+            }
         } else if let Some(combined_features) = system.combine_with_modifier(base, modifier) {
-             if let Some(base_data) = system.get_phoneme_data(base) {
-                 println!("Base: {base}");
-                 println!("Modifiers: {modifier}");
-                 println!("Original Features: {:?}", base_data.features);
-                 println!("Modified Features: {combined_features:?}");
-                 println!("Place: {:?}", base_data.place);
-                 println!("Manner: {:?}", base_data.manner);
-             }
+            if let Some(base_data) = system.get_phoneme_data(base) {
+                println!("Base: {base}");
+                println!("Modifiers: {modifier}");
+                println!("Original Features: {:?}", base_data.features);
+                println!("Modified Features: {combined_features:?}");
+                println!("Place: {:?}", base_data.place);
+                println!("Manner: {:?}", base_data.manner);
+            }
         } else if system.get_entry(phoneme).is_some() {
-             println!("Found entry, but it is not a base phoneme.");
+            println!("Found entry, but it is not a base phoneme.");
         } else {
-             println!("Phoneme '{phoneme}' not found or could not combine.");
+            println!("Phoneme '{phoneme}' not found or could not combine.");
         }
     } else {
         println!("Phoneme '{phoneme}' not found.");
