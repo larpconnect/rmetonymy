@@ -2016,7 +2016,6 @@
     "type": "consonant",
     "features": [
       "+coronal",
-      "+anterior",
       "+consonantal",
       "+sonorant",
       "+continuant",
