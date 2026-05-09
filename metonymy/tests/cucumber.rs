@@ -1,5 +1,5 @@
-use assert_cmd::Command;
 use cucumber::{World, given, then, when};
+use assert_cmd::Command;
 
 #[derive(Debug, Default, World)]
 pub struct MetonymyWorld {
@@ -21,7 +21,10 @@ fn i_run_metonymy(_world: &mut MetonymyWorld) {
 #[when(expr = "I run metonymy with {string}")]
 fn i_run_metonymy_with(world: &mut MetonymyWorld, args_str: String) {
     let mut cmd = Command::cargo_bin("metonymy").expect("failed to get cargo bin");
-    let args: Vec<&str> = args_str.split_whitespace().collect();
+    let args: Vec<String> = match shlex::split(&args_str) {
+        Some(a) => a,
+        None => args_str.split_whitespace().map(|s| s.to_string()).collect(),
+    };
     cmd.args(&args);
     let assert = cmd.assert();
     world.output = String::from_utf8(assert.get_output().stdout.clone()).unwrap();

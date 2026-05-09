@@ -1340,6 +1340,7 @@ dependencies = [
  "cucumber",
  "ipa",
  "predicates",
+ "shlex",
  "soundchange",
  "tokio",
 ]
