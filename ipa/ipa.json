@@ -1863,7 +1863,7 @@
       "affricate"
     ],
     "aliases": [
-      "ts"
+      "ʦ"
     ]
   },
   "d͡z": {
@@ -1883,7 +1883,7 @@
       "affricate"
     ],
     "aliases": [
-      "dz"
+      "ʣ"
     ]
   },
   "t͡ʃ": {
@@ -1902,8 +1902,7 @@
       "affricate"
     ],
     "aliases": [
-      "tʃ",
-      "c"
+      "ʧ"
     ]
   },
   "d͡ʒ": {
@@ -1923,8 +1922,7 @@
       "affricate"
     ],
     "aliases": [
-      "dʒ",
-      "ɟ"
+      "ʤ"
     ]
   },
   "p͡f": {
@@ -1942,9 +1940,7 @@
     "manner": [
       "affricate"
     ],
-    "aliases": [
-      "pf"
-    ]
+    "aliases": []
   },
   "b͡v": {
     "type": "consonant",
@@ -1962,9 +1958,7 @@
     "manner": [
       "affricate"
     ],
-    "aliases": [
-      "bv"
-    ]
+    "aliases": []
   },
   "k͡x": {
     "type": "consonant",
@@ -1981,9 +1975,7 @@
     "manner": [
       "affricate"
     ],
-    "aliases": [
-      "kx"
-    ]
+    "aliases": []
   },
   "ɡ͡ɣ": {
     "type": "consonant",
@@ -2001,9 +1993,7 @@
     "manner": [
       "affricate"
     ],
-    "aliases": [
-      "ɡɣ"
-    ]
+    "aliases": []
   },
   "q͡χ": {
     "type": "consonant",
@@ -2020,9 +2010,7 @@
     "manner": [
       "affricate"
     ],
-    "aliases": [
-      "qχ"
-    ]
+    "aliases": []
   },
   "ɽr": {
     "type": "consonant",
