@@ -124,7 +124,9 @@ fn parse_pattern(
     }
 
     if elements.len() == 1 {
-        Ok(elements.pop().expect("elements is guaranteed to have 1 item"))
+        Ok(elements
+            .pop()
+            .expect("elements is guaranteed to have 1 item"))
     } else {
         Ok(PhonotacticPattern::Sequence(elements))
     }
