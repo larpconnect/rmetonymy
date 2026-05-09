@@ -62,7 +62,7 @@ fn handle_lookup(phoneme: &str, phone_config: Option<&PathBuf>) -> anyhow::Resul
 
     for len in (1..=char_indices.len()).rev() {
         let end_idx = char_indices.get(len).map_or(phoneme.len(), |&(idx, _)| idx);
-        let prefix = &phoneme[0..end_idx];
+        let prefix = phoneme.get(0..end_idx).unwrap_or("");
         if system.get_phoneme_data(prefix).is_some() {
             longest_base = Some(prefix);
             longest_base_len_chars = len;
@@ -72,7 +72,7 @@ fn handle_lookup(phoneme: &str, phone_config: Option<&PathBuf>) -> anyhow::Resul
 
     if let Some(base) = longest_base {
         let start_idx = char_indices.get(longest_base_len_chars).map_or(phoneme.len(), |&(idx, _)| idx);
-        let modifier = &phoneme[start_idx..];
+        let modifier = phoneme.get(start_idx..).unwrap_or("");
 
         if modifier.is_empty() {
              // Handled by exact match above, but just in case
