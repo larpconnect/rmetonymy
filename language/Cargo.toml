@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 ipa = { path = "../ipa" }
+data = { path = "../data" }
 thiserror.workspace = true
 serde.workspace = true
 serde_json.workspace = true
@@ -12,6 +13,15 @@ uuid.workspace = true
 time.workspace = true
 pest = "2.8.6"
 pest_derive = "2.8.6"
+regex = "1"
+
+[dev-dependencies]
+cucumber.workspace = true
+tokio.workspace = true
 
 [lints]
 workspace = true
+
+[[test]]
+name = "sound_matcher_integration"
+harness = false

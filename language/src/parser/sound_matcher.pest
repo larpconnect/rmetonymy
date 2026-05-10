@@ -1,0 +1,44 @@
+// sound_matcher.pest
+
+// Sound Class (matches SoundClassKey rules: A-Z, Α-Ω, א-ת optionally followed by 0-9 subscript)
+sound_class_base = _{ ASCII_ALPHA_UPPER | '\u{0391}'..'\u{03A9}' | '\u{05D0}'..'\u{05EA}' }
+subscript = _{ '\u{2080}'..'\u{2089}' }
+sound_class = @{ sound_class_base ~ subscript? }
+
+// Features: [+voice], [-stop], [C +voice], etc.
+sign = { "+" | "-" }
+feature_name = @{ (ASCII_ALPHA_LOWER | "_")+ }
+feature = { sign ~ feature_name }
+descriptor = { "[" ~ sound_class? ~ " "* ~ feature* ~ "]" }
+
+// Boundaries
+word_boundary = { "#" }
+syllable_boundary = { "$" }
+
+// Literal IPA sequence (we exclude characters used in our syntax or whitespace)
+ipa_char = _{ !( "(" | ")" | "{" | "}" | "[" | "]" | "*" | "+" | "#" | "$" | "," | " " | "\t" | "\r" | "\n" | sound_class_base ) ~ ANY }
+ipa_sequence = @{ ipa_char+ }
+
+// Set: {a, e, i}
+set_element = { sound_class | descriptor | ipa_sequence }
+set = { "{" ~ " "* ~ set_element ~ (" "* ~ "," ~ " "* ~ set_element)* ~ " "* ~ "}" }
+
+// Optional group: (Ca)
+optional_group = { "(" ~ " "* ~ pattern ~ " "* ~ ")" }
+
+// Base Element
+base_element = _{
+    word_boundary |
+    syllable_boundary |
+    descriptor |
+    sound_class |
+    optional_group |
+    set |
+    ipa_sequence
+}
+
+quantifier = { "*" | "+" }
+element = { base_element ~ quantifier? }
+
+pattern = { element+ }
+main = { SOI ~ pattern ~ EOI }

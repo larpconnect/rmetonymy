@@ -1263,13 +1263,17 @@ dependencies = [
 name = "language"
 version = "0.1.0"
 dependencies = [
+ "cucumber",
+ "data",
  "ipa",
  "pest",
  "pest_derive",
+ "regex",
  "serde",
  "serde_json",
  "thiserror",
  "time",
+ "tokio",
  "uuid",
 ]
 

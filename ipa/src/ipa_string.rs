@@ -46,9 +46,13 @@ impl FromStr for IpaString {
                 let start_idx_bytes = char_indices.get(i).map_or(s.len(), |(idx, _)| *idx);
                 let end_idx_bytes = char_indices.get(i + len).map_or(s.len(), |(idx, _)| *idx);
 
-                if s.get(start_idx_bytes..end_idx_bytes)
-                    .is_some_and(|substr| get_entry(substr).is_some())
-                {
+                if s.get(start_idx_bytes..end_idx_bytes).is_some_and(|substr| {
+                    get_entry(substr).is_some()
+                        || substr == "."
+                        || substr == "'"
+                        || substr == "ˌ"
+                        || substr == "ˈ"
+                }) {
                     i += len;
                     matched = true;
                     break;

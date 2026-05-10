@@ -1,5 +1,6 @@
 use crate::phonotactics::PhonotacticPattern;
 use crate::sound_class::SoundClassKey;
+use crate::sound_matcher::SoundMatcherPattern;
 use ipa::IpaString;
 use serde::{Deserialize, Deserializer, Serialize};
 use std::collections::BTreeMap;
@@ -62,6 +63,8 @@ pub struct PhonologyConfig {
     pub sound_classes: BTreeMap<SoundClassKey, SoundClass>,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub phonotactics: BTreeMap<String, PhonotacticsConfig>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub illegal_patterns: Vec<SoundMatcherPattern>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -94,7 +97,7 @@ mod tests {
 
     #[test]
     fn test_language_config_deserialization() {
-        let json_str = r#"{
+        let json_str = r##"{
             "id": "018f4a3e-6b9f-7a1a-9b1a-2b3c4d5e6f7a",
             "name": {
                 "endonym": "p"
@@ -122,9 +125,10 @@ mod tests {
                             "b": 1.0
                         }
                     }
-                }
+                },
+                "illegal_patterns": ["#aCa", "C+"]
             }
-        }"#;
+        }"##;
 
         let config: LanguageConfig = serde_json::from_str(json_str).expect("Should deserialize");
 
@@ -172,16 +176,20 @@ mod tests {
             noun_masculine.generator,
             Some(GeneratorConfig::Zipf { a: 1.5, b: 1.0 })
         );
+
+        let p1: crate::sound_matcher::SoundMatcherPattern = "#aCa".parse().unwrap();
+        let p2: crate::sound_matcher::SoundMatcherPattern = "C+".parse().unwrap();
+        assert_eq!(config.phonology.illegal_patterns, vec![p1, p2]);
     }
 
     #[test]
     fn test_generator_equiprobable() {
-        let json_str = r#"{
+        let json_str = r##"{
             "values": ["a", "e", "i"],
             "generator": {
                 "type": "Equiprobable"
             }
-        }"#;
+        }"##;
 
         let sound_class: SoundClass = serde_json::from_str(json_str).expect("Should deserialize");
         assert_eq!(sound_class.generator, Some(GeneratorConfig::Equiprobable));
