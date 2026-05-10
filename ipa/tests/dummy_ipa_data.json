@@ -14,7 +14,7 @@
       "nasal"
     ],
     "aliases": [],
-    "sonority": 25
+    "sonority": 57
   },
   "ɡ": {
     "type": "consonant",
@@ -34,7 +34,7 @@
     "aliases": [
       "g"
     ],
-    "sonority": 25
+    "sonority": 27
   },
   "˜": {
     "type": "modifier",
@@ -63,7 +63,7 @@
       "ʧ",
       "t͜ʃ"
     ],
-    "sonority": 25
+    "sonority": 35
   },
   "ɫ": {
     "type": "consonant",
@@ -83,6 +83,6 @@
       "approximant"
     ],
     "aliases": [],
-    "sonority": 25
+    "sonority": 67
   }
 }

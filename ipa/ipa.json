@@ -1427,7 +1427,7 @@
       "close"
     ],
     "aliases": [],
-    "sonority": 95
+    "sonority": 85
   },
   "y": {
     "type": "vowel",
@@ -1448,7 +1448,7 @@
       "close"
     ],
     "aliases": [],
-    "sonority": 95
+    "sonority": 85
   },
   "ɨ": {
     "type": "vowel",
@@ -1467,7 +1467,7 @@
       "close"
     ],
     "aliases": [],
-    "sonority": 95
+    "sonority": 85
   },
   "ʉ": {
     "type": "vowel",
@@ -1487,7 +1487,7 @@
       "close"
     ],
     "aliases": [],
-    "sonority": 95
+    "sonority": 85
   },
   "ɯ": {
     "type": "vowel",
@@ -1507,7 +1507,7 @@
       "close"
     ],
     "aliases": [],
-    "sonority": 95
+    "sonority": 85
   },
   "u": {
     "type": "vowel",
@@ -1528,7 +1528,7 @@
       "close"
     ],
     "aliases": [],
-    "sonority": 95
+    "sonority": 85
   },
   "ɪ": {
     "type": "vowel",
@@ -1547,7 +1547,7 @@
       "near_close"
     ],
     "aliases": [],
-    "sonority": 95
+    "sonority": 85
   },
   "ʏ": {
     "type": "vowel",
@@ -1567,7 +1567,7 @@
       "near_close"
     ],
     "aliases": [],
-    "sonority": 95
+    "sonority": 85
   },
   "ʊ": {
     "type": "vowel",
@@ -1587,7 +1587,7 @@
       "near_close"
     ],
     "aliases": [],
-    "sonority": 95
+    "sonority": 85
   },
   "e": {
     "type": "vowel",
@@ -1847,7 +1847,7 @@
       "near_open"
     ],
     "aliases": [],
-    "sonority": 85
+    "sonority": 95
   },
   "ɐ": {
     "type": "vowel",
@@ -1865,7 +1865,7 @@
       "near_open"
     ],
     "aliases": [],
-    "sonority": 85
+    "sonority": 95
   },
   "a": {
     "type": "vowel",
@@ -1885,7 +1885,7 @@
       "open"
     ],
     "aliases": [],
-    "sonority": 85
+    "sonority": 95
   },
   "ɶ": {
     "type": "vowel",
@@ -1906,7 +1906,7 @@
       "open"
     ],
     "aliases": [],
-    "sonority": 85
+    "sonority": 95
   },
   "ɑ": {
     "type": "vowel",
@@ -1926,7 +1926,7 @@
       "open"
     ],
     "aliases": [],
-    "sonority": 85
+    "sonority": 95
   },
   "ɒ": {
     "type": "vowel",
@@ -1947,7 +1947,7 @@
       "open"
     ],
     "aliases": [],
-    "sonority": 85
+    "sonority": 95
   },
   "t͡s": {
     "type": "consonant",

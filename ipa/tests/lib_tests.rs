@@ -15,7 +15,7 @@ fn test_get_phoneme_data_modifier() {
         "h": {
             "type": "modifier",
             "added_features": ["+aspirated"],
-            "sonority": 25
+            "sonority": 0
         }
     }"#;
     let system = IpaSystem::new(json_data).expect("failed to unwrap");
@@ -28,7 +28,7 @@ fn test_combine_with_modifier_base_not_found() {
         "h": {
             "type": "modifier",
             "added_features": ["+aspirated"],
-            "sonority": 25
+            "sonority": 0
         }
     }"#;
     let system = IpaSystem::new(json_data).expect("failed to unwrap");
@@ -85,7 +85,7 @@ fn test_combine_with_modifier_success() {
             "type": "modifier",
             "added_features": ["+aspirated"],
             "removed_features": ["-voice"],
-            "sonority": 25
+            "sonority": 0
         }
     }"#;
     let system = ipa::IpaSystem::new(json_data).expect("failed to unwrap");

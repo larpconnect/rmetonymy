@@ -16,7 +16,12 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["phoneme", "modifier", "vowel", "consonant"]
+          "enum": [
+            "phoneme",
+            "modifier",
+            "vowel",
+            "consonant"
+          ]
         },
         "features": {
           "type": "array",
@@ -45,7 +50,7 @@
           "items": {
             "type": "string"
           },
-          "description": "List of aliases or equivalent symbols (e.g., ['g'] for 'ɡ'). Must use literal UTF-8."
+          "description": "List of aliases or equivalent symbols (e.g., ['g'] for '\u0261'). Must use literal UTF-8."
         },
         "added_features": {
           "type": "array",
@@ -57,6 +62,8 @@
         },
         "sonority": {
           "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
           "description": "The sonority score of the sound (0-100 scale, modifiers use 0)."
         },
         "removed_features": {
@@ -68,7 +75,10 @@
           "description": "Features explicitly removed or inverted by this modifier."
         }
       },
-      "required": ["type", "sonority"],
+      "required": [
+        "type",
+        "sonority"
+      ],
       "additionalProperties": false
     }
   }
