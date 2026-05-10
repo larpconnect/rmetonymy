@@ -22,7 +22,7 @@
       "+bilabial",
       "+consonantal",
       "+stop",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "bilabial"
@@ -55,7 +55,7 @@
       "+anterior",
       "+consonantal",
       "+stop",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "alveolar"
@@ -86,7 +86,7 @@
       "+coronal",
       "+consonantal",
       "+stop",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "retroflex"
@@ -121,7 +121,7 @@
       "+front",
       "+consonantal",
       "+stop",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "palatal"
@@ -156,7 +156,7 @@
       "+back",
       "+consonantal",
       "+stop",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "velar"
@@ -193,7 +193,7 @@
       "+back",
       "+consonantal",
       "+stop",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "uvular"
@@ -226,7 +226,7 @@
       "+consonantal",
       "+sonorant",
       "+nasal",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "bilabial"
@@ -244,7 +244,7 @@
       "+consonantal",
       "+sonorant",
       "+nasal",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "labiodental"
@@ -262,7 +262,7 @@
       "+consonantal",
       "+sonorant",
       "+nasal",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "alveolar"
@@ -279,7 +279,7 @@
       "+consonantal",
       "+sonorant",
       "+nasal",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "retroflex"
@@ -298,7 +298,7 @@
       "+consonantal",
       "+sonorant",
       "+nasal",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "palatal"
@@ -317,7 +317,7 @@
       "+consonantal",
       "+sonorant",
       "+nasal",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "velar"
@@ -336,7 +336,7 @@
       "+consonantal",
       "+sonorant",
       "+nasal",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "uvular"
@@ -355,7 +355,7 @@
       "+sonorant",
       "+continuant",
       "+trill",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "bilabial"
@@ -374,7 +374,7 @@
       "+sonorant",
       "+continuant",
       "+trill",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "alveolar"
@@ -394,7 +394,7 @@
       "+sonorant",
       "+continuant",
       "+trill",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "uvular"
@@ -413,7 +413,7 @@
       "+sonorant",
       "+continuant",
       "+tap",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "labiodental"
@@ -432,7 +432,7 @@
       "+sonorant",
       "+continuant",
       "+tap",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "alveolar"
@@ -450,7 +450,7 @@
       "+sonorant",
       "+continuant",
       "+tap",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "retroflex"
@@ -485,7 +485,7 @@
       "+consonantal",
       "+continuant",
       "+delayed_release",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "bilabial"
@@ -520,7 +520,7 @@
       "+consonantal",
       "+continuant",
       "+delayed_release",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "labiodental"
@@ -557,7 +557,7 @@
       "+consonantal",
       "+continuant",
       "+delayed_release",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "dental"
@@ -593,7 +593,7 @@
       "+consonantal",
       "+continuant",
       "+delayed_release",
-      "+voice",
+      "+voiced",
       "+strident"
     ],
     "place": [
@@ -630,7 +630,7 @@
       "+consonantal",
       "+continuant",
       "+delayed_release",
-      "+voice",
+      "+voiced",
       "+strident"
     ],
     "place": [
@@ -665,7 +665,7 @@
       "+consonantal",
       "+continuant",
       "+delayed_release",
-      "+voice",
+      "+voiced",
       "+strident"
     ],
     "place": [
@@ -703,7 +703,7 @@
       "+consonantal",
       "+continuant",
       "+delayed_release",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "palatal"
@@ -740,7 +740,7 @@
       "+consonantal",
       "+continuant",
       "+delayed_release",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "velar"
@@ -777,7 +777,7 @@
       "+consonantal",
       "+continuant",
       "+delayed_release",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "uvular"
@@ -812,7 +812,7 @@
       "+consonantal",
       "+continuant",
       "+delayed_release",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "pharyngeal"
@@ -844,7 +844,7 @@
       "+consonantal",
       "+continuant",
       "+delayed_release",
-      "+voice",
+      "+voiced",
       "+spread_glottis"
     ],
     "place": [
@@ -883,7 +883,7 @@
       "+continuant",
       "+delayed_release",
       "+lateral",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "alveolar"
@@ -902,7 +902,7 @@
       "+sonorant",
       "+continuant",
       "+approximant",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "labiodental"
@@ -920,7 +920,7 @@
       "+sonorant",
       "+continuant",
       "+approximant",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "alveolar"
@@ -937,7 +937,7 @@
       "+sonorant",
       "+continuant",
       "+approximant",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "retroflex"
@@ -956,7 +956,7 @@
       "+sonorant",
       "+continuant",
       "+approximant",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "palatal"
@@ -975,7 +975,7 @@
       "+sonorant",
       "+continuant",
       "+approximant",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "velar"
@@ -995,7 +995,7 @@
       "+continuant",
       "+approximant",
       "+lateral",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "alveolar"
@@ -1015,7 +1015,7 @@
       "+continuant",
       "+approximant",
       "+lateral",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "retroflex"
@@ -1037,7 +1037,7 @@
       "+continuant",
       "+approximant",
       "+lateral",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "palatal"
@@ -1059,7 +1059,7 @@
       "+continuant",
       "+approximant",
       "+lateral",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "velar"
@@ -1160,7 +1160,7 @@
       "+bilabial",
       "+consonantal",
       "+stop",
-      "+voice",
+      "+voiced",
       "+constricted_glottis"
     ],
     "place": [
@@ -1178,7 +1178,7 @@
       "+anterior",
       "+consonantal",
       "+stop",
-      "+voice",
+      "+voiced",
       "+constricted_glottis"
     ],
     "place": [
@@ -1195,7 +1195,7 @@
       "+coronal",
       "+consonantal",
       "+stop",
-      "+voice",
+      "+voiced",
       "+constricted_glottis"
     ],
     "place": [
@@ -1214,7 +1214,7 @@
       "+front",
       "+consonantal",
       "+stop",
-      "+voice",
+      "+voiced",
       "+constricted_glottis"
     ],
     "place": [
@@ -1233,7 +1233,7 @@
       "+back",
       "+consonantal",
       "+stop",
-      "+voice",
+      "+voiced",
       "+constricted_glottis"
     ],
     "place": [
@@ -1252,7 +1252,7 @@
       "+back",
       "+consonantal",
       "+stop",
-      "+voice",
+      "+voiced",
       "+constricted_glottis"
     ],
     "place": [
@@ -1341,7 +1341,7 @@
       "+syllabic",
       "+sonorant",
       "+continuant",
-      "+voice",
+      "+voiced",
       "+high",
       "+tense",
       "+front"
@@ -1360,7 +1360,7 @@
       "+syllabic",
       "+sonorant",
       "+continuant",
-      "+voice",
+      "+voiced",
       "+high",
       "+tense",
       "+front",
@@ -1380,7 +1380,7 @@
       "+syllabic",
       "+sonorant",
       "+continuant",
-      "+voice",
+      "+voiced",
       "+high",
       "+tense"
     ],
@@ -1398,7 +1398,7 @@
       "+syllabic",
       "+sonorant",
       "+continuant",
-      "+voice",
+      "+voiced",
       "+high",
       "+tense",
       "+round"
@@ -1417,7 +1417,7 @@
       "+syllabic",
       "+sonorant",
       "+continuant",
-      "+voice",
+      "+voiced",
       "+high",
       "+tense",
       "+back"
@@ -1436,7 +1436,7 @@
       "+syllabic",
       "+sonorant",
       "+continuant",
-      "+voice",
+      "+voiced",
       "+high",
       "+tense",
       "+back",
@@ -1456,7 +1456,7 @@
       "+syllabic",
       "+sonorant",
       "+continuant",
-      "+voice",
+      "+voiced",
       "+high",
       "+front"
     ],
@@ -1474,7 +1474,7 @@
       "+syllabic",
       "+sonorant",
       "+continuant",
-      "+voice",
+      "+voiced",
       "+high",
       "+front",
       "+round"
@@ -1493,7 +1493,7 @@
       "+syllabic",
       "+sonorant",
       "+continuant",
-      "+voice",
+      "+voiced",
       "+high",
       "+back",
       "+round"
@@ -1512,7 +1512,7 @@
       "+syllabic",
       "+sonorant",
       "+continuant",
-      "+voice",
+      "+voiced",
       "+tense",
       "+front"
     ],
@@ -1530,7 +1530,7 @@
       "+syllabic",
       "+sonorant",
       "+continuant",
-      "+voice",
+      "+voiced",
       "+tense",
       "+front",
       "+round"
@@ -1549,7 +1549,7 @@
       "+syllabic",
       "+sonorant",
       "+continuant",
-      "+voice",
+      "+voiced",
       "+tense"
     ],
     "place": [
@@ -1566,7 +1566,7 @@
       "+syllabic",
       "+sonorant",
       "+continuant",
-      "+voice",
+      "+voiced",
       "+tense",
       "+round"
     ],
@@ -1584,7 +1584,7 @@
       "+syllabic",
       "+sonorant",
       "+continuant",
-      "+voice",
+      "+voiced",
       "+tense",
       "+back"
     ],
@@ -1602,7 +1602,7 @@
       "+syllabic",
       "+sonorant",
       "+continuant",
-      "+voice",
+      "+voiced",
       "+tense",
       "+back",
       "+round"
@@ -1621,7 +1621,7 @@
       "+syllabic",
       "+sonorant",
       "+continuant",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "central"
@@ -1637,7 +1637,7 @@
       "+syllabic",
       "+sonorant",
       "+continuant",
-      "+voice",
+      "+voiced",
       "+front"
     ],
     "place": [
@@ -1654,7 +1654,7 @@
       "+syllabic",
       "+sonorant",
       "+continuant",
-      "+voice",
+      "+voiced",
       "+front",
       "+round"
     ],
@@ -1672,7 +1672,7 @@
       "+syllabic",
       "+sonorant",
       "+continuant",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "central"
@@ -1688,7 +1688,7 @@
       "+syllabic",
       "+sonorant",
       "+continuant",
-      "+voice",
+      "+voiced",
       "+round"
     ],
     "place": [
@@ -1705,7 +1705,7 @@
       "+syllabic",
       "+sonorant",
       "+continuant",
-      "+voice",
+      "+voiced",
       "+back"
     ],
     "place": [
@@ -1722,7 +1722,7 @@
       "+syllabic",
       "+sonorant",
       "+continuant",
-      "+voice",
+      "+voiced",
       "+back",
       "+round"
     ],
@@ -1740,7 +1740,7 @@
       "+syllabic",
       "+sonorant",
       "+continuant",
-      "+voice",
+      "+voiced",
       "+low",
       "+front"
     ],
@@ -1758,7 +1758,7 @@
       "+syllabic",
       "+sonorant",
       "+continuant",
-      "+voice",
+      "+voiced",
       "+low"
     ],
     "place": [
@@ -1775,7 +1775,7 @@
       "+syllabic",
       "+sonorant",
       "+continuant",
-      "+voice",
+      "+voiced",
       "+low",
       "+tense",
       "+front"
@@ -1794,7 +1794,7 @@
       "+syllabic",
       "+sonorant",
       "+continuant",
-      "+voice",
+      "+voiced",
       "+low",
       "+tense",
       "+front",
@@ -1814,7 +1814,7 @@
       "+syllabic",
       "+sonorant",
       "+continuant",
-      "+voice",
+      "+voiced",
       "+low",
       "+tense",
       "+back"
@@ -1833,7 +1833,7 @@
       "+syllabic",
       "+sonorant",
       "+continuant",
-      "+voice",
+      "+voiced",
       "+low",
       "+tense",
       "+back",
@@ -1874,7 +1874,7 @@
       "+consonantal",
       "+delayed_release",
       "+strident",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "alveolar"
@@ -1913,7 +1913,7 @@
       "+consonantal",
       "+delayed_release",
       "+strident",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "postalveolar"
@@ -1950,7 +1950,7 @@
       "+consonantal",
       "+delayed_release",
       "+strident",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "labiodental"
@@ -1985,7 +1985,7 @@
       "+back",
       "+consonantal",
       "+delayed_release",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "velar"
@@ -2020,7 +2020,7 @@
       "+sonorant",
       "+continuant",
       "+trill",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "retroflex"
@@ -2053,7 +2053,7 @@
       "+consonantal",
       "+continuant",
       "+trill",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "epiglottal"

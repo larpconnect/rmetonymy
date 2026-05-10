@@ -15,7 +15,7 @@ pub enum Feature {
     Tap,
     Lateral,
     Nasal,
-    Voice,
+    Voiced,
     SpreadGlottis,
     ConstrictedGlottis,
     Labial,

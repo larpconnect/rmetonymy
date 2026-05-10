@@ -38,7 +38,7 @@ fn test_combine_with_modifier_mod_not_found() {
     let json_data = r#"{
         "p": {
             "type": "consonant",
-            "features": ["-voice"]
+            "features": ["-voiced"]
         }
     }"#;
     let system = IpaSystem::new(json_data).expect("failed to unwrap");
@@ -50,11 +50,11 @@ fn test_combine_with_modifier_mod_is_not_modifier() {
     let json_data = r#"{
         "p": {
             "type": "consonant",
-            "features": ["-voice"]
+            "features": ["-voiced"]
         },
         "t": {
             "type": "consonant",
-            "features": ["-voice"]
+            "features": ["-voiced"]
         }
     }"#;
     let system = IpaSystem::new(json_data).expect("failed to unwrap");
@@ -73,12 +73,12 @@ fn test_combine_with_modifier_success() {
     let json_data = r#"{
         "p": {
             "type": "consonant",
-            "features": ["-voice", "+bilabial"]
+            "features": ["-voiced", "+bilabial"]
         },
         "h": {
             "type": "modifier",
             "added_features": ["+aspirated"],
-            "removed_features": ["-voice"]
+            "removed_features": ["-voiced"]
         }
     }"#;
     let system = ipa::IpaSystem::new(json_data).expect("failed to unwrap");
@@ -99,7 +99,7 @@ fn test_combine_with_modifier_success() {
     assert!(
         !combined
             .iter()
-            .any(|f| matches!(f, data::SpeFeature::Minus(Feature::Voice)))
+            .any(|f| matches!(f, data::SpeFeature::Minus(Feature::Voiced)))
     );
 }
 

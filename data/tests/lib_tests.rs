@@ -8,8 +8,8 @@ fn test_spe_feature_deserialize_valid() {
     assert_eq!(plus_feature, SpeFeature::Plus(Feature::Nasal));
 
     let minus_feature: SpeFeature =
-        serde_json::from_value(json!("-voice")).expect("failed to unwrap");
-    assert_eq!(minus_feature, SpeFeature::Minus(Feature::Voice));
+        serde_json::from_value(json!("-voiced")).expect("failed to unwrap");
+    assert_eq!(minus_feature, SpeFeature::Minus(Feature::Voiced));
 }
 
 #[test]
@@ -27,10 +27,10 @@ fn test_spe_feature_serialize() {
         json!("+nasal")
     );
 
-    let minus_feature = SpeFeature::Minus(Feature::Voice);
+    let minus_feature = SpeFeature::Minus(Feature::Voiced);
     assert_eq!(
         serde_json::to_value(minus_feature).expect("failed to unwrap"),
-        json!("-voice")
+        json!("-voiced")
     );
 }
 
@@ -41,8 +41,8 @@ fn test_spe_feature_from_str() {
         SpeFeature::Plus(Feature::Nasal)
     );
     assert_eq!(
-        "-voice".parse::<SpeFeature>().expect("failed to unwrap"),
-        SpeFeature::Minus(Feature::Voice)
+        "-voiced".parse::<SpeFeature>().expect("failed to unwrap"),
+        SpeFeature::Minus(Feature::Voiced)
     );
     "invalid".parse::<SpeFeature>().expect_err("expected error");
 }
@@ -50,7 +50,7 @@ fn test_spe_feature_from_str() {
 #[test]
 fn test_spe_feature_display() {
     assert_eq!(format!("{}", SpeFeature::Plus(Feature::Nasal)), "+nasal");
-    assert_eq!(format!("{}", SpeFeature::Minus(Feature::Voice)), "-voice");
+    assert_eq!(format!("{}", SpeFeature::Minus(Feature::Voiced)), "-voiced");
 }
 
 #[test]
@@ -58,7 +58,7 @@ fn test_parse_and_validate_success() {
     let json_str = r#"{
         "p": {
             "type": "consonant",
-            "features": ["-voice", "+bilabial", "+stop"]
+            "features": ["-voiced", "+bilabial", "+stop"]
         }
     }"#;
     let result = parse_and_validate(json_str);
@@ -76,7 +76,7 @@ fn test_parse_and_validate_invalid_schema() {
     let json_str = r#"{
         "p": {
             "type": "invalid_type",
-            "features": ["-voice"]
+            "features": ["-voiced"]
         }
     }"#;
     let result = parse_and_validate(json_str);

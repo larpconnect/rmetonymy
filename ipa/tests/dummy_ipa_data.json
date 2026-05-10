@@ -1,14 +1,14 @@
 {
   "n": {
     "type": "consonant",
-    "features": ["+nasal", "+voice", "+coronal", "+anterior"],
+    "features": ["+nasal", "+voiced", "+coronal", "+anterior"],
     "place": ["alveolar"],
     "manner": ["nasal"],
     "aliases": []
   },
   "ɡ": {
     "type": "consonant",
-    "features": ["-nasal", "+voice", "-coronal", "+high", "+back"],
+    "features": ["-nasal", "+voiced", "-coronal", "+high", "+back"],
     "place": ["velar"],
     "manner": ["stop"],
     "aliases": ["g"]
@@ -28,7 +28,7 @@
   },
   "ɫ": {
     "type": "consonant",
-    "features": ["+voice", "+coronal", "+anterior", "+lateral", "+back"],
+    "features": ["+voiced", "+coronal", "+anterior", "+lateral", "+back"],
     "place": ["alveolar", "velar"],
     "manner": ["lateral", "approximant"],
     "aliases": []
