@@ -102,6 +102,7 @@ This repository implements the standardized Agent Skill Files protocol to modula
 - Never ignore deprecation warnings; fix them immediately or use #[expect(deprecated)].
 - All configuration files should be UTF-8. `unicode-normalization` should be used for unicode processing.
 - Prefer `IndexMap` (from the `indexmap` crate) to `HashMap` to provide deterministic ordering for tests.
+- **DO NOT** override clippy limitations, especially for method complexity, method length, and file length. 
 
 ---
 
