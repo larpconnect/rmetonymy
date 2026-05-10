@@ -88,6 +88,7 @@ pub enum IpaEntry {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PhonemeData {
+    pub sonority: i32,
     #[serde(default)]
     pub features: Vec<SpeFeature>,
     #[serde(default)]
@@ -100,6 +101,7 @@ pub struct PhonemeData {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ModifierData {
+    pub sonority: i32,
     #[serde(default)]
     pub added_features: Vec<SpeFeature>,
     #[serde(default)]

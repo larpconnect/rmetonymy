@@ -13,7 +13,8 @@
     "manner": [
       "plosive"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 25
   },
   "b": {
     "type": "consonant",
@@ -30,7 +31,8 @@
     "manner": [
       "plosive"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 27
   },
   "t": {
     "type": "consonant",
@@ -46,7 +48,8 @@
     "manner": [
       "plosive"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 25
   },
   "d": {
     "type": "consonant",
@@ -63,7 +66,8 @@
     "manner": [
       "plosive"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 27
   },
   "ʈ": {
     "type": "consonant",
@@ -78,7 +82,8 @@
     "manner": [
       "plosive"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 25
   },
   "ɖ": {
     "type": "consonant",
@@ -94,7 +99,8 @@
     "manner": [
       "plosive"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 27
   },
   "c": {
     "type": "consonant",
@@ -111,7 +117,8 @@
     "manner": [
       "plosive"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 25
   },
   "ɟ": {
     "type": "consonant",
@@ -129,7 +136,8 @@
     "manner": [
       "plosive"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 27
   },
   "k": {
     "type": "consonant",
@@ -146,7 +154,8 @@
     "manner": [
       "plosive"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 25
   },
   "ɡ": {
     "type": "consonant",
@@ -166,7 +175,8 @@
     ],
     "aliases": [
       "g"
-    ]
+    ],
+    "sonority": 27
   },
   "q": {
     "type": "consonant",
@@ -183,7 +193,8 @@
     "manner": [
       "plosive"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 25
   },
   "ɢ": {
     "type": "consonant",
@@ -201,7 +212,8 @@
     "manner": [
       "plosive"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 27
   },
   "ʔ": {
     "type": "consonant",
@@ -216,7 +228,8 @@
     "manner": [
       "plosive"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 25
   },
   "m": {
     "type": "consonant",
@@ -234,7 +247,8 @@
     "manner": [
       "nasal"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 57
   },
   "ɱ": {
     "type": "consonant",
@@ -252,7 +266,8 @@
     "manner": [
       "nasal"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 57
   },
   "n": {
     "type": "consonant",
@@ -270,7 +285,8 @@
     "manner": [
       "nasal"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 57
   },
   "ɳ": {
     "type": "consonant",
@@ -287,7 +303,8 @@
     "manner": [
       "nasal"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 57
   },
   "ɲ": {
     "type": "consonant",
@@ -306,7 +323,8 @@
     "manner": [
       "nasal"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 57
   },
   "ŋ": {
     "type": "consonant",
@@ -325,7 +343,8 @@
     "manner": [
       "nasal"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 57
   },
   "ɴ": {
     "type": "consonant",
@@ -344,7 +363,8 @@
     "manner": [
       "nasal"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 57
   },
   "ʙ": {
     "type": "consonant",
@@ -363,7 +383,8 @@
     "manner": [
       "trill"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 67
   },
   "r": {
     "type": "consonant",
@@ -382,7 +403,8 @@
     "manner": [
       "trill"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 67
   },
   "ʀ": {
     "type": "consonant",
@@ -402,7 +424,8 @@
     "manner": [
       "trill"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 67
   },
   "ⱱ": {
     "type": "consonant",
@@ -421,7 +444,8 @@
     "manner": [
       "tap"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 67
   },
   "ɾ": {
     "type": "consonant",
@@ -440,7 +464,8 @@
     "manner": [
       "tap"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 67
   },
   "ɽ": {
     "type": "consonant",
@@ -458,7 +483,8 @@
     "manner": [
       "tap"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 67
   },
   "ɸ": {
     "type": "consonant",
@@ -475,7 +501,8 @@
     "manner": [
       "fricative"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 45
   },
   "β": {
     "type": "consonant",
@@ -493,7 +520,8 @@
     "manner": [
       "fricative"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 47
   },
   "f": {
     "type": "consonant",
@@ -510,7 +538,8 @@
     "manner": [
       "fricative"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 45
   },
   "v": {
     "type": "consonant",
@@ -528,7 +557,8 @@
     "manner": [
       "fricative"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 47
   },
   "θ": {
     "type": "consonant",
@@ -546,7 +576,8 @@
     "manner": [
       "fricative"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 45
   },
   "ð": {
     "type": "consonant",
@@ -565,7 +596,8 @@
     "manner": [
       "fricative"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 47
   },
   "s": {
     "type": "consonant",
@@ -583,7 +615,8 @@
     "manner": [
       "fricative"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 45
   },
   "z": {
     "type": "consonant",
@@ -602,7 +635,8 @@
     "manner": [
       "fricative"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 47
   },
   "ʃ": {
     "type": "consonant",
@@ -620,7 +654,8 @@
     "manner": [
       "fricative"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 45
   },
   "ʒ": {
     "type": "consonant",
@@ -639,7 +674,8 @@
     "manner": [
       "fricative"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 47
   },
   "ʂ": {
     "type": "consonant",
@@ -656,7 +692,8 @@
     "manner": [
       "fricative"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 45
   },
   "ʐ": {
     "type": "consonant",
@@ -674,7 +711,8 @@
     "manner": [
       "fricative"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 47
   },
   "ç": {
     "type": "consonant",
@@ -692,7 +730,8 @@
     "manner": [
       "fricative"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 45
   },
   "ʝ": {
     "type": "consonant",
@@ -711,7 +750,8 @@
     "manner": [
       "fricative"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 47
   },
   "x": {
     "type": "consonant",
@@ -729,7 +769,8 @@
     "manner": [
       "fricative"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 45
   },
   "ɣ": {
     "type": "consonant",
@@ -748,7 +789,8 @@
     "manner": [
       "fricative"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 47
   },
   "χ": {
     "type": "consonant",
@@ -766,7 +808,8 @@
     "manner": [
       "fricative"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 45
   },
   "ʁ": {
     "type": "consonant",
@@ -785,7 +828,8 @@
     "manner": [
       "fricative"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 47
   },
   "ħ": {
     "type": "consonant",
@@ -802,7 +846,8 @@
     "manner": [
       "fricative"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 45
   },
   "ʕ": {
     "type": "consonant",
@@ -820,7 +865,8 @@
     "manner": [
       "fricative"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 47
   },
   "h": {
     "type": "consonant",
@@ -836,7 +882,8 @@
     "manner": [
       "fricative"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 45
   },
   "ɦ": {
     "type": "consonant",
@@ -853,7 +900,8 @@
     "manner": [
       "fricative"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 47
   },
   "ɬ": {
     "type": "consonant",
@@ -872,7 +920,8 @@
       "lateral",
       "fricative"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 65
   },
   "ɮ": {
     "type": "consonant",
@@ -892,7 +941,8 @@
       "lateral",
       "fricative"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 67
   },
   "ʋ": {
     "type": "consonant",
@@ -910,7 +960,8 @@
     "manner": [
       "approximant"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 67
   },
   "ɹ": {
     "type": "consonant",
@@ -928,7 +979,8 @@
     "manner": [
       "approximant"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 67
   },
   "ɻ": {
     "type": "consonant",
@@ -945,7 +997,8 @@
     "manner": [
       "approximant"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 67
   },
   "j": {
     "type": "consonant",
@@ -964,7 +1017,8 @@
     "manner": [
       "approximant"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 77
   },
   "ɰ": {
     "type": "consonant",
@@ -983,7 +1037,8 @@
     "manner": [
       "approximant"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 77
   },
   "l": {
     "type": "consonant",
@@ -1004,7 +1059,8 @@
       "lateral",
       "approximant"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 67
   },
   "ɭ": {
     "type": "consonant",
@@ -1024,7 +1080,8 @@
       "lateral",
       "approximant"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 67
   },
   "ʎ": {
     "type": "consonant",
@@ -1046,7 +1103,8 @@
       "lateral",
       "approximant"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 67
   },
   "ʟ": {
     "type": "consonant",
@@ -1068,7 +1126,8 @@
       "lateral",
       "approximant"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 67
   },
   "ʘ": {
     "type": "consonant",
@@ -1084,7 +1143,8 @@
     "manner": [
       "click"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 15
   },
   "ǀ": {
     "type": "consonant",
@@ -1101,7 +1161,8 @@
     "manner": [
       "click"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 15
   },
   "ǃ": {
     "type": "consonant",
@@ -1117,7 +1178,8 @@
     "manner": [
       "click"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 15
   },
   "ǂ": {
     "type": "consonant",
@@ -1134,7 +1196,8 @@
     "manner": [
       "click"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 15
   },
   "ǁ": {
     "type": "consonant",
@@ -1151,7 +1214,8 @@
     "manner": [
       "click"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 15
   },
   "ɓ": {
     "type": "consonant",
@@ -1169,7 +1233,8 @@
     "manner": [
       "implosive"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 27
   },
   "ɗ": {
     "type": "consonant",
@@ -1187,7 +1252,8 @@
     "manner": [
       "implosive"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 27
   },
   "ᶑ": {
     "type": "consonant",
@@ -1204,7 +1270,8 @@
     "manner": [
       "implosive"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 27
   },
   "ʄ": {
     "type": "consonant",
@@ -1223,7 +1290,8 @@
     "manner": [
       "implosive"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 27
   },
   "ɠ": {
     "type": "consonant",
@@ -1242,7 +1310,8 @@
     "manner": [
       "implosive"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 27
   },
   "ʛ": {
     "type": "consonant",
@@ -1261,7 +1330,8 @@
     "manner": [
       "implosive"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 27
   },
   "pʼ": {
     "type": "consonant",
@@ -1278,7 +1348,8 @@
     "manner": [
       "ejective"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 25
   },
   "tʼ": {
     "type": "consonant",
@@ -1295,7 +1366,8 @@
     "manner": [
       "ejective"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 25
   },
   "kʼ": {
     "type": "consonant",
@@ -1313,7 +1385,8 @@
     "manner": [
       "ejective"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 25
   },
   "sʼ": {
     "type": "consonant",
@@ -1333,7 +1406,8 @@
       "ejective",
       "fricative"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 45
   },
   "i": {
     "type": "vowel",
@@ -1352,7 +1426,8 @@
     "manner": [
       "close"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 95
   },
   "y": {
     "type": "vowel",
@@ -1372,7 +1447,8 @@
     "manner": [
       "close"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 95
   },
   "ɨ": {
     "type": "vowel",
@@ -1390,7 +1466,8 @@
     "manner": [
       "close"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 95
   },
   "ʉ": {
     "type": "vowel",
@@ -1409,7 +1486,8 @@
     "manner": [
       "close"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 95
   },
   "ɯ": {
     "type": "vowel",
@@ -1428,7 +1506,8 @@
     "manner": [
       "close"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 95
   },
   "u": {
     "type": "vowel",
@@ -1448,7 +1527,8 @@
     "manner": [
       "close"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 95
   },
   "ɪ": {
     "type": "vowel",
@@ -1466,7 +1546,8 @@
     "manner": [
       "near_close"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 95
   },
   "ʏ": {
     "type": "vowel",
@@ -1485,7 +1566,8 @@
     "manner": [
       "near_close"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 95
   },
   "ʊ": {
     "type": "vowel",
@@ -1504,7 +1586,8 @@
     "manner": [
       "near_close"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 95
   },
   "e": {
     "type": "vowel",
@@ -1522,7 +1605,8 @@
     "manner": [
       "close_mid"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 90
   },
   "ø": {
     "type": "vowel",
@@ -1541,7 +1625,8 @@
     "manner": [
       "close_mid"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 90
   },
   "ɘ": {
     "type": "vowel",
@@ -1558,7 +1643,8 @@
     "manner": [
       "close_mid"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 90
   },
   "ɵ": {
     "type": "vowel",
@@ -1576,7 +1662,8 @@
     "manner": [
       "close_mid"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 90
   },
   "ɤ": {
     "type": "vowel",
@@ -1594,7 +1681,8 @@
     "manner": [
       "close_mid"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 90
   },
   "o": {
     "type": "vowel",
@@ -1613,7 +1701,8 @@
     "manner": [
       "close_mid"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 90
   },
   "ə": {
     "type": "vowel",
@@ -1629,7 +1718,8 @@
     "manner": [
       "mid"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 90
   },
   "ɛ": {
     "type": "vowel",
@@ -1646,7 +1736,8 @@
     "manner": [
       "open_mid"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 90
   },
   "œ": {
     "type": "vowel",
@@ -1664,7 +1755,8 @@
     "manner": [
       "open_mid"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 90
   },
   "ɜ": {
     "type": "vowel",
@@ -1680,7 +1772,8 @@
     "manner": [
       "open_mid"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 90
   },
   "ɞ": {
     "type": "vowel",
@@ -1697,7 +1790,8 @@
     "manner": [
       "open_mid"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 90
   },
   "ʌ": {
     "type": "vowel",
@@ -1714,7 +1808,8 @@
     "manner": [
       "open_mid"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 90
   },
   "ɔ": {
     "type": "vowel",
@@ -1732,7 +1827,8 @@
     "manner": [
       "open_mid"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 90
   },
   "æ": {
     "type": "vowel",
@@ -1750,7 +1846,8 @@
     "manner": [
       "near_open"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 85
   },
   "ɐ": {
     "type": "vowel",
@@ -1767,7 +1864,8 @@
     "manner": [
       "near_open"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 85
   },
   "a": {
     "type": "vowel",
@@ -1786,7 +1884,8 @@
     "manner": [
       "open"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 85
   },
   "ɶ": {
     "type": "vowel",
@@ -1806,7 +1905,8 @@
     "manner": [
       "open"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 85
   },
   "ɑ": {
     "type": "vowel",
@@ -1825,7 +1925,8 @@
     "manner": [
       "open"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 85
   },
   "ɒ": {
     "type": "vowel",
@@ -1845,7 +1946,8 @@
     "manner": [
       "open"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 85
   },
   "t͡s": {
     "type": "consonant",
@@ -1864,7 +1966,8 @@
     ],
     "aliases": [
       "ʦ"
-    ]
+    ],
+    "sonority": 35
   },
   "d͡z": {
     "type": "consonant",
@@ -1884,7 +1987,8 @@
     ],
     "aliases": [
       "ʣ"
-    ]
+    ],
+    "sonority": 37
   },
   "t͡ʃ": {
     "type": "consonant",
@@ -1903,7 +2007,8 @@
     ],
     "aliases": [
       "ʧ"
-    ]
+    ],
+    "sonority": 35
   },
   "d͡ʒ": {
     "type": "consonant",
@@ -1923,7 +2028,8 @@
     ],
     "aliases": [
       "ʤ"
-    ]
+    ],
+    "sonority": 37
   },
   "p͡f": {
     "type": "consonant",
@@ -1940,7 +2046,8 @@
     "manner": [
       "affricate"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 35
   },
   "b͡v": {
     "type": "consonant",
@@ -1958,7 +2065,8 @@
     "manner": [
       "affricate"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 37
   },
   "k͡x": {
     "type": "consonant",
@@ -1975,7 +2083,8 @@
     "manner": [
       "affricate"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 35
   },
   "ɡ͡ɣ": {
     "type": "consonant",
@@ -1993,7 +2102,8 @@
     "manner": [
       "affricate"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 37
   },
   "q͡χ": {
     "type": "consonant",
@@ -2010,7 +2120,8 @@
     "manner": [
       "affricate"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 35
   },
   "ɽr": {
     "type": "consonant",
@@ -2028,7 +2139,8 @@
     "manner": [
       "trill"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 67
   },
   "ʜ": {
     "type": "consonant",
@@ -2044,7 +2156,8 @@
     "manner": [
       "trill"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 65
   },
   "ʢ": {
     "type": "consonant",
@@ -2061,6 +2174,7 @@
     "manner": [
       "trill"
     ],
-    "aliases": []
+    "aliases": [],
+    "sonority": 67
   }
 }

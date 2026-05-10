@@ -58,7 +58,8 @@ fn test_parse_and_validate_success() {
     let json_str = r#"{
         "p": {
             "type": "consonant",
-            "features": ["-voice", "+bilabial", "+stop"]
+            "features": ["-voice", "+bilabial", "+stop"],
+            "sonority": 25
         }
     }"#;
     let result = parse_and_validate(json_str);

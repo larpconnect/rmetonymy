@@ -55,6 +55,10 @@
           },
           "description": "Features added by this modifier (e.g., '+nasalized')."
         },
+        "sonority": {
+          "type": "integer",
+          "description": "The sonority score of the sound (0-100 scale, modifiers use 0)."
+        },
         "removed_features": {
           "type": "array",
           "items": {
@@ -64,7 +68,7 @@
           "description": "Features explicitly removed or inverted by this modifier."
         }
       },
-      "required": ["type"],
+      "required": ["type", "sonority"],
       "additionalProperties": false
     }
   }

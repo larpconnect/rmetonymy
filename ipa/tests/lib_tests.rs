@@ -14,7 +14,8 @@ fn test_get_phoneme_data_modifier() {
     let json_data = r#"{
         "h": {
             "type": "modifier",
-            "added_features": ["+aspirated"]
+            "added_features": ["+aspirated"],
+            "sonority": 25
         }
     }"#;
     let system = IpaSystem::new(json_data).expect("failed to unwrap");
@@ -26,7 +27,8 @@ fn test_combine_with_modifier_base_not_found() {
     let json_data = r#"{
         "h": {
             "type": "modifier",
-            "added_features": ["+aspirated"]
+            "added_features": ["+aspirated"],
+            "sonority": 25
         }
     }"#;
     let system = IpaSystem::new(json_data).expect("failed to unwrap");
@@ -38,7 +40,8 @@ fn test_combine_with_modifier_mod_not_found() {
     let json_data = r#"{
         "p": {
             "type": "consonant",
-            "features": ["-voice"]
+            "features": ["-voice"],
+            "sonority": 25
         }
     }"#;
     let system = IpaSystem::new(json_data).expect("failed to unwrap");
@@ -50,11 +53,13 @@ fn test_combine_with_modifier_mod_is_not_modifier() {
     let json_data = r#"{
         "p": {
             "type": "consonant",
-            "features": ["-voice"]
+            "features": ["-voice"],
+            "sonority": 25
         },
         "t": {
             "type": "consonant",
-            "features": ["-voice"]
+            "features": ["-voice"],
+            "sonority": 25
         }
     }"#;
     let system = IpaSystem::new(json_data).expect("failed to unwrap");
@@ -73,12 +78,14 @@ fn test_combine_with_modifier_success() {
     let json_data = r#"{
         "p": {
             "type": "consonant",
-            "features": ["-voice", "+bilabial"]
+            "features": ["-voice", "+bilabial"],
+            "sonority": 25
         },
         "h": {
             "type": "modifier",
             "added_features": ["+aspirated"],
-            "removed_features": ["-voice"]
+            "removed_features": ["-voice"],
+            "sonority": 25
         }
     }"#;
     let system = ipa::IpaSystem::new(json_data).expect("failed to unwrap");
