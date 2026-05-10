@@ -32,17 +32,17 @@ Feature: Sound Matcher
     Then the pattern should not match
 
   Scenario: Match using feature descriptors
-    When I check the pattern "[+voice]" against the word "b"
+    When I check the pattern "[+voiced]V" against the word "be"
     Then the pattern should match
 
-    When I check the pattern "[+voice]" against the word "p"
-    Then the pattern should not match
+    When I check the pattern "[-voiced]V" against the word "pe"
+    Then the pattern should match
 
   Scenario: Match using feature descriptors with sound class
-    When I check the pattern "[F -voice]" against the word "f"
+    When I check the pattern "[F -voiced]" against the word "f"
     Then the pattern should match
 
-    When I check the pattern "[F -voice]" against the word "v"
+    When I check the pattern "[F -voiced]" against the word "v"
     Then the pattern should not match
 
   Scenario: Match using sets
