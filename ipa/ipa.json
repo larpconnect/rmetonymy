@@ -1846,5 +1846,221 @@
       "open"
     ],
     "aliases": []
+  },
+  "t͡s": {
+    "type": "consonant",
+    "features": [
+      "+coronal",
+      "+anterior",
+      "+consonantal",
+      "+delayed_release",
+      "+strident"
+    ],
+    "place": [
+      "alveolar"
+    ],
+    "manner": [
+      "affricate"
+    ],
+    "aliases": [
+      "ʦ"
+    ]
+  },
+  "d͡z": {
+    "type": "consonant",
+    "features": [
+      "+coronal",
+      "+anterior",
+      "+consonantal",
+      "+delayed_release",
+      "+strident",
+      "+voice"
+    ],
+    "place": [
+      "alveolar"
+    ],
+    "manner": [
+      "affricate"
+    ],
+    "aliases": [
+      "ʣ"
+    ]
+  },
+  "t͡ʃ": {
+    "type": "consonant",
+    "features": [
+      "+coronal",
+      "+distributed",
+      "+consonantal",
+      "+delayed_release",
+      "+strident"
+    ],
+    "place": [
+      "postalveolar"
+    ],
+    "manner": [
+      "affricate"
+    ],
+    "aliases": [
+      "ʧ"
+    ]
+  },
+  "d͡ʒ": {
+    "type": "consonant",
+    "features": [
+      "+coronal",
+      "+distributed",
+      "+consonantal",
+      "+delayed_release",
+      "+strident",
+      "+voice"
+    ],
+    "place": [
+      "postalveolar"
+    ],
+    "manner": [
+      "affricate"
+    ],
+    "aliases": [
+      "ʤ"
+    ]
+  },
+  "p͡f": {
+    "type": "consonant",
+    "features": [
+      "+labial",
+      "+labiodental",
+      "+consonantal",
+      "+delayed_release",
+      "+strident"
+    ],
+    "place": [
+      "labiodental"
+    ],
+    "manner": [
+      "affricate"
+    ],
+    "aliases": []
+  },
+  "b͡v": {
+    "type": "consonant",
+    "features": [
+      "+labial",
+      "+labiodental",
+      "+consonantal",
+      "+delayed_release",
+      "+strident",
+      "+voice"
+    ],
+    "place": [
+      "labiodental"
+    ],
+    "manner": [
+      "affricate"
+    ],
+    "aliases": []
+  },
+  "k͡x": {
+    "type": "consonant",
+    "features": [
+      "+dorsal",
+      "+high",
+      "+back",
+      "+consonantal",
+      "+delayed_release"
+    ],
+    "place": [
+      "velar"
+    ],
+    "manner": [
+      "affricate"
+    ],
+    "aliases": []
+  },
+  "ɡ͡ɣ": {
+    "type": "consonant",
+    "features": [
+      "+dorsal",
+      "+high",
+      "+back",
+      "+consonantal",
+      "+delayed_release",
+      "+voice"
+    ],
+    "place": [
+      "velar"
+    ],
+    "manner": [
+      "affricate"
+    ],
+    "aliases": []
+  },
+  "q͡χ": {
+    "type": "consonant",
+    "features": [
+      "+dorsal",
+      "+low",
+      "+back",
+      "+consonantal",
+      "+delayed_release"
+    ],
+    "place": [
+      "uvular"
+    ],
+    "manner": [
+      "affricate"
+    ],
+    "aliases": []
+  },
+  "ɽr": {
+    "type": "consonant",
+    "features": [
+      "+coronal",
+      "+consonantal",
+      "+sonorant",
+      "+continuant",
+      "+trill",
+      "+voice"
+    ],
+    "place": [
+      "retroflex"
+    ],
+    "manner": [
+      "trill"
+    ],
+    "aliases": []
+  },
+  "ʜ": {
+    "type": "consonant",
+    "features": [
+      "+pharyngeal",
+      "+consonantal",
+      "+continuant",
+      "+trill"
+    ],
+    "place": [
+      "epiglottal"
+    ],
+    "manner": [
+      "trill"
+    ],
+    "aliases": []
+  },
+  "ʢ": {
+    "type": "consonant",
+    "features": [
+      "+pharyngeal",
+      "+consonantal",
+      "+continuant",
+      "+trill",
+      "+voice"
+    ],
+    "place": [
+      "epiglottal"
+    ],
+    "manner": [
+      "trill"
+    ],
+    "aliases": []
   }
 }

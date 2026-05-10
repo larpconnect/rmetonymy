@@ -1,5 +1,5 @@
-use cucumber::{World, given, then, when};
 use assert_cmd::Command;
+use cucumber::{World, given, then, when};
 
 #[derive(Debug, Default, World)]
 pub struct MetonymyWorld {
