@@ -30,7 +30,7 @@ impl Default for IpaSystem {
         // Since DEFAULT_SYSTEM is baked into the binary via include_str!,
         // it is expected to be valid. If it's not, we fallback to an empty system
         // to avoid panicking during static initialization.
-        DEFAULT_SYSTEM.as_ref().cloned().unwrap_or_else(|_| Self {
+        DEFAULT_SYSTEM.as_ref().ok().cloned().unwrap_or_else(|| Self {
             dataset: HashMap::new(),
             alias_map: HashMap::new(),
         })
