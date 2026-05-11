@@ -96,7 +96,7 @@ impl IpaSystem {
 
         // Remove explicitly removed features
         if !mod_data.removed_features.is_empty() {
-            let removed_set: HashSet<_> = mod_data.removed_features.iter().cloned().collect();
+            let removed_set: HashSet<_> = mod_data.removed_features.iter().collect();
             features.retain(|f| !removed_set.contains(f));
         }
 
