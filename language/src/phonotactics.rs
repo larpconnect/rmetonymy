@@ -124,9 +124,9 @@ fn parse_pattern(
     }
 
     if elements.len() == 1 {
-        Ok(elements
-            .pop()
-            .expect("elements is guaranteed to have 1 item"))
+        elements.pop().ok_or_else(|| {
+            PhonotacticsError::ParseError("Internal error: elements is empty".to_string())
+        })
     } else {
         Ok(PhonotacticPattern::Sequence(elements))
     }
