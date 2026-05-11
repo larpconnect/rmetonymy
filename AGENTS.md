@@ -102,11 +102,24 @@ This repository implements the standardized Agent Skill Files protocol to modula
 - Never ignore deprecation warnings; fix them immediately or use #[expect(deprecated)].
 - All configuration files should be UTF-8. `unicode-normalization` should be used for unicode processing.
 - Prefer `IndexMap` (from the `indexmap` crate) to `HashMap` to provide deterministic ordering for tests.
-- **DO NOT** override clippy limitations, especially for method complexity, method length, and file length. 
+
 
 ---
 
-# CLI Architecture
+## Clean Code
+
+These rules take precedence over having all of the code for a given task together in "one place."
+
+- **DO NOT** override clippy limitations, especially for method complexity, method length, and file length. Clippy is the law of the system.
+- Emphasize small (≤ 50 LOC, ≤ 8 cyclomatic complexity) helper functions over large blocks of code.
+- Emphasize small (≤ 500 LOC) files.
+- Avoid `unwrap` and `expect` in production code.
+- Avoid boolean flags in method arguments. Either create separate methods or use an enum.
+- Use domain specific types whenever possible. For example: Instead of passing a `u32` for a `UserId`, create a tuple struct: `struct UserId(u32)`. This prevents mixing up distinct identifiers of the same underlying primitive type.
+
+---
+
+## CLI Architecture
 - Use clap's Subcommand enum to unify Batch and REPL entry points. Example: myapp run <file> (batch) vs myapp repl (interactive)
 
 ---
