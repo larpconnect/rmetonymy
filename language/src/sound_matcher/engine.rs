@@ -33,103 +33,96 @@ impl SoundMatcherPattern {
         if elem_idx == elements.len() {
             return true;
         }
-
         let Some(current_elem) = elements.get(elem_idx) else {
             return false;
         };
 
-        let get_single_matches = |p_idx: usize| -> Vec<usize> {
-            match &current_elem.element {
-                MatcherElement::OptionalGroup(inner) => {
-                    self.match_subpattern(inner, phonemes, p_idx, sound_classes)
-                }
-                _ => {
-                    if let Some(idx) = self.match_single_element(
-                        &current_elem.element,
-                        phonemes,
-                        p_idx,
-                        sound_classes,
-                    ) {
-                        vec![idx]
-                    } else {
-                        vec![]
-                    }
-                }
-            }
-        };
-
         match current_elem.quantifier {
-            None => {
-                for next_idx in get_single_matches(phoneme_idx) {
-                    if self.has_any_match(elements, elem_idx + 1, phonemes, next_idx, sound_classes)
-                    {
-                        return true;
-                    }
-                }
-                false
+            None => self.match_no_quantifier(elements, elem_idx, phonemes, phoneme_idx, sound_classes),
+            Some(Quantifier::ZeroOrMore) => self.match_zero_or_more(elements, elem_idx, phonemes, phoneme_idx, sound_classes),
+            Some(Quantifier::OneOrMore) => self.match_one_or_more(elements, elem_idx, phonemes, phoneme_idx, sound_classes),
+        }
+    }
+
+    fn get_single_matches(
+        &self,
+        current_elem: &QuantifiedElement,
+        p_idx: usize,
+        phonemes: &[&str],
+        sound_classes: &BTreeMap<SoundClassKey, SoundClass>,
+    ) -> Vec<usize> {
+        match &current_elem.element {
+            MatcherElement::OptionalGroup(inner) => {
+                self.match_subpattern(inner, phonemes, p_idx, sound_classes)
             }
-            Some(Quantifier::ZeroOrMore) => {
-                if self.has_any_match(
-                    elements,
-                    elem_idx + 1,
-                    phonemes,
-                    phoneme_idx,
-                    sound_classes,
-                ) {
-                    return true;
+            _ => {
+                if let Some(idx) = self.match_single_element(&current_elem.element, phonemes, p_idx, sound_classes) {
+                    vec![idx]
+                } else {
+                    vec![]
                 }
-
-                let mut queue = vec![phoneme_idx];
-                let mut visited = vec![false; phonemes.len() + 1];
-                if let Some(v) = visited.get_mut(phoneme_idx) { *v = true; }
-
-                while let Some(curr) = queue.pop() {
-                    for next_idx in get_single_matches(curr) {
-                        if next_idx > curr && !visited.get(next_idx).copied().unwrap_or(false) {
-                            if let Some(v) = visited.get_mut(next_idx) { *v = true; }
-                            queue.push(next_idx);
-                            if self.has_any_match(
-                                elements,
-                                elem_idx + 1,
-                                phonemes,
-                                next_idx,
-                                sound_classes,
-                            ) {
-                                return true;
-                            }
-                        }
-                    }
-                }
-                false
-            }
-            Some(Quantifier::OneOrMore) => {
-                let mut queue = vec![phoneme_idx];
-                let mut visited = vec![false; phonemes.len() + 1];
-                if let Some(v) = visited.get_mut(phoneme_idx) { *v = true; }
-
-                while let Some(curr) = queue.pop() {
-                    for next_idx in get_single_matches(curr) {
-                        if next_idx > curr && !visited.get(next_idx).copied().unwrap_or(false) {
-                            if let Some(v) = visited.get_mut(next_idx) { *v = true; }
-                            queue.push(next_idx);
-                            if self.has_any_match(
-                                elements,
-                                elem_idx + 1,
-                                phonemes,
-                                next_idx,
-                                sound_classes,
-                            ) {
-                                return true;
-                            }
-                        }
-                    }
-                }
-                false
             }
         }
     }
 
-    #[expect(clippy::too_many_lines, reason = "Matching logic is complex")]
+    fn match_no_quantifier(
+        &self,
+        elements: &[QuantifiedElement],
+        elem_idx: usize,
+        phonemes: &[&str],
+        phoneme_idx: usize,
+        sound_classes: &BTreeMap<SoundClassKey, SoundClass>,
+    ) -> bool {
+        let Some(current_elem) = elements.get(elem_idx) else { return false; };
+        for next_idx in self.get_single_matches(current_elem, phoneme_idx, phonemes, sound_classes) {
+            if self.has_any_match(elements, elem_idx + 1, phonemes, next_idx, sound_classes) {
+                return true;
+            }
+        }
+        false
+    }
+
+    fn match_zero_or_more(
+        &self,
+        elements: &[QuantifiedElement],
+        elem_idx: usize,
+        phonemes: &[&str],
+        phoneme_idx: usize,
+        sound_classes: &BTreeMap<SoundClassKey, SoundClass>,
+    ) -> bool {
+        if self.has_any_match(elements, elem_idx + 1, phonemes, phoneme_idx, sound_classes) {
+            return true;
+        }
+        self.match_one_or_more(elements, elem_idx, phonemes, phoneme_idx, sound_classes)
+    }
+
+    fn match_one_or_more(
+        &self,
+        elements: &[QuantifiedElement],
+        elem_idx: usize,
+        phonemes: &[&str],
+        phoneme_idx: usize,
+        sound_classes: &BTreeMap<SoundClassKey, SoundClass>,
+    ) -> bool {
+        let Some(current_elem) = elements.get(elem_idx) else { return false; };
+        let mut queue = vec![phoneme_idx];
+        let mut visited = vec![false; phonemes.len() + 1];
+        if let Some(v) = visited.get_mut(phoneme_idx) { *v = true; }
+
+        while let Some(curr) = queue.pop() {
+            for next_idx in self.get_single_matches(current_elem, curr, phonemes, sound_classes) {
+                if next_idx > curr && !visited.get(next_idx).copied().unwrap_or(false) {
+                    if let Some(v) = visited.get_mut(next_idx) { *v = true; }
+                    queue.push(next_idx);
+                    if self.has_any_match(elements, elem_idx + 1, phonemes, next_idx, sound_classes) {
+                        return true;
+                    }
+                }
+            }
+        }
+        false
+    }
+
     fn match_single_element(
         &self,
         element: &MatcherElement,
@@ -138,120 +131,122 @@ impl SoundMatcherPattern {
         sound_classes: &BTreeMap<SoundClassKey, SoundClass>,
     ) -> Option<usize> {
         match element {
-            MatcherElement::WordBoundary => {
-                if idx == 0 || idx == phonemes.len() {
-                    Some(idx) // Consumes 0 tokens
-                } else {
-                    None
-                }
-            }
-            MatcherElement::SyllableBoundary => {
-                if idx == 0 || idx == phonemes.len() {
-                    Some(idx)
-                } else {
-                    let current = phonemes.get(idx)?;
-                    if *current == "." || *current == "'" || *current == "ˌ" || *current == "ˈ" {
-                        Some(idx + 1)
-                    } else {
-                        None
-                    }
-                }
-            }
-            MatcherElement::SoundClass(key) => {
-                if idx >= phonemes.len() {
-                    return None;
-                }
-                let current = phonemes.get(idx)?;
-
-                if let Some(sc) = sound_classes.get(key) {
-                    if check_builtin_class(key.as_str(), current) {
-                        return Some(idx + 1);
-                    }
-                    if sc.values.iter().any(|v| v == current) {
-                        return Some(idx + 1);
-                    }
-                } else if check_builtin_class(key.as_str(), current) {
-                    return Some(idx + 1);
-                }
-                None
-            }
-            MatcherElement::Descriptor(sc_opt, features) => {
-                if idx >= phonemes.len() {
-                    return None;
-                }
-                let current = phonemes.get(idx)?;
-
-                if let Some(key) = sc_opt {
-                    let mut matched_class = false;
-                    if let Some(sc) = sound_classes.get(key) {
-                        if check_builtin_class(key.as_str(), current)
-                            || sc.values.iter().any(|v| v == current)
-                        {
-                            matched_class = true;
-                        }
-                    } else if check_builtin_class(key.as_str(), current) {
-                        matched_class = true;
-                    }
-                    if !matched_class {
-                        return None;
-                    }
-                }
-
-                if let Some(phoneme_data) = get_phoneme_data(current) {
-                    let mut satisfies = true;
-                    for required_feat in features {
-                        match required_feat {
-                            SpeFeature::Plus(_) => {
-                                if !phoneme_data.features.contains(required_feat) {
-                                    satisfies = false;
-                                    break;
-                                }
-                            }
-                            SpeFeature::Minus(feat) => {
-                                let plus_feat = SpeFeature::Plus(*feat);
-                                if phoneme_data.features.contains(&plus_feat) {
-                                    satisfies = false;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    if satisfies {
-                        return Some(idx + 1);
-                    }
-                }
-                None
-            }
-            MatcherElement::IpaSequence(ipa) => {
-                let ipa_str = ipa.as_str();
-                let ipa_phonemes = extract_phonemes_internal(ipa_str);
-
-                if idx + ipa_phonemes.len() > phonemes.len() {
-                    return None;
-                }
-
-                for i in 0..ipa_phonemes.len() {
-                    if phonemes.get(idx + i).copied() != ipa_phonemes.get(i).copied() {
-                        return None;
-                    }
-                }
-                Some(idx + ipa_phonemes.len())
-            }
-            MatcherElement::Set(elements) => {
-                for elem in elements {
-                    if let Some(next_idx) =
-                        self.match_single_element(elem, phonemes, idx, sound_classes)
-                    {
-                        return Some(next_idx);
-                    }
-                }
-                None
-            }
+            MatcherElement::WordBoundary => Self::match_word_boundary(idx, phonemes.len()),
+            MatcherElement::SyllableBoundary => Self::match_syllable_boundary(idx, phonemes),
+            MatcherElement::SoundClass(key) => Self::match_sound_class(key, idx, phonemes, sound_classes),
+            MatcherElement::Descriptor(sc_opt, features) => Self::match_descriptor(sc_opt.as_ref(), features, idx, phonemes, sound_classes),
+            MatcherElement::IpaSequence(ipa) => Self::match_ipa_sequence(ipa, idx, phonemes),
+            MatcherElement::Set(elements) => self.match_set(elements, idx, phonemes, sound_classes),
             MatcherElement::OptionalGroup(group_elements) => {
                 let lengths = self.match_subpattern(group_elements, phonemes, idx, sound_classes);
                 lengths.into_iter().next()
             }
         }
+    }
+
+    fn match_word_boundary(idx: usize, len: usize) -> Option<usize> {
+        if idx == 0 || idx == len {
+            Some(idx)
+        } else {
+            None
+        }
+    }
+
+    fn match_syllable_boundary(idx: usize, phonemes: &[&str]) -> Option<usize> {
+        if idx == 0 || idx == phonemes.len() {
+            Some(idx)
+        } else {
+            let current = phonemes.get(idx)?;
+            if matches!(*current, "." | "'" | "ˌ" | "ˈ") {
+                Some(idx + 1)
+            } else {
+                None
+            }
+        }
+    }
+
+    fn match_sound_class(
+        key: &SoundClassKey,
+        idx: usize,
+        phonemes: &[&str],
+        sound_classes: &BTreeMap<SoundClassKey, SoundClass>,
+    ) -> Option<usize> {
+        let current = phonemes.get(idx)?;
+        if let Some(sc) = sound_classes.get(key) {
+            if check_builtin_class(key.as_str(), current) || sc.values.iter().any(|v| v == current) {
+                return Some(idx + 1);
+            }
+        } else if check_builtin_class(key.as_str(), current) {
+            return Some(idx + 1);
+        }
+        None
+    }
+
+    fn match_descriptor(
+        sc_opt: Option<&SoundClassKey>,
+        features: &[SpeFeature],
+        idx: usize,
+        phonemes: &[&str],
+        sound_classes: &BTreeMap<SoundClassKey, SoundClass>,
+    ) -> Option<usize> {
+        let current = phonemes.get(idx)?;
+
+        if let Some(key) = sc_opt {
+            let matched_class = if let Some(sc) = sound_classes.get(key) {
+                check_builtin_class(key.as_str(), current) || sc.values.iter().any(|v| v == current)
+            } else {
+                check_builtin_class(key.as_str(), current)
+            };
+            if !matched_class {
+                return None;
+            }
+        }
+
+        let phoneme_data = get_phoneme_data(current)?;
+        for required_feat in features {
+            match required_feat {
+                SpeFeature::Plus(_) => {
+                    if !phoneme_data.features.contains(required_feat) {
+                        return None;
+                    }
+                }
+                SpeFeature::Minus(feat) => {
+                    let plus_feat = SpeFeature::Plus(*feat);
+                    if phoneme_data.features.contains(&plus_feat) {
+                        return None;
+                    }
+                }
+            }
+        }
+        Some(idx + 1)
+    }
+
+    fn match_ipa_sequence(ipa: &IpaString, idx: usize, phonemes: &[&str]) -> Option<usize> {
+        let ipa_phonemes = extract_phonemes_internal(ipa.as_str());
+        if idx + ipa_phonemes.len() > phonemes.len() {
+            return None;
+        }
+        for i in 0..ipa_phonemes.len() {
+            if phonemes.get(idx + i).copied() != ipa_phonemes.get(i).copied() {
+                return None;
+            }
+        }
+        Some(idx + ipa_phonemes.len())
+    }
+
+    fn match_set(
+        &self,
+        elements: &[MatcherElement],
+        idx: usize,
+        phonemes: &[&str],
+        sound_classes: &BTreeMap<SoundClassKey, SoundClass>,
+    ) -> Option<usize> {
+        for elem in elements {
+            if let Some(next_idx) = self.match_single_element(elem, phonemes, idx, sound_classes) {
+                return Some(next_idx);
+            }
+        }
+        None
     }
 
     fn match_subpattern(
