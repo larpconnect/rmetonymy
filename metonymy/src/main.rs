@@ -53,11 +53,13 @@ fn print_phoneme_info(symbol: &str, system: &IpaSystem) {
     }
 }
 
-fn print_modified_phoneme_info(base: &str, modifier: &str, system: &IpaSystem) {
-    if let (Some(combined_features), Some(base_data)) = (
-        system.combine_with_modifier(base, modifier),
-        system.get_phoneme_data(base),
-    ) {
+fn print_modified_phoneme_info(
+    base: &str,
+    modifier: &str,
+    combined_features: &[data::SpeFeature],
+    system: &IpaSystem,
+) {
+    if let Some(base_data) = system.get_phoneme_data(base) {
         println!("Base: {base}");
         println!("Modifiers: {modifier}");
         println!("Original Features: {:?}", base_data.features);
@@ -71,11 +73,10 @@ fn find_base_and_modifier<'a>(system: &IpaSystem, phoneme: &'a str) -> Option<(&
     let char_indices: Vec<(usize, char)> = phoneme.char_indices().collect();
 
     for len in (1..=char_indices.len()).rev() {
-        let end_idx = char_indices.get(len).map_or(phoneme.len(), |&(idx, _)| idx);
-        let prefix = phoneme.get(0..end_idx).unwrap_or("");
+        let split_idx = char_indices.get(len).map_or(phoneme.len(), |&(idx, _)| idx);
+        let prefix = phoneme.get(0..split_idx).unwrap_or("");
         if system.get_phoneme_data(prefix).is_some() {
-            let start_idx = char_indices.get(len).map_or(phoneme.len(), |&(idx, _)| idx);
-            let modifier = phoneme.get(start_idx..).unwrap_or("");
+            let modifier = phoneme.get(split_idx..).unwrap_or("");
             return Some((prefix, modifier));
         }
     }
@@ -87,20 +88,15 @@ fn handle_lookup(phoneme: &str, phone_config: Option<&PathBuf>) -> anyhow::Resul
 
     println!("Looking up phoneme: {phoneme}");
 
-    // Look up the exact string as a single phoneme/symbol first
-    if system.get_phoneme_data(phoneme).is_some() {
-        print_phoneme_info(phoneme, &system);
-        return Ok(());
-    }
-
     // Fallback logic for affricates and diacritics
+    // This also handles exact matches (when modifier is empty)
     match find_base_and_modifier(&system, phoneme) {
         Some((base, "")) => {
             print_phoneme_info(base, &system);
         }
         Some((base, modifier)) => {
-            if system.combine_with_modifier(base, modifier).is_some() {
-                print_modified_phoneme_info(base, modifier, &system);
+            if let Some(combined_features) = system.combine_with_modifier(base, modifier) {
+                print_modified_phoneme_info(base, modifier, &combined_features, &system);
             } else if system.get_entry(phoneme).is_some() {
                 println!("Found entry, but it is not a base phoneme.");
             } else {

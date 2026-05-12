@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+data = { path = "../data" }
 ipa = { path = "../ipa" }
 soundchange = { path = "../soundchange" }
 anyhow.workspace = true
