@@ -54,15 +54,16 @@ fn print_phoneme_info(symbol: &str, system: &IpaSystem) {
 }
 
 fn print_modified_phoneme_info(base: &str, modifier: &str, system: &IpaSystem) {
-    if let Some(combined_features) = system.combine_with_modifier(base, modifier) {
-        if let Some(base_data) = system.get_phoneme_data(base) {
-            println!("Base: {base}");
-            println!("Modifiers: {modifier}");
-            println!("Original Features: {:?}", base_data.features);
-            println!("Modified Features: {combined_features:?}");
-            println!("Place: {:?}", base_data.place);
-            println!("Manner: {:?}", base_data.manner);
-        }
+    if let (Some(combined_features), Some(base_data)) = (
+        system.combine_with_modifier(base, modifier),
+        system.get_phoneme_data(base),
+    ) {
+        println!("Base: {base}");
+        println!("Modifiers: {modifier}");
+        println!("Original Features: {:?}", base_data.features);
+        println!("Modified Features: {combined_features:?}");
+        println!("Place: {:?}", base_data.place);
+        println!("Manner: {:?}", base_data.manner);
     }
 }
 
