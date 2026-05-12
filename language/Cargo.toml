@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+data = { path = "../data" }
 ipa = { path = "../ipa" }
 thiserror.workspace = true
 serde.workspace = true
@@ -15,3 +16,11 @@ pest_derive = "2.8.6"
 
 [lints]
 workspace = true
+
+[dev-dependencies]
+cucumber.workspace = true
+tokio.workspace = true
+
+[[test]]
+name = "cucumber"
+harness = false

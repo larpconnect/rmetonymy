@@ -1263,6 +1263,8 @@ dependencies = [
 name = "language"
 version = "0.1.0"
 dependencies = [
+ "cucumber",
+ "data",
  "ipa",
  "pest",
  "pest_derive",
@@ -1270,6 +1272,7 @@ dependencies = [
  "serde_json",
  "thiserror",
  "time",
+ "tokio",
  "uuid",
 ]
 
@@ -1338,6 +1341,7 @@ dependencies = [
  "assert_cmd",
  "clap",
  "cucumber",
+ "data",
  "ipa",
  "predicates",
  "shlex",

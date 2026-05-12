@@ -1,5 +1,6 @@
 use crate::phonotactics::PhonotacticPattern;
 use crate::sound_class::SoundClassKey;
+use crate::sound_matcher::SoundMatcherPattern;
 use ipa::IpaString;
 use serde::{Deserialize, Deserializer, Serialize};
 use std::collections::BTreeMap;
@@ -62,6 +63,8 @@ pub struct PhonologyConfig {
     pub sound_classes: BTreeMap<SoundClassKey, SoundClass>,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub phonotactics: BTreeMap<String, PhonotacticsConfig>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub illegal_patterns: Vec<SoundMatcherPattern>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

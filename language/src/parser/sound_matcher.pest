@@ -1,0 +1,48 @@
+// sound_matcher.pest
+
+// Boundaries
+word_boundary = { "#" }
+syllable_boundary = { "$" }
+
+// Sound class base definition
+sound_class_base = _{ ASCII_ALPHA_UPPER | '\u{0391}'..'\u{03A9}' | '\u{05D0}'..'\u{05EA}' }
+subscript = _{ '\u{2080}'..'\u{2089}' }
+sound_class = @{ sound_class_base ~ subscript? }
+
+// Feature descriptors
+feature_sign = { "+" | "-" }
+feature_name = { ASCII_ALPHA_LOWER+ }
+feature = { feature_sign ~ feature_name }
+
+// Feature descriptor block: e.g., [+voiced -stop] or [C +voiced]
+feature_block_inner = _{ (sound_class ~ " "*)? ~ (feature ~ (" "+ ~ feature)*)? }
+feature_descriptor = { "[" ~ " "* ~ feature_block_inner ~ " "* ~ "]" }
+
+// Sets e.g., {a, b} or {C, i}
+set_item = { sound_class | ipa_sequence }
+set = { "{" ~ " "* ~ set_item ~ (" "* ~ "," ~ " "* ~ set_item)* ~ " "* ~ "}" }
+
+// Quantifiers
+quantifier_zero_or_more = { "*" }
+quantifier_one_or_more = { "+" }
+quantifier = _{ quantifier_zero_or_more | quantifier_one_or_more }
+
+// Optional group
+optional_group = { "(" ~ pattern ~ ")" }
+
+// For IPA characters
+// We explicitly exclude reserved syntax characters
+ipa_char = _{ !( "(" | ")" | "[" | "]" | "{" | "}" | "*" | "+" | "#" | "$" | "," | " " | "\t" | "\r" | "\n" | sound_class_base ) ~ ANY }
+ipa_sequence = @{ ipa_char+ }
+
+// Base matchable element
+base_element = { word_boundary | syllable_boundary | optional_group | feature_descriptor | set | sound_class | ipa_sequence }
+
+// Element with optional quantifier
+pattern_element = { base_element ~ quantifier? }
+
+// The entire pattern
+pattern = { pattern_element+ }
+
+// Top-level rule
+main = { SOI ~ pattern ~ EOI }
