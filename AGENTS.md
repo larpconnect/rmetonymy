@@ -110,12 +110,13 @@ This repository implements the standardized Agent Skill Files protocol to modula
 
 These rules take precedence over having all of the code for a given task together in "one place."
 
-- **DO NOT** override clippy limitations, especially for method complexity, method length, and file length. Clippy is the law of the system.
+- **NEVER** override clippy, especially for method complexity, method length, and file length. **Clippy is the law of the system**.
 - Emphasize small (≤ 50 LOC, ≤ 8 cyclomatic complexity) helper functions over large blocks of code.
 - Emphasize small (≤ 500 LOC) files.
 - Avoid `unwrap` and `expect` in production code.
 - Avoid boolean flags in method arguments. Either create separate methods or use an enum.
 - Use domain specific types whenever possible. For example: Instead of passing a `u32` for a `UserId`, create a tuple struct: `struct UserId(u32)`. This prevents mixing up distinct identifiers of the same underlying primitive type.
+- Always get an internal `request_code_review` before publishing. If this code review comes back clean then you do not need to confirm before pushing to branch.
 
 ---
 
@@ -189,8 +190,10 @@ These rules take precedence over having all of the code for a given task togethe
 - `cargo-deny`: Prevent unwated licenses.
 - `schemars`: Keep JSON schema in sync with rust structures.
 - `anyhow`/`thiserror`: Error handling.
+- `pest`: Parsing.
 - `tracing`: Structured logging.
 - `serde`: Serialization.
+- `unicode-segmentation`: For working with unicode.
 - `unicode-normalization`: For working with unicode. 
 - `tokio`: Async runtime (if applicable).
 - `insta`: Snapshot testing.
