@@ -1,4 +1,4 @@
-use crate::matcher::ast::*;
+use crate::matcher::ast::{SoundMatcherPattern, SoundMatcherError, PatternElement, Quantifier, BaseElement, FeatureDescriptor};
 use crate::sound_class::SoundClassKey;
 use data::feature::Feature;
 use ipa::IpaString;

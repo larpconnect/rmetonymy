@@ -3,7 +3,7 @@ use data::feature::Feature;
 use ipa::IpaString;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt::{Display, Formatter};
-use std::str::FromStr;
+
 use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq)]

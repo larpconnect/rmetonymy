@@ -1,5 +1,5 @@
 use crate::config::SoundClass;
-use crate::matcher::ast::*;
+use crate::matcher::ast::{SoundMatcherPattern, PatternElement, Quantifier, BaseElement, Token};
 use crate::sound_class::SoundClassKey;
 use data::IpaEntry;
 use ipa::{get_entry, get_phoneme_data};
@@ -44,10 +44,10 @@ impl SoundMatcherPattern {
         let tokens = Self::tokenize(word);
 
         for i in 0..tokens.len() {
-            if let Some(tokens_slice) = tokens.get(i..) {
-                if self.match_at(tokens_slice, &self.elements, classes) {
+            if let Some(tokens_slice) = tokens.get(i..)
+                && self.match_at(tokens_slice, &self.elements, classes)
+            {
                     return true;
-                }
             }
         }
 
@@ -108,16 +108,17 @@ impl SoundMatcherPattern {
         match_lengths.dedup();
 
         for len in match_lengths {
-            if let Some(tokens_slice) = tokens.get(len..) {
-                if self.match_at(tokens_slice, rest_pattern, classes) {
+            if let Some(tokens_slice) = tokens.get(len..)
+                && self.match_at(tokens_slice, rest_pattern, classes)
+            {
                     return true;
-                }
             }
         }
 
         false
     }
 
+    #[expect(clippy::too_many_arguments, reason = "Recursive logic dictates numerous arguments passed")]
     fn find_repeated_matches(
         &self,
         base: &BaseElement,
@@ -132,10 +133,11 @@ impl SoundMatcherPattern {
             results.push(current_len);
         }
 
-        if max > 0 {
-            if let Some(tokens_slice) = tokens.get(current_len..) {
-                if let Some(len) = self.match_base(base, tokens_slice, classes) {
-                    if len > 0 {
+        if max > 0
+            && let Some(tokens_slice) = tokens.get(current_len..)
+            && let Some(len) = self.match_base(base, tokens_slice, classes)
+            && len > 0
+        {
                         let next_min = min.saturating_sub(1);
                         self.find_repeated_matches(
                             base,
@@ -146,9 +148,6 @@ impl SoundMatcherPattern {
                             current_len + len,
                             results,
                         );
-                    }
-                }
-            }
         }
     }
 
@@ -162,24 +161,24 @@ impl SoundMatcherPattern {
 
         match base {
             BaseElement::WordBoundary => {
-                if let Token::Boundary(b) = first_token {
-                    if b == "#" {
-                        return Some(1);
-                    }
+                if let Token::Boundary(b) = first_token
+                    && b == "#"
+                {
+                    return Some(1);
                 }
             }
             BaseElement::SyllableBoundary => {
-                if let Token::Boundary(b) = first_token {
-                    if b == "$" {
-                        return Some(1);
-                    }
+                if let Token::Boundary(b) = first_token
+                    && b == "$"
+                {
+                    return Some(1);
                 }
             }
             BaseElement::SoundClass(key) => {
-                if let Token::Phoneme(p) = first_token {
-                    if Self::phoneme_in_class(p, key, classes) {
-                        return Some(1);
-                    }
+                if let Token::Phoneme(p) = first_token
+                    && Self::phoneme_in_class(p, key, classes)
+                {
+                    return Some(1);
                 }
             }
             BaseElement::IpaSequence(ipa) => {
@@ -202,10 +201,10 @@ impl SoundMatcherPattern {
             }
             BaseElement::FeatureClass(sc_opt, features) => {
                 if let Token::Phoneme(p) = first_token {
-                    if let Some(sc) = sc_opt {
-                        if !Self::phoneme_in_class(p, sc, classes) {
-                            return None;
-                        }
+                    if let Some(sc) = sc_opt
+                        && !Self::phoneme_in_class(p, sc, classes)
+                    {
+                        return None;
                     }
 
                     if let Some(phoneme_data) = get_phoneme_data(p) {
@@ -213,12 +212,9 @@ impl SoundMatcherPattern {
                         let phoneme_features: HashSet<_> = phoneme_data
                             .features
                             .iter()
-                            .filter_map(|sf| {
-                                // Extract the underlying feature
-                                match sf {
-                                    data::SpeFeature::Plus(f) => Some((*f, true)),
-                                    data::SpeFeature::Minus(f) => Some((*f, false)),
-                                }
+                            .map(|sf| match sf {
+                                data::SpeFeature::Plus(f) => (*f, true),
+                                data::SpeFeature::Minus(f) => (*f, false),
                             })
                             .collect();
 
@@ -275,7 +271,7 @@ impl SoundMatcherPattern {
             return;
         }
 
-        let el = &pattern[0];
+        let Some(el) = pattern.first() else { return; };
         let Some(rest_pattern) = pattern.get(1..) else {
             return;
         };
@@ -283,10 +279,10 @@ impl SoundMatcherPattern {
         let mut match_lengths = Vec::new();
         match el.quantifier {
             Quantifier::None => {
-                if let Some(tokens_slice) = tokens.get(current_len..) {
-                    if let Some(len) = self.match_base(&el.base, tokens_slice, classes) {
-                        match_lengths.push(len);
-                    }
+                if let Some(tokens_slice) = tokens.get(current_len..)
+                    && let Some(len) = self.match_base(&el.base, tokens_slice, classes)
+                {
+                    match_lengths.push(len);
                 }
             }
             Quantifier::ZeroOrMore => {
