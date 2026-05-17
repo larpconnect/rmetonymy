@@ -5,7 +5,7 @@ use crate::matcher::ast::{
 use crate::sound_class::SoundClassKey;
 use data::IpaEntry;
 use ipa::{IpaString, get_entry, get_phoneme_data};
-use std::collections::{BTreeMap, HashSet};
+use std::collections::BTreeMap;
 
 impl SoundMatcherPattern {
     fn parse_phoneme(chars: &mut std::iter::Peekable<std::str::Chars>) -> String {
@@ -178,19 +178,32 @@ impl SoundMatcherPattern {
         tokens: &[Token],
         classes: &BTreeMap<SoundClassKey, SoundClass>,
     ) -> Option<usize> {
-        let first_token = tokens.first()?;
+        let mut skip = 0;
+        while let Some(Token::Boundary(b)) = tokens.get(skip) {
+            if b == "$" && !matches!(base, BaseElement::SyllableBoundary) {
+                skip += 1;
+            } else {
+                break;
+            }
+        }
 
-        match base {
+        let tokens_to_check = &tokens[skip..];
+        let first_token = tokens_to_check.first()?;
+
+        let len = match base {
             BaseElement::WordBoundary => Self::match_word_boundary(first_token),
             BaseElement::SyllableBoundary => Self::match_syllable_boundary(first_token),
             BaseElement::SoundClass(key) => Self::match_sound_class(first_token, key, classes),
-            BaseElement::IpaSequence(ipa) => Self::match_ipa_sequence(tokens, ipa),
+            BaseElement::IpaSequence(ipa) => Self::match_ipa_sequence(tokens_to_check, ipa),
             BaseElement::FeatureClass(sc_opt, features) => {
                 Self::match_feature_class(first_token, sc_opt.as_ref(), features, classes)
             }
-            BaseElement::Set(els) => self.match_set(els, tokens, classes),
-            BaseElement::OptionalGroup(pat) => self.match_optional_group(pat, tokens, classes),
-        }
+            BaseElement::Set(els) => self.match_set(els, tokens_to_check, classes),
+            BaseElement::OptionalGroup(pat) => {
+                self.match_optional_group(pat, tokens_to_check, classes)
+            }
+        };
+        len.map(|l| skip + l)
     }
 
     fn match_word_boundary(first_token: &Token) -> Option<usize> {
@@ -204,7 +217,7 @@ impl SoundMatcherPattern {
 
     fn match_syllable_boundary(first_token: &Token) -> Option<usize> {
         if let Token::Boundary(b) = first_token
-            && b == "$"
+            && (b == "$" || b == "#")
         {
             return Some(1);
         }
@@ -229,6 +242,12 @@ impl SoundMatcherPattern {
         let mut accumulated = String::new();
         let mut len = 0;
         for t in tokens {
+            if let Token::Boundary(b) = t {
+                if b == "$" {
+                    len += 1;
+                    continue;
+                }
+            }
             if let Token::Phoneme(p) = t {
                 accumulated.push_str(p);
                 len += 1;
@@ -259,7 +278,7 @@ impl SoundMatcherPattern {
 
             if let Some(phoneme_data) = get_phoneme_data(p) {
                 let mut has_all_features = true;
-                let phoneme_features: HashSet<_> = phoneme_data
+                let phoneme_features: std::collections::HashMap<_, _> = phoneme_data
                     .features
                     .iter()
                     .map(|sf| match sf {
@@ -269,14 +288,13 @@ impl SoundMatcherPattern {
                     .collect();
 
                 for fd in features {
-                    let mut found_match = false;
-                    for &(ref feat, sign) in &phoneme_features {
-                        if *feat == fd.feature && sign == fd.sign {
-                            found_match = true;
-                            break;
-                        }
-                    }
-                    if !found_match {
+                    let has_feature = if let Some(&sign) = phoneme_features.get(&fd.feature) {
+                        sign
+                    } else {
+                        false // Default to minus if absent
+                    };
+
+                    if has_feature != fd.sign {
                         has_all_features = false;
                         break;
                     }

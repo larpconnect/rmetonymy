@@ -14,12 +14,15 @@ pub struct SoundMatcherWorld {
 }
 
 #[given(expr = "the following sound classes exist:")]
-async fn given_sound_classes(world: &mut SoundMatcherWorld, step: &cucumber::Step) {
+async fn given_sound_classes(world: &mut SoundMatcherWorld, step: &cucumber::gherkin::Step) {
     if let Some(table) = step.table.as_ref() {
         for row in table.rows.iter().skip(1) {
             // Skip header
             let class_key = SoundClassKey::from_str(&row[0]).unwrap();
-            let values: Vec<String> = row[1].split(',').map(|s| s.trim().to_string()).collect();
+            let values: Vec<String> = row[1]
+                .split(',')
+                .map(|s: &str| s.trim().to_string())
+                .collect();
             world.sound_classes.insert(
                 class_key,
                 SoundClass {
