@@ -464,8 +464,9 @@ impl SoundMatcherPattern {
                         } else if !target.starts_with(&accumulated) {
                             break;
                         }
+                    } else {
+                        break;
                     }
-                    break;
                 }
             }
             BaseElement::FeatureClass(sc_opt, features) => {
