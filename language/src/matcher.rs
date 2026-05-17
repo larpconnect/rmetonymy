@@ -145,7 +145,7 @@ fn parse_pattern_element(
                                     feature_name = fd_inner.as_str();
                                 }
                             }
-                            let feature = Feature::from_str(feature_name).map_err(|e| {
+                            let feature = Feature::from_str(feature_name).map_err(|_e| {
                                 SoundMatcherError::ParseError(format!(
                                     "Unknown feature: {}",
                                     feature_name
@@ -453,7 +453,7 @@ impl SoundMatcherPattern {
                 let mut accumulated = String::new();
                 let mut len = 0;
                 for t in tokens {
-                    if let Token::Phoneme(ref p) = t {
+                    if let Token::Phoneme(p) = t {
                         accumulated.push_str(p);
                         len += 1;
                         if accumulated == target {
@@ -488,7 +488,7 @@ impl SoundMatcherPattern {
 
                         for fd in features {
                             let feat_name = fd.feature.to_string().to_lowercase();
-                            let sign_str = if fd.sign { "+" } else { "-" };
+                            let _sign_str = if fd.sign { "+" } else { "-" };
 
                             // Check if the exact positive or negative feature exists.
                             // Some datasets only store positive features explicitly.
@@ -529,7 +529,7 @@ impl SoundMatcherPattern {
                     // But optional group shouldn't be matched like this; we should do full NFA or backtracking.
                     // A simple approximation is recursively using a helper that returns length.
                     // For now, let's just do a hacky length check.
-                    let mut max_len = 0;
+                    let _max_len = 0;
                     // Let's find all possible match lengths of pat against tokens.
                     let mut lengths = vec![];
                     self.find_group_match_lengths(tokens, &pat.elements, classes, 0, &mut lengths);
