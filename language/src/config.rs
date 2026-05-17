@@ -62,6 +62,8 @@ pub struct PhonologyConfig {
     pub sound_classes: BTreeMap<SoundClassKey, SoundClass>,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub phonotactics: BTreeMap<String, PhonotacticsConfig>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub illegal_patterns: Vec<crate::matcher::SoundMatcherPattern>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
