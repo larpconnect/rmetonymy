@@ -187,7 +187,7 @@ impl SoundMatcherPattern {
             }
         }
 
-        let tokens_to_check = &tokens[skip..];
+        let tokens_to_check = tokens.get(skip..)?;
         let first_token = tokens_to_check.first()?;
 
         let len = match base {
@@ -242,11 +242,11 @@ impl SoundMatcherPattern {
         let mut accumulated = String::new();
         let mut len = 0;
         for t in tokens {
-            if let Token::Boundary(b) = t {
-                if b == "$" {
-                    len += 1;
-                    continue;
-                }
+            if let Token::Boundary(b) = t
+                && b == "$"
+            {
+                len += 1;
+                continue;
             }
             if let Token::Phoneme(p) = t {
                 accumulated.push_str(p);
