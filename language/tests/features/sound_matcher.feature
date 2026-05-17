@@ -64,3 +64,7 @@ Feature: Sound Matcher
 
     When I check the pattern "V*" against the word "str"
     Then the pattern should match
+
+  Scenario: Another syllable check
+    When I check the pattern "aba" against the word "a.ba"
+    Then the pattern should match
