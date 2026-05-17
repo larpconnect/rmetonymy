@@ -200,12 +200,12 @@ impl Display for SoundMatcherPattern {
             match &el.base {
                 BaseElement::WordBoundary => write!(f, "#")?,
                 BaseElement::SyllableBoundary => write!(f, "$")?,
-                BaseElement::SoundClass(key) => write!(f, "{}", key)?,
-                BaseElement::IpaSequence(ipa) => write!(f, "{}", ipa)?,
+                BaseElement::SoundClass(key) => write!(f, "{key}")?,
+                BaseElement::IpaSequence(ipa) => write!(f, "{ipa}")?,
                 BaseElement::FeatureClass(sc, features) => {
                     write!(f, "[")?;
                     if let Some(sc) = sc {
-                        write!(f, "{} ", sc)?;
+                        write!(f, "{sc} ")?;
                     }
                     for (i, feat) in features.iter().enumerate() {
                         if i > 0 {
@@ -223,14 +223,14 @@ impl Display for SoundMatcherPattern {
                             write!(f, ", ")?;
                         }
                         match set_el {
-                            BaseElement::SoundClass(key) => write!(f, "{}", key)?,
-                            BaseElement::IpaSequence(ipa) => write!(f, "{}", ipa)?,
+                            BaseElement::SoundClass(key) => write!(f, "{key}")?,
+                            BaseElement::IpaSequence(ipa) => write!(f, "{ipa}")?,
                             _ => {}
                         }
                     }
                     write!(f, "}}")?;
                 }
-                BaseElement::OptionalGroup(pat) => write!(f, "({})", pat)?,
+                BaseElement::OptionalGroup(pat) => write!(f, "({pat})")?,
             }
             match el.quantifier {
                 Quantifier::ZeroOrMore => write!(f, "*")?,
@@ -267,6 +267,7 @@ pub enum Token {
     Phoneme(String),
 }
 
+#[allow(clippy::indexing_slicing, clippy::collapsible_if)]
 impl SoundMatcherPattern {
     /// Tokenizes the word, pulling out syllable boundaries and phonemes.
     fn tokenize(word: &str) -> Vec<Token> {
@@ -283,7 +284,7 @@ impl SoundMatcherPattern {
                     if next_c == '.' || next_c == 'ˌ' || next_c == 'ˈ' || next_c == '\'' {
                         break;
                     }
-                    let combined = format!("{}{}", phoneme, next_c);
+                    let combined = format!("{phoneme}{next_c}");
                     if get_entry(&combined).is_some() {
                         phoneme = combined;
                         chars.next();
@@ -292,9 +293,8 @@ impl SoundMatcherPattern {
                         if get_entry(&next_c.to_string()).is_some() {
                             phoneme = combined;
                             chars.next();
-                        } else {
-                            break;
                         }
+                        break;
                     }
                 }
                 // Even if not a valid phoneme by itself, just push it
@@ -306,6 +306,7 @@ impl SoundMatcherPattern {
         tokens
     }
 
+    #[must_use]
     pub fn matches(&self, word: &str, classes: &BTreeMap<SoundClassKey, SoundClass>) -> bool {
         let tokens = Self::tokenize(word);
 
@@ -382,6 +383,7 @@ impl SoundMatcherPattern {
         false
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn find_repeated_matches(
         &self,
         base: &BaseElement,
@@ -412,6 +414,7 @@ impl SoundMatcherPattern {
         }
     }
 
+    #[allow(clippy::too_many_lines)]
     fn match_base(
         &self,
         base: &BaseElement,
@@ -458,14 +461,11 @@ impl SoundMatcherPattern {
                         len += 1;
                         if accumulated == target {
                             return Some(len);
-                        } else if target.starts_with(&accumulated) {
-                            continue;
-                        } else {
+                        } else if !target.starts_with(&accumulated) {
                             break;
                         }
-                    } else {
-                        break;
                     }
+                    break;
                 }
             }
             BaseElement::FeatureClass(sc_opt, features) => {
@@ -488,7 +488,6 @@ impl SoundMatcherPattern {
 
                         for fd in features {
                             let feat_name = fd.feature.to_string().to_lowercase();
-                            let _sign_str = if fd.sign { "+" } else { "-" };
 
                             // Check if the exact positive or negative feature exists.
                             // Some datasets only store positive features explicitly.
@@ -529,7 +528,6 @@ impl SoundMatcherPattern {
                     // But optional group shouldn't be matched like this; we should do full NFA or backtracking.
                     // A simple approximation is recursively using a helper that returns length.
                     // For now, let's just do a hacky length check.
-                    let _max_len = 0;
                     // Let's find all possible match lengths of pat against tokens.
                     let mut lengths = vec![];
                     self.find_group_match_lengths(tokens, &pat.elements, classes, 0, &mut lengths);
@@ -602,6 +600,7 @@ impl SoundMatcherPattern {
         }
     }
 
+    #[allow(clippy::unused_self)]
     fn phoneme_in_class(
         &self,
         p: &str,
