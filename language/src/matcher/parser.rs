@@ -1,4 +1,7 @@
-use crate::matcher::ast::{SoundMatcherPattern, SoundMatcherError, PatternElement, Quantifier, BaseElement, FeatureDescriptor};
+use crate::matcher::ast::{
+    BaseElement, FeatureDescriptor, PatternElement, Quantifier, SoundMatcherError,
+    SoundMatcherPattern,
+};
 use crate::sound_class::SoundClassKey;
 use data::feature::Feature;
 use ipa::IpaString;
@@ -63,34 +66,11 @@ fn parse_pattern_element(
             Rule::one_or_more => quantifier = Quantifier::OneOrMore,
             Rule::word_boundary => base_element = Some(BaseElement::WordBoundary),
             Rule::syllable_boundary => base_element = Some(BaseElement::SyllableBoundary),
-            Rule::sound_class => {
-                let key = inner
-                    .as_str()
-                    .parse::<SoundClassKey>()
-                    .map_err(|e| SoundMatcherError::ParseError(e.to_string()))?;
-                base_element = Some(BaseElement::SoundClass(key));
-            }
-            Rule::ipa_sequence => {
-                let ipa = inner
-                    .as_str()
-                    .parse::<IpaString>()
-                    .map_err(|e| SoundMatcherError::ParseError(e.to_string()))?;
-                base_element = Some(BaseElement::IpaSequence(ipa));
-            }
-            Rule::feature_class => {
-                base_element = Some(parse_feature_class(inner)?);
-            }
-            Rule::set => {
-                base_element = Some(parse_set(inner)?);
-            }
-            Rule::optional_group => {
-                for opt_inner in inner.into_inner() {
-                    if opt_inner.as_rule() == Rule::pattern {
-                        let pat = parse_pattern(opt_inner)?;
-                        base_element = Some(BaseElement::OptionalGroup(Box::new(pat)));
-                    }
-                }
-            }
+            Rule::sound_class => base_element = Some(parse_sound_class(&inner)?),
+            Rule::ipa_sequence => base_element = Some(parse_ipa_sequence(&inner)?),
+            Rule::feature_class => base_element = Some(parse_feature_class(inner)?),
+            Rule::set => base_element = Some(parse_set(inner)?),
+            Rule::optional_group => base_element = Some(parse_optional_group(inner)?),
             _ => {}
         }
     }
@@ -98,6 +78,40 @@ fn parse_pattern_element(
     let base = base_element
         .ok_or_else(|| SoundMatcherError::ParseError("Missing base element".to_string()))?;
     Ok(PatternElement { base, quantifier })
+}
+
+fn parse_sound_class(
+    inner: &pest::iterators::Pair<Rule>,
+) -> Result<BaseElement, SoundMatcherError> {
+    let key = inner
+        .as_str()
+        .parse::<SoundClassKey>()
+        .map_err(|e| SoundMatcherError::ParseError(e.to_string()))?;
+    Ok(BaseElement::SoundClass(key))
+}
+
+fn parse_ipa_sequence(
+    inner: &pest::iterators::Pair<Rule>,
+) -> Result<BaseElement, SoundMatcherError> {
+    let ipa = inner
+        .as_str()
+        .parse::<IpaString>()
+        .map_err(|e| SoundMatcherError::ParseError(e.to_string()))?;
+    Ok(BaseElement::IpaSequence(ipa))
+}
+
+fn parse_optional_group(
+    inner: pest::iterators::Pair<Rule>,
+) -> Result<BaseElement, SoundMatcherError> {
+    for opt_inner in inner.into_inner() {
+        if opt_inner.as_rule() == Rule::pattern {
+            let pat = parse_pattern(opt_inner)?;
+            return Ok(BaseElement::OptionalGroup(Box::new(pat)));
+        }
+    }
+    Err(SoundMatcherError::ParseError(
+        "Empty optional group".to_string(),
+    ))
 }
 
 fn parse_feature_class(
