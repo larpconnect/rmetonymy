@@ -1,11 +1,11 @@
 use crate::config::SoundClass;
 use crate::sound_class::SoundClassKey;
-use data::{Feature, IpaEntry, SpeFeature};
-use ipa::{IpaString, IpaSystem, combine_with_modifier, get_entry, get_phoneme_data};
+use data::{IpaEntry, feature::Feature};
+use ipa::{IpaString, get_entry, get_phoneme_data};
 use pest::Parser;
 use pest_derive::Parser;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use std::collections::{BTreeMap, HashSet};
+use std::collections::BTreeMap;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 use thiserror::Error;
