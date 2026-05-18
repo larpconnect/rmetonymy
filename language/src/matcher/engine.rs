@@ -7,6 +7,16 @@ use data::IpaEntry;
 use ipa::{IpaString, get_entry, get_phoneme_data};
 use std::collections::BTreeMap;
 
+struct RepeatContext<'a> {
+    base: &'a BaseElement,
+    tokens: &'a [Token],
+    classes: &'a BTreeMap<SoundClassKey, SoundClass>,
+    min: usize,
+    max: usize,
+    current_len: usize,
+    results: &'a mut Vec<usize>,
+}
+
 impl SoundMatcherPattern {
     fn parse_phoneme(chars: &mut std::iter::Peekable<std::str::Chars>) -> String {
         let Some(first_char) = chars.next() else {
@@ -111,64 +121,54 @@ impl SoundMatcherPattern {
             }
             Quantifier::ZeroOrMore => {
                 match_lengths.push(0);
-                self.find_repeated_matches(
-                    &el.base,
+                let mut ctx = RepeatContext {
+                    base: &el.base,
                     tokens,
                     classes,
-                    1,
-                    usize::MAX,
-                    0,
-                    &mut match_lengths,
-                );
+                    min: 1,
+                    max: usize::MAX,
+                    current_len: 0,
+                    results: &mut match_lengths,
+                };
+                self.find_repeated_matches(&mut ctx);
             }
             Quantifier::OneOrMore => {
-                self.find_repeated_matches(
-                    &el.base,
+                let mut ctx = RepeatContext {
+                    base: &el.base,
                     tokens,
                     classes,
-                    1,
-                    usize::MAX,
-                    0,
-                    &mut match_lengths,
-                );
+                    min: 1,
+                    max: usize::MAX,
+                    current_len: 0,
+                    results: &mut match_lengths,
+                };
+                self.find_repeated_matches(&mut ctx);
             }
         }
         match_lengths
     }
 
-    #[expect(
-        clippy::too_many_arguments,
-        reason = "Recursive logic dictates numerous arguments passed"
-    )]
-    fn find_repeated_matches(
-        &self,
-        base: &BaseElement,
-        tokens: &[Token],
-        classes: &BTreeMap<SoundClassKey, SoundClass>,
-        min: usize,
-        max: usize,
-        current_len: usize,
-        results: &mut Vec<usize>,
-    ) {
-        if min == 0 {
-            results.push(current_len);
+    fn find_repeated_matches(&self, ctx: &mut RepeatContext<'_>) {
+        if ctx.min == 0 {
+            ctx.results.push(ctx.current_len);
         }
 
-        if max > 0
-            && let Some(tokens_slice) = tokens.get(current_len..)
-            && let Some(len) = self.match_base(base, tokens_slice, classes)
+        if ctx.max > 0
+            && let Some(tokens_slice) = ctx.tokens.get(ctx.current_len..)
+            && let Some(len) = self.match_base(ctx.base, tokens_slice, ctx.classes)
             && len > 0
         {
-            let next_min = min.saturating_sub(1);
-            self.find_repeated_matches(
-                base,
-                tokens,
-                classes,
-                next_min,
-                max - 1,
-                current_len + len,
-                results,
-            );
+            let next_min = ctx.min.saturating_sub(1);
+            let mut next_ctx = RepeatContext {
+                base: ctx.base,
+                tokens: ctx.tokens,
+                classes: ctx.classes,
+                min: next_min,
+                max: ctx.max - 1,
+                current_len: ctx.current_len + len,
+                results: ctx.results,
+            };
+            self.find_repeated_matches(&mut next_ctx);
         }
     }
 
@@ -389,28 +389,30 @@ impl SoundMatcherPattern {
             Quantifier::ZeroOrMore => {
                 match_lengths.push(0);
                 if let Some(tokens_slice) = tokens.get(current_len..) {
-                    self.find_repeated_matches(
-                        &el.base,
-                        tokens_slice,
+                    let mut ctx = RepeatContext {
+                        base: &el.base,
+                        tokens: tokens_slice,
                         classes,
-                        1,
-                        usize::MAX,
-                        0,
-                        &mut match_lengths,
-                    );
+                        min: 1,
+                        max: usize::MAX,
+                        current_len: 0,
+                        results: &mut match_lengths,
+                    };
+                    self.find_repeated_matches(&mut ctx);
                 }
             }
             Quantifier::OneOrMore => {
                 if let Some(tokens_slice) = tokens.get(current_len..) {
-                    self.find_repeated_matches(
-                        &el.base,
-                        tokens_slice,
+                    let mut ctx = RepeatContext {
+                        base: &el.base,
+                        tokens: tokens_slice,
                         classes,
-                        1,
-                        usize::MAX,
-                        0,
-                        &mut match_lengths,
-                    );
+                        min: 1,
+                        max: usize::MAX,
+                        current_len: 0,
+                        results: &mut match_lengths,
+                    };
+                    self.find_repeated_matches(&mut ctx);
                 }
             }
         }
