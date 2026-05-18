@@ -23,17 +23,19 @@ pub struct IpaSystem {
     alias_map: HashMap<String, String>,
 }
 
-
-
 impl Default for IpaSystem {
     fn default() -> Self {
         // Since DEFAULT_SYSTEM is baked into the binary via include_str!,
         // it is expected to be valid. If it's not, we fallback to an empty system
         // to avoid panicking during static initialization.
-        DEFAULT_SYSTEM.as_ref().ok().cloned().unwrap_or_else(|| Self {
-            dataset: HashMap::new(),
-            alias_map: HashMap::new(),
-        })
+        DEFAULT_SYSTEM
+            .as_ref()
+            .ok()
+            .cloned()
+            .unwrap_or_else(|| Self {
+                dataset: HashMap::new(),
+                alias_map: HashMap::new(),
+            })
     }
 }
 
@@ -141,7 +143,10 @@ pub fn get_phoneme_data(symbol: &str) -> Option<&PhonemeData> {
 /// Dynamically combines a base phoneme and a modifier to produce an updated feature set using the default IPA system.
 #[must_use]
 pub fn combine_with_modifier(base: &str, modifier: &str) -> Option<Vec<SpeFeature>> {
-    DEFAULT_SYSTEM.as_ref().ok()?.combine_with_modifier(base, modifier)
+    DEFAULT_SYSTEM
+        .as_ref()
+        .ok()?
+        .combine_with_modifier(base, modifier)
 }
 pub mod ipa_string;
 pub use ipa_string::IpaString;
