@@ -31,7 +31,7 @@ fn test_get_features() {
         n_data.features,
         vec![
             SpeFeature::Plus(Feature::Nasal),
-            SpeFeature::Plus(Feature::Voice),
+            SpeFeature::Plus(Feature::Voiced),
             SpeFeature::Plus(Feature::Coronal),
             SpeFeature::Plus(Feature::Anterior)
         ]
@@ -45,7 +45,7 @@ fn test_get_features() {
         g_data.features,
         vec![
             SpeFeature::Minus(Feature::Nasal),
-            SpeFeature::Plus(Feature::Voice),
+            SpeFeature::Plus(Feature::Voiced),
             SpeFeature::Minus(Feature::Coronal),
             SpeFeature::Plus(Feature::High),
             SpeFeature::Plus(Feature::Back)
@@ -64,7 +64,7 @@ fn test_combine_with_modifier() {
         .combine_with_modifier("n", "˜")
         .expect("Failed to combine");
 
-    // Original 'n' features were: ["+nasal", "+voice", "+coronal", "+anterior"]
+    // Original 'n' features were: ["+nasal", "+voiced", "+coronal", "+anterior"]
     // Added by '˜': ["+nasalized"]
     assert!(combined_features.contains(&SpeFeature::Plus(Feature::Nasal)));
     assert!(combined_features.contains(&SpeFeature::Plus(Feature::Nasalized)));
@@ -74,7 +74,7 @@ fn test_combine_with_modifier() {
         .combine_with_modifier("g", "~")
         .expect("Failed to combine with aliases");
 
-    // Original 'ɡ' features were: ["-nasal", "+voice", "-coronal", "+high", "+back"]
+    // Original 'ɡ' features were: ["-nasal", "+voiced", "-coronal", "+high", "+back"]
     // Added by '~' (which is alias for '˜'): ["+nasalized"]
     assert!(combined_features_alias.contains(&SpeFeature::Minus(Feature::Nasal)));
     assert!(combined_features_alias.contains(&SpeFeature::Plus(Feature::Nasalized)));

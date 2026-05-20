@@ -137,7 +137,6 @@ fn parse_feature_class(
                         sign = fd_inner.as_str() == "+";
                     } else if fd_inner.as_rule() == Rule::feature_name {
                         feature_name = match fd_inner.as_str() {
-                            "voiced" | "voice" => "voice",
                             x => x,
                         };
                     }

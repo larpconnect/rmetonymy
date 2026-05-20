@@ -2,9 +2,9 @@
   "p": {
     "type": "consonant",
     "features": [
-      "+labial",
       "+bilabial",
       "+consonantal",
+      "+labial",
       "+stop"
     ],
     "place": [
@@ -19,11 +19,11 @@
   "b": {
     "type": "consonant",
     "features": [
-      "+labial",
       "+bilabial",
       "+consonantal",
+      "+labial",
       "+stop",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "bilabial"
@@ -37,9 +37,9 @@
   "t": {
     "type": "consonant",
     "features": [
-      "+coronal",
       "+anterior",
       "+consonantal",
+      "+coronal",
       "+stop"
     ],
     "place": [
@@ -54,11 +54,11 @@
   "d": {
     "type": "consonant",
     "features": [
-      "+coronal",
       "+anterior",
       "+consonantal",
+      "+coronal",
       "+stop",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "alveolar"
@@ -72,8 +72,8 @@
   "ʈ": {
     "type": "consonant",
     "features": [
-      "+coronal",
       "+consonantal",
+      "+coronal",
       "+stop"
     ],
     "place": [
@@ -88,10 +88,10 @@
   "ɖ": {
     "type": "consonant",
     "features": [
-      "+coronal",
       "+consonantal",
+      "+coronal",
       "+stop",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "retroflex"
@@ -105,10 +105,10 @@
   "c": {
     "type": "consonant",
     "features": [
-      "+dorsal",
-      "+high",
-      "+front",
       "+consonantal",
+      "+dorsal",
+      "+front",
+      "+high",
       "+stop"
     ],
     "place": [
@@ -123,12 +123,12 @@
   "ɟ": {
     "type": "consonant",
     "features": [
-      "+dorsal",
-      "+high",
-      "+front",
       "+consonantal",
+      "+dorsal",
+      "+front",
+      "+high",
       "+stop",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "palatal"
@@ -142,10 +142,10 @@
   "k": {
     "type": "consonant",
     "features": [
-      "+dorsal",
-      "+high",
       "+back",
       "+consonantal",
+      "+dorsal",
+      "+high",
       "+stop"
     ],
     "place": [
@@ -160,12 +160,12 @@
   "ɡ": {
     "type": "consonant",
     "features": [
-      "+dorsal",
-      "+high",
       "+back",
       "+consonantal",
+      "+dorsal",
+      "+high",
       "+stop",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "velar"
@@ -181,10 +181,10 @@
   "q": {
     "type": "consonant",
     "features": [
-      "+dorsal",
-      "+low",
       "+back",
       "+consonantal",
+      "+dorsal",
+      "+low",
       "+stop"
     ],
     "place": [
@@ -199,12 +199,12 @@
   "ɢ": {
     "type": "consonant",
     "features": [
-      "+dorsal",
-      "+low",
       "+back",
       "+consonantal",
+      "+dorsal",
+      "+low",
       "+stop",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "uvular"
@@ -219,8 +219,8 @@
     "type": "consonant",
     "features": [
       "+consonantal",
-      "+stop",
-      "+constricted_glottis"
+      "+constricted_glottis",
+      "+stop"
     ],
     "place": [
       "glottal"
@@ -234,12 +234,12 @@
   "m": {
     "type": "consonant",
     "features": [
-      "+labial",
       "+bilabial",
       "+consonantal",
-      "+sonorant",
+      "+labial",
       "+nasal",
-      "+voice"
+      "+sonorant",
+      "+voiced"
     ],
     "place": [
       "bilabial"
@@ -253,12 +253,12 @@
   "ɱ": {
     "type": "consonant",
     "features": [
+      "+consonantal",
       "+labial",
       "+labiodental",
-      "+consonantal",
-      "+sonorant",
       "+nasal",
-      "+voice"
+      "+sonorant",
+      "+voiced"
     ],
     "place": [
       "labiodental"
@@ -272,12 +272,12 @@
   "n": {
     "type": "consonant",
     "features": [
-      "+coronal",
       "+anterior",
       "+consonantal",
-      "+sonorant",
+      "+coronal",
       "+nasal",
-      "+voice"
+      "+sonorant",
+      "+voiced"
     ],
     "place": [
       "alveolar"
@@ -291,11 +291,11 @@
   "ɳ": {
     "type": "consonant",
     "features": [
-      "+coronal",
       "+consonantal",
-      "+sonorant",
+      "+coronal",
       "+nasal",
-      "+voice"
+      "+sonorant",
+      "+voiced"
     ],
     "place": [
       "retroflex"
@@ -309,13 +309,13 @@
   "ɲ": {
     "type": "consonant",
     "features": [
-      "+dorsal",
-      "+high",
-      "+front",
       "+consonantal",
-      "+sonorant",
+      "+dorsal",
+      "+front",
+      "+high",
       "+nasal",
-      "+voice"
+      "+sonorant",
+      "+voiced"
     ],
     "place": [
       "palatal"
@@ -329,13 +329,13 @@
   "ŋ": {
     "type": "consonant",
     "features": [
-      "+dorsal",
-      "+high",
       "+back",
       "+consonantal",
-      "+sonorant",
+      "+dorsal",
+      "+high",
       "+nasal",
-      "+voice"
+      "+sonorant",
+      "+voiced"
     ],
     "place": [
       "velar"
@@ -349,13 +349,13 @@
   "ɴ": {
     "type": "consonant",
     "features": [
-      "+dorsal",
-      "+low",
       "+back",
       "+consonantal",
-      "+sonorant",
+      "+dorsal",
+      "+low",
       "+nasal",
-      "+voice"
+      "+sonorant",
+      "+voiced"
     ],
     "place": [
       "uvular"
@@ -369,13 +369,13 @@
   "ʙ": {
     "type": "consonant",
     "features": [
-      "+labial",
       "+bilabial",
       "+consonantal",
-      "+sonorant",
       "+continuant",
+      "+labial",
+      "+sonorant",
       "+trill",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "bilabial"
@@ -389,13 +389,15 @@
   "r": {
     "type": "consonant",
     "features": [
-      "+coronal",
       "+anterior",
       "+consonantal",
-      "+sonorant",
       "+continuant",
+      "+coronal",
+      "+liquid",
+      "+rhotic",
+      "+sonorant",
       "+trill",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "alveolar"
@@ -409,14 +411,16 @@
   "ʀ": {
     "type": "consonant",
     "features": [
-      "+dorsal",
-      "+low",
       "+back",
       "+consonantal",
-      "+sonorant",
       "+continuant",
+      "+dorsal",
+      "+liquid",
+      "+low",
+      "+rhotic",
+      "+sonorant",
       "+trill",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "uvular"
@@ -430,13 +434,13 @@
   "ⱱ": {
     "type": "consonant",
     "features": [
+      "+consonantal",
+      "+continuant",
       "+labial",
       "+labiodental",
-      "+consonantal",
       "+sonorant",
-      "+continuant",
       "+tap",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "labiodental"
@@ -450,13 +454,15 @@
   "ɾ": {
     "type": "consonant",
     "features": [
-      "+coronal",
       "+anterior",
       "+consonantal",
-      "+sonorant",
       "+continuant",
+      "+coronal",
+      "+liquid",
+      "+rhotic",
+      "+sonorant",
       "+tap",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "alveolar"
@@ -470,12 +476,14 @@
   "ɽ": {
     "type": "consonant",
     "features": [
-      "+coronal",
       "+consonantal",
-      "+sonorant",
       "+continuant",
+      "+coronal",
+      "+liquid",
+      "+rhotic",
+      "+sonorant",
       "+tap",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "retroflex"
@@ -489,11 +497,11 @@
   "ɸ": {
     "type": "consonant",
     "features": [
-      "+labial",
       "+bilabial",
       "+consonantal",
       "+continuant",
-      "+delayed_release"
+      "+delayed",
+      "+labial"
     ],
     "place": [
       "bilabial"
@@ -507,12 +515,12 @@
   "β": {
     "type": "consonant",
     "features": [
-      "+labial",
       "+bilabial",
       "+consonantal",
       "+continuant",
-      "+delayed_release",
-      "+voice"
+      "+delayed",
+      "+labial",
+      "+voiced"
     ],
     "place": [
       "bilabial"
@@ -526,11 +534,11 @@
   "f": {
     "type": "consonant",
     "features": [
-      "+labial",
-      "+labiodental",
       "+consonantal",
       "+continuant",
-      "+delayed_release"
+      "+delayed",
+      "+labial",
+      "+labiodental"
     ],
     "place": [
       "labiodental"
@@ -544,12 +552,12 @@
   "v": {
     "type": "consonant",
     "features": [
-      "+labial",
-      "+labiodental",
       "+consonantal",
       "+continuant",
-      "+delayed_release",
-      "+voice"
+      "+delayed",
+      "+labial",
+      "+labiodental",
+      "+voiced"
     ],
     "place": [
       "labiodental"
@@ -563,12 +571,12 @@
   "θ": {
     "type": "consonant",
     "features": [
-      "+coronal",
       "+anterior",
-      "+distributed",
       "+consonantal",
       "+continuant",
-      "+delayed_release"
+      "+coronal",
+      "+delayed",
+      "+distributed"
     ],
     "place": [
       "dental"
@@ -582,13 +590,13 @@
   "ð": {
     "type": "consonant",
     "features": [
-      "+coronal",
       "+anterior",
-      "+distributed",
       "+consonantal",
       "+continuant",
-      "+delayed_release",
-      "+voice"
+      "+coronal",
+      "+delayed",
+      "+distributed",
+      "+voiced"
     ],
     "place": [
       "dental"
@@ -602,11 +610,11 @@
   "s": {
     "type": "consonant",
     "features": [
-      "+coronal",
       "+anterior",
       "+consonantal",
       "+continuant",
-      "+delayed_release",
+      "+coronal",
+      "+delayed",
       "+strident"
     ],
     "place": [
@@ -621,13 +629,13 @@
   "z": {
     "type": "consonant",
     "features": [
-      "+coronal",
       "+anterior",
       "+consonantal",
       "+continuant",
-      "+delayed_release",
-      "+voice",
-      "+strident"
+      "+coronal",
+      "+delayed",
+      "+strident",
+      "+voiced"
     ],
     "place": [
       "alveolar"
@@ -641,11 +649,11 @@
   "ʃ": {
     "type": "consonant",
     "features": [
-      "+coronal",
-      "+distributed",
       "+consonantal",
       "+continuant",
-      "+delayed_release",
+      "+coronal",
+      "+delayed",
+      "+distributed",
       "+strident"
     ],
     "place": [
@@ -660,13 +668,13 @@
   "ʒ": {
     "type": "consonant",
     "features": [
-      "+coronal",
-      "+distributed",
       "+consonantal",
       "+continuant",
-      "+delayed_release",
-      "+voice",
-      "+strident"
+      "+coronal",
+      "+delayed",
+      "+distributed",
+      "+strident",
+      "+voiced"
     ],
     "place": [
       "postalveolar"
@@ -680,10 +688,10 @@
   "ʂ": {
     "type": "consonant",
     "features": [
-      "+coronal",
       "+consonantal",
       "+continuant",
-      "+delayed_release",
+      "+coronal",
+      "+delayed",
       "+strident"
     ],
     "place": [
@@ -698,12 +706,12 @@
   "ʐ": {
     "type": "consonant",
     "features": [
-      "+coronal",
       "+consonantal",
       "+continuant",
-      "+delayed_release",
-      "+voice",
-      "+strident"
+      "+coronal",
+      "+delayed",
+      "+strident",
+      "+voiced"
     ],
     "place": [
       "retroflex"
@@ -717,12 +725,12 @@
   "ç": {
     "type": "consonant",
     "features": [
-      "+dorsal",
-      "+high",
-      "+front",
       "+consonantal",
       "+continuant",
-      "+delayed_release"
+      "+delayed",
+      "+dorsal",
+      "+front",
+      "+high"
     ],
     "place": [
       "palatal"
@@ -736,13 +744,13 @@
   "ʝ": {
     "type": "consonant",
     "features": [
-      "+dorsal",
-      "+high",
-      "+front",
       "+consonantal",
       "+continuant",
-      "+delayed_release",
-      "+voice"
+      "+delayed",
+      "+dorsal",
+      "+front",
+      "+high",
+      "+voiced"
     ],
     "place": [
       "palatal"
@@ -756,12 +764,12 @@
   "x": {
     "type": "consonant",
     "features": [
-      "+dorsal",
-      "+high",
       "+back",
       "+consonantal",
       "+continuant",
-      "+delayed_release"
+      "+delayed",
+      "+dorsal",
+      "+high"
     ],
     "place": [
       "velar"
@@ -775,13 +783,13 @@
   "ɣ": {
     "type": "consonant",
     "features": [
-      "+dorsal",
-      "+high",
       "+back",
       "+consonantal",
       "+continuant",
-      "+delayed_release",
-      "+voice"
+      "+delayed",
+      "+dorsal",
+      "+high",
+      "+voiced"
     ],
     "place": [
       "velar"
@@ -795,12 +803,12 @@
   "χ": {
     "type": "consonant",
     "features": [
-      "+dorsal",
-      "+low",
       "+back",
       "+consonantal",
       "+continuant",
-      "+delayed_release"
+      "+delayed",
+      "+dorsal",
+      "+low"
     ],
     "place": [
       "uvular"
@@ -814,13 +822,15 @@
   "ʁ": {
     "type": "consonant",
     "features": [
-      "+dorsal",
-      "+low",
       "+back",
       "+consonantal",
       "+continuant",
-      "+delayed_release",
-      "+voice"
+      "+delayed",
+      "+dorsal",
+      "+liquid",
+      "+low",
+      "+rhotic",
+      "+voiced"
     ],
     "place": [
       "uvular"
@@ -834,11 +844,11 @@
   "ħ": {
     "type": "consonant",
     "features": [
-      "+pharyngeal",
-      "+radical",
       "+consonantal",
       "+continuant",
-      "+delayed_release"
+      "+delayed",
+      "+pharyngeal",
+      "+radical"
     ],
     "place": [
       "pharyngeal"
@@ -852,12 +862,12 @@
   "ʕ": {
     "type": "consonant",
     "features": [
-      "+pharyngeal",
-      "+radical",
       "+consonantal",
       "+continuant",
-      "+delayed_release",
-      "+voice"
+      "+delayed",
+      "+pharyngeal",
+      "+radical",
+      "+voiced"
     ],
     "place": [
       "pharyngeal"
@@ -873,7 +883,7 @@
     "features": [
       "+consonantal",
       "+continuant",
-      "+delayed_release",
+      "+delayed",
       "+spread_glottis"
     ],
     "place": [
@@ -890,9 +900,9 @@
     "features": [
       "+consonantal",
       "+continuant",
-      "+delayed_release",
-      "+voice",
-      "+spread_glottis"
+      "+delayed",
+      "+spread_glottis",
+      "+voiced"
     ],
     "place": [
       "glottal"
@@ -906,12 +916,13 @@
   "ɬ": {
     "type": "consonant",
     "features": [
-      "+coronal",
       "+anterior",
       "+consonantal",
       "+continuant",
-      "+delayed_release",
-      "+lateral"
+      "+coronal",
+      "+delayed",
+      "+lateral",
+      "+liquid"
     ],
     "place": [
       "alveolar"
@@ -926,13 +937,14 @@
   "ɮ": {
     "type": "consonant",
     "features": [
-      "+coronal",
       "+anterior",
       "+consonantal",
       "+continuant",
-      "+delayed_release",
+      "+coronal",
+      "+delayed",
       "+lateral",
-      "+voice"
+      "+liquid",
+      "+voiced"
     ],
     "place": [
       "alveolar"
@@ -947,12 +959,12 @@
   "ʋ": {
     "type": "consonant",
     "features": [
+      "+approximant",
+      "+continuant",
       "+labial",
       "+labiodental",
       "+sonorant",
-      "+continuant",
-      "+approximant",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "labiodental"
@@ -966,12 +978,14 @@
   "ɹ": {
     "type": "consonant",
     "features": [
-      "+coronal",
       "+anterior",
-      "+sonorant",
-      "+continuant",
       "+approximant",
-      "+voice"
+      "+continuant",
+      "+coronal",
+      "+liquid",
+      "+rhotic",
+      "+sonorant",
+      "+voiced"
     ],
     "place": [
       "alveolar"
@@ -985,11 +999,13 @@
   "ɻ": {
     "type": "consonant",
     "features": [
-      "+coronal",
-      "+sonorant",
-      "+continuant",
       "+approximant",
-      "+voice"
+      "+continuant",
+      "+coronal",
+      "+liquid",
+      "+rhotic",
+      "+sonorant",
+      "+voiced"
     ],
     "place": [
       "retroflex"
@@ -1003,13 +1019,14 @@
   "j": {
     "type": "consonant",
     "features": [
-      "+dorsal",
-      "+high",
-      "+front",
-      "+sonorant",
-      "+continuant",
       "+approximant",
-      "+voice"
+      "+continuant",
+      "+dorsal",
+      "+front",
+      "+glide",
+      "+high",
+      "+sonorant",
+      "+voiced"
     ],
     "place": [
       "palatal"
@@ -1023,13 +1040,14 @@
   "ɰ": {
     "type": "consonant",
     "features": [
-      "+dorsal",
-      "+high",
-      "+back",
-      "+sonorant",
-      "+continuant",
       "+approximant",
-      "+voice"
+      "+back",
+      "+continuant",
+      "+dorsal",
+      "+glide",
+      "+high",
+      "+sonorant",
+      "+voiced"
     ],
     "place": [
       "velar"
@@ -1043,14 +1061,15 @@
   "l": {
     "type": "consonant",
     "features": [
-      "+coronal",
       "+anterior",
-      "+consonantal",
-      "+sonorant",
-      "+continuant",
       "+approximant",
+      "+consonantal",
+      "+continuant",
+      "+coronal",
       "+lateral",
-      "+voice"
+      "+liquid",
+      "+sonorant",
+      "+voiced"
     ],
     "place": [
       "alveolar"
@@ -1065,13 +1084,14 @@
   "ɭ": {
     "type": "consonant",
     "features": [
-      "+coronal",
-      "+consonantal",
-      "+sonorant",
-      "+continuant",
       "+approximant",
+      "+consonantal",
+      "+continuant",
+      "+coronal",
       "+lateral",
-      "+voice"
+      "+liquid",
+      "+sonorant",
+      "+voiced"
     ],
     "place": [
       "retroflex"
@@ -1086,15 +1106,16 @@
   "ʎ": {
     "type": "consonant",
     "features": [
-      "+dorsal",
-      "+high",
-      "+front",
-      "+consonantal",
-      "+sonorant",
-      "+continuant",
       "+approximant",
+      "+consonantal",
+      "+continuant",
+      "+dorsal",
+      "+front",
+      "+high",
       "+lateral",
-      "+voice"
+      "+liquid",
+      "+sonorant",
+      "+voiced"
     ],
     "place": [
       "palatal"
@@ -1109,15 +1130,16 @@
   "ʟ": {
     "type": "consonant",
     "features": [
-      "+dorsal",
-      "+high",
+      "+approximant",
       "+back",
       "+consonantal",
-      "+sonorant",
       "+continuant",
-      "+approximant",
+      "+dorsal",
+      "+high",
       "+lateral",
-      "+voice"
+      "+liquid",
+      "+sonorant",
+      "+voiced"
     ],
     "place": [
       "velar"
@@ -1132,10 +1154,10 @@
   "ʘ": {
     "type": "consonant",
     "features": [
-      "+labial",
       "+bilabial",
       "+consonantal",
-      "+delayed_release"
+      "+delayed",
+      "+labial"
     ],
     "place": [
       "bilabial"
@@ -1149,11 +1171,11 @@
   "ǀ": {
     "type": "consonant",
     "features": [
-      "+coronal",
       "+anterior",
-      "+distributed",
       "+consonantal",
-      "+delayed_release"
+      "+coronal",
+      "+delayed",
+      "+distributed"
     ],
     "place": [
       "dental"
@@ -1167,10 +1189,10 @@
   "ǃ": {
     "type": "consonant",
     "features": [
-      "+coronal",
       "+anterior",
       "+consonantal",
-      "+delayed_release"
+      "+coronal",
+      "+delayed"
     ],
     "place": [
       "alveolar"
@@ -1184,11 +1206,11 @@
   "ǂ": {
     "type": "consonant",
     "features": [
-      "+dorsal",
-      "+high",
-      "+front",
       "+consonantal",
-      "+delayed_release"
+      "+delayed",
+      "+dorsal",
+      "+front",
+      "+high"
     ],
     "place": [
       "palatal"
@@ -1202,10 +1224,10 @@
   "ǁ": {
     "type": "consonant",
     "features": [
-      "+coronal",
       "+anterior",
       "+consonantal",
-      "+delayed_release",
+      "+coronal",
+      "+delayed",
       "+lateral"
     ],
     "place": [
@@ -1220,12 +1242,12 @@
   "ɓ": {
     "type": "consonant",
     "features": [
-      "+labial",
       "+bilabial",
       "+consonantal",
+      "+constricted_glottis",
+      "+labial",
       "+stop",
-      "+voice",
-      "+constricted_glottis"
+      "+voiced"
     ],
     "place": [
       "bilabial"
@@ -1239,12 +1261,12 @@
   "ɗ": {
     "type": "consonant",
     "features": [
-      "+coronal",
       "+anterior",
       "+consonantal",
+      "+constricted_glottis",
+      "+coronal",
       "+stop",
-      "+voice",
-      "+constricted_glottis"
+      "+voiced"
     ],
     "place": [
       "alveolar"
@@ -1258,11 +1280,11 @@
   "ᶑ": {
     "type": "consonant",
     "features": [
-      "+coronal",
       "+consonantal",
+      "+constricted_glottis",
+      "+coronal",
       "+stop",
-      "+voice",
-      "+constricted_glottis"
+      "+voiced"
     ],
     "place": [
       "retroflex"
@@ -1276,13 +1298,13 @@
   "ʄ": {
     "type": "consonant",
     "features": [
-      "+dorsal",
-      "+high",
-      "+front",
       "+consonantal",
+      "+constricted_glottis",
+      "+dorsal",
+      "+front",
+      "+high",
       "+stop",
-      "+voice",
-      "+constricted_glottis"
+      "+voiced"
     ],
     "place": [
       "palatal"
@@ -1296,13 +1318,13 @@
   "ɠ": {
     "type": "consonant",
     "features": [
-      "+dorsal",
-      "+high",
       "+back",
       "+consonantal",
+      "+constricted_glottis",
+      "+dorsal",
+      "+high",
       "+stop",
-      "+voice",
-      "+constricted_glottis"
+      "+voiced"
     ],
     "place": [
       "velar"
@@ -1316,13 +1338,13 @@
   "ʛ": {
     "type": "consonant",
     "features": [
-      "+dorsal",
-      "+low",
       "+back",
       "+consonantal",
+      "+constricted_glottis",
+      "+dorsal",
+      "+low",
       "+stop",
-      "+voice",
-      "+constricted_glottis"
+      "+voiced"
     ],
     "place": [
       "uvular"
@@ -1336,11 +1358,11 @@
   "pʼ": {
     "type": "consonant",
     "features": [
-      "+labial",
       "+bilabial",
       "+consonantal",
-      "+stop",
-      "+constricted_glottis"
+      "+constricted_glottis",
+      "+labial",
+      "+stop"
     ],
     "place": [
       "bilabial"
@@ -1354,11 +1376,11 @@
   "tʼ": {
     "type": "consonant",
     "features": [
-      "+coronal",
       "+anterior",
       "+consonantal",
-      "+stop",
-      "+constricted_glottis"
+      "+constricted_glottis",
+      "+coronal",
+      "+stop"
     ],
     "place": [
       "alveolar"
@@ -1372,12 +1394,12 @@
   "kʼ": {
     "type": "consonant",
     "features": [
-      "+dorsal",
-      "+high",
       "+back",
       "+consonantal",
-      "+stop",
-      "+constricted_glottis"
+      "+constricted_glottis",
+      "+dorsal",
+      "+high",
+      "+stop"
     ],
     "place": [
       "velar"
@@ -1391,12 +1413,12 @@
   "sʼ": {
     "type": "consonant",
     "features": [
-      "+coronal",
       "+anterior",
       "+consonantal",
-      "+continuant",
-      "+delayed_release",
       "+constricted_glottis",
+      "+continuant",
+      "+coronal",
+      "+delayed",
       "+strident"
     ],
     "place": [
@@ -1412,13 +1434,13 @@
   "i": {
     "type": "vowel",
     "features": [
-      "+syllabic",
-      "+sonorant",
       "+continuant",
-      "+voice",
+      "+front",
       "+high",
+      "+sonorant",
+      "+syllabic",
       "+tense",
-      "+front"
+      "+voiced"
     ],
     "place": [
       "front"
@@ -1432,14 +1454,14 @@
   "y": {
     "type": "vowel",
     "features": [
-      "+syllabic",
-      "+sonorant",
       "+continuant",
-      "+voice",
-      "+high",
-      "+tense",
       "+front",
-      "+round"
+      "+high",
+      "+round",
+      "+sonorant",
+      "+syllabic",
+      "+tense",
+      "+voiced"
     ],
     "place": [
       "front"
@@ -1453,12 +1475,12 @@
   "ɨ": {
     "type": "vowel",
     "features": [
-      "+syllabic",
-      "+sonorant",
       "+continuant",
-      "+voice",
       "+high",
-      "+tense"
+      "+sonorant",
+      "+syllabic",
+      "+tense",
+      "+voiced"
     ],
     "place": [
       "central"
@@ -1472,13 +1494,13 @@
   "ʉ": {
     "type": "vowel",
     "features": [
-      "+syllabic",
-      "+sonorant",
       "+continuant",
-      "+voice",
       "+high",
+      "+round",
+      "+sonorant",
+      "+syllabic",
       "+tense",
-      "+round"
+      "+voiced"
     ],
     "place": [
       "central"
@@ -1492,13 +1514,13 @@
   "ɯ": {
     "type": "vowel",
     "features": [
-      "+syllabic",
-      "+sonorant",
+      "+back",
       "+continuant",
-      "+voice",
       "+high",
+      "+sonorant",
+      "+syllabic",
       "+tense",
-      "+back"
+      "+voiced"
     ],
     "place": [
       "back"
@@ -1512,14 +1534,14 @@
   "u": {
     "type": "vowel",
     "features": [
-      "+syllabic",
-      "+sonorant",
-      "+continuant",
-      "+voice",
-      "+high",
-      "+tense",
       "+back",
-      "+round"
+      "+continuant",
+      "+high",
+      "+round",
+      "+sonorant",
+      "+syllabic",
+      "+tense",
+      "+voiced"
     ],
     "place": [
       "back"
@@ -1533,12 +1555,12 @@
   "ɪ": {
     "type": "vowel",
     "features": [
-      "+syllabic",
-      "+sonorant",
       "+continuant",
-      "+voice",
+      "+front",
       "+high",
-      "+front"
+      "+sonorant",
+      "+syllabic",
+      "+voiced"
     ],
     "place": [
       "front"
@@ -1552,13 +1574,13 @@
   "ʏ": {
     "type": "vowel",
     "features": [
-      "+syllabic",
-      "+sonorant",
       "+continuant",
-      "+voice",
-      "+high",
       "+front",
-      "+round"
+      "+high",
+      "+round",
+      "+sonorant",
+      "+syllabic",
+      "+voiced"
     ],
     "place": [
       "front"
@@ -1572,13 +1594,13 @@
   "ʊ": {
     "type": "vowel",
     "features": [
-      "+syllabic",
-      "+sonorant",
-      "+continuant",
-      "+voice",
-      "+high",
       "+back",
-      "+round"
+      "+continuant",
+      "+high",
+      "+round",
+      "+sonorant",
+      "+syllabic",
+      "+voiced"
     ],
     "place": [
       "back"
@@ -1592,12 +1614,12 @@
   "e": {
     "type": "vowel",
     "features": [
-      "+syllabic",
-      "+sonorant",
       "+continuant",
-      "+voice",
+      "+front",
+      "+sonorant",
+      "+syllabic",
       "+tense",
-      "+front"
+      "+voiced"
     ],
     "place": [
       "front"
@@ -1611,13 +1633,13 @@
   "ø": {
     "type": "vowel",
     "features": [
-      "+syllabic",
-      "+sonorant",
       "+continuant",
-      "+voice",
-      "+tense",
       "+front",
-      "+round"
+      "+round",
+      "+sonorant",
+      "+syllabic",
+      "+tense",
+      "+voiced"
     ],
     "place": [
       "front"
@@ -1631,11 +1653,11 @@
   "ɘ": {
     "type": "vowel",
     "features": [
-      "+syllabic",
-      "+sonorant",
       "+continuant",
-      "+voice",
-      "+tense"
+      "+sonorant",
+      "+syllabic",
+      "+tense",
+      "+voiced"
     ],
     "place": [
       "central"
@@ -1649,12 +1671,12 @@
   "ɵ": {
     "type": "vowel",
     "features": [
-      "+syllabic",
-      "+sonorant",
       "+continuant",
-      "+voice",
+      "+round",
+      "+sonorant",
+      "+syllabic",
       "+tense",
-      "+round"
+      "+voiced"
     ],
     "place": [
       "central"
@@ -1668,12 +1690,12 @@
   "ɤ": {
     "type": "vowel",
     "features": [
-      "+syllabic",
-      "+sonorant",
+      "+back",
       "+continuant",
-      "+voice",
+      "+sonorant",
+      "+syllabic",
       "+tense",
-      "+back"
+      "+voiced"
     ],
     "place": [
       "back"
@@ -1687,13 +1709,13 @@
   "o": {
     "type": "vowel",
     "features": [
-      "+syllabic",
-      "+sonorant",
-      "+continuant",
-      "+voice",
-      "+tense",
       "+back",
-      "+round"
+      "+continuant",
+      "+round",
+      "+sonorant",
+      "+syllabic",
+      "+tense",
+      "+voiced"
     ],
     "place": [
       "back"
@@ -1707,10 +1729,10 @@
   "ə": {
     "type": "vowel",
     "features": [
-      "+syllabic",
-      "+sonorant",
       "+continuant",
-      "+voice"
+      "+sonorant",
+      "+syllabic",
+      "+voiced"
     ],
     "place": [
       "central"
@@ -1724,11 +1746,11 @@
   "ɛ": {
     "type": "vowel",
     "features": [
-      "+syllabic",
-      "+sonorant",
       "+continuant",
-      "+voice",
-      "+front"
+      "+front",
+      "+sonorant",
+      "+syllabic",
+      "+voiced"
     ],
     "place": [
       "front"
@@ -1742,12 +1764,12 @@
   "œ": {
     "type": "vowel",
     "features": [
-      "+syllabic",
-      "+sonorant",
       "+continuant",
-      "+voice",
       "+front",
-      "+round"
+      "+round",
+      "+sonorant",
+      "+syllabic",
+      "+voiced"
     ],
     "place": [
       "front"
@@ -1761,10 +1783,10 @@
   "ɜ": {
     "type": "vowel",
     "features": [
-      "+syllabic",
-      "+sonorant",
       "+continuant",
-      "+voice"
+      "+sonorant",
+      "+syllabic",
+      "+voiced"
     ],
     "place": [
       "central"
@@ -1778,11 +1800,11 @@
   "ɞ": {
     "type": "vowel",
     "features": [
-      "+syllabic",
-      "+sonorant",
       "+continuant",
-      "+voice",
-      "+round"
+      "+round",
+      "+sonorant",
+      "+syllabic",
+      "+voiced"
     ],
     "place": [
       "central"
@@ -1796,11 +1818,11 @@
   "ʌ": {
     "type": "vowel",
     "features": [
-      "+syllabic",
-      "+sonorant",
+      "+back",
       "+continuant",
-      "+voice",
-      "+back"
+      "+sonorant",
+      "+syllabic",
+      "+voiced"
     ],
     "place": [
       "back"
@@ -1814,12 +1836,12 @@
   "ɔ": {
     "type": "vowel",
     "features": [
-      "+syllabic",
-      "+sonorant",
-      "+continuant",
-      "+voice",
       "+back",
-      "+round"
+      "+continuant",
+      "+round",
+      "+sonorant",
+      "+syllabic",
+      "+voiced"
     ],
     "place": [
       "back"
@@ -1833,12 +1855,12 @@
   "æ": {
     "type": "vowel",
     "features": [
-      "+syllabic",
-      "+sonorant",
       "+continuant",
-      "+voice",
+      "+front",
       "+low",
-      "+front"
+      "+sonorant",
+      "+syllabic",
+      "+voiced"
     ],
     "place": [
       "front"
@@ -1852,11 +1874,11 @@
   "ɐ": {
     "type": "vowel",
     "features": [
-      "+syllabic",
-      "+sonorant",
       "+continuant",
-      "+voice",
-      "+low"
+      "+low",
+      "+sonorant",
+      "+syllabic",
+      "+voiced"
     ],
     "place": [
       "central"
@@ -1870,13 +1892,13 @@
   "a": {
     "type": "vowel",
     "features": [
-      "+syllabic",
-      "+sonorant",
       "+continuant",
-      "+voice",
+      "+front",
       "+low",
+      "+sonorant",
+      "+syllabic",
       "+tense",
-      "+front"
+      "+voiced"
     ],
     "place": [
       "front"
@@ -1890,14 +1912,14 @@
   "ɶ": {
     "type": "vowel",
     "features": [
-      "+syllabic",
-      "+sonorant",
       "+continuant",
-      "+voice",
-      "+low",
-      "+tense",
       "+front",
-      "+round"
+      "+low",
+      "+round",
+      "+sonorant",
+      "+syllabic",
+      "+tense",
+      "+voiced"
     ],
     "place": [
       "front"
@@ -1911,13 +1933,13 @@
   "ɑ": {
     "type": "vowel",
     "features": [
-      "+syllabic",
-      "+sonorant",
+      "+back",
       "+continuant",
-      "+voice",
       "+low",
+      "+sonorant",
+      "+syllabic",
       "+tense",
-      "+back"
+      "+voiced"
     ],
     "place": [
       "back"
@@ -1931,14 +1953,14 @@
   "ɒ": {
     "type": "vowel",
     "features": [
-      "+syllabic",
-      "+sonorant",
-      "+continuant",
-      "+voice",
-      "+low",
-      "+tense",
       "+back",
-      "+round"
+      "+continuant",
+      "+low",
+      "+round",
+      "+sonorant",
+      "+syllabic",
+      "+tense",
+      "+voiced"
     ],
     "place": [
       "back"
@@ -1952,10 +1974,10 @@
   "t͡s": {
     "type": "consonant",
     "features": [
-      "+coronal",
       "+anterior",
       "+consonantal",
-      "+delayed_release",
+      "+coronal",
+      "+delayed",
       "+strident"
     ],
     "place": [
@@ -1972,12 +1994,12 @@
   "d͡z": {
     "type": "consonant",
     "features": [
-      "+coronal",
       "+anterior",
       "+consonantal",
-      "+delayed_release",
+      "+coronal",
+      "+delayed",
       "+strident",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "alveolar"
@@ -1993,10 +2015,10 @@
   "t͡ʃ": {
     "type": "consonant",
     "features": [
-      "+coronal",
-      "+distributed",
       "+consonantal",
-      "+delayed_release",
+      "+coronal",
+      "+delayed",
+      "+distributed",
       "+strident"
     ],
     "place": [
@@ -2013,12 +2035,12 @@
   "d͡ʒ": {
     "type": "consonant",
     "features": [
-      "+coronal",
-      "+distributed",
       "+consonantal",
-      "+delayed_release",
+      "+coronal",
+      "+delayed",
+      "+distributed",
       "+strident",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "postalveolar"
@@ -2034,10 +2056,10 @@
   "p͡f": {
     "type": "consonant",
     "features": [
+      "+consonantal",
+      "+delayed",
       "+labial",
       "+labiodental",
-      "+consonantal",
-      "+delayed_release",
       "+strident"
     ],
     "place": [
@@ -2052,12 +2074,12 @@
   "b͡v": {
     "type": "consonant",
     "features": [
+      "+consonantal",
+      "+delayed",
       "+labial",
       "+labiodental",
-      "+consonantal",
-      "+delayed_release",
       "+strident",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "labiodental"
@@ -2071,11 +2093,11 @@
   "k͡x": {
     "type": "consonant",
     "features": [
-      "+dorsal",
-      "+high",
       "+back",
       "+consonantal",
-      "+delayed_release"
+      "+delayed",
+      "+dorsal",
+      "+high"
     ],
     "place": [
       "velar"
@@ -2089,12 +2111,12 @@
   "ɡ͡ɣ": {
     "type": "consonant",
     "features": [
-      "+dorsal",
-      "+high",
       "+back",
       "+consonantal",
-      "+delayed_release",
-      "+voice"
+      "+delayed",
+      "+dorsal",
+      "+high",
+      "+voiced"
     ],
     "place": [
       "velar"
@@ -2108,11 +2130,11 @@
   "q͡χ": {
     "type": "consonant",
     "features": [
-      "+dorsal",
-      "+low",
       "+back",
       "+consonantal",
-      "+delayed_release"
+      "+delayed",
+      "+dorsal",
+      "+low"
     ],
     "place": [
       "uvular"
@@ -2126,12 +2148,12 @@
   "ɽr": {
     "type": "consonant",
     "features": [
-      "+coronal",
       "+consonantal",
-      "+sonorant",
       "+continuant",
+      "+coronal",
+      "+sonorant",
       "+trill",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "retroflex"
@@ -2145,9 +2167,9 @@
   "ʜ": {
     "type": "consonant",
     "features": [
-      "+pharyngeal",
       "+consonantal",
       "+continuant",
+      "+pharyngeal",
       "+trill"
     ],
     "place": [
@@ -2162,11 +2184,11 @@
   "ʢ": {
     "type": "consonant",
     "features": [
-      "+pharyngeal",
       "+consonantal",
       "+continuant",
+      "+pharyngeal",
       "+trill",
-      "+voice"
+      "+voiced"
     ],
     "place": [
       "epiglottal"
@@ -2176,5 +2198,72 @@
     ],
     "aliases": [],
     "sonority": 67
+  },
+  "˞": {
+    "type": "modifier",
+    "added_features": [
+      "+rhotic"
+    ],
+    "removed_features": [],
+    "sonority": 0
+  },
+  "ʴ": {
+    "type": "modifier",
+    "added_features": [
+      "+rhotic"
+    ],
+    "removed_features": [],
+    "sonority": 0
+  },
+  "ɝ": {
+    "type": "vowel",
+    "features": [
+      "+syllabic",
+      "+sonorant",
+      "+continuant",
+      "+voiced",
+      "+rhotic"
+    ],
+    "place": [
+      "central"
+    ],
+    "manner": [
+      "mid"
+    ],
+    "sonority": 90
+  },
+  "ɚ": {
+    "type": "vowel",
+    "features": [
+      "+syllabic",
+      "+sonorant",
+      "+continuant",
+      "+voiced",
+      "+rhotic"
+    ],
+    "place": [
+      "central"
+    ],
+    "manner": [
+      "mid"
+    ],
+    "sonority": 90
+  },
+  "ᶕ": {
+    "type": "vowel",
+    "features": [
+      "+syllabic",
+      "+sonorant",
+      "+continuant",
+      "+voiced",
+      "+rhotic"
+    ],
+    "place": [
+      "central"
+    ],
+    "manner": [
+      "mid"
+    ],
+    "sonority": 90
   }
 }
