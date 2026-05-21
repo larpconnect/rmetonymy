@@ -1,4 +1,3 @@
-use crate::get_entry;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt::Display;
 use std::str::FromStr;
@@ -41,13 +40,31 @@ impl FromStr for IpaString {
         let char_len = char_indices.len();
 
         while i < char_len {
+            let Some(&(start_idx, _)) = char_indices.get(i) else {
+                break;
+            };
+
+            if s.get(start_idx..).is_some_and(|sub| sub.starts_with('.'))
+                || s.get(start_idx..).is_some_and(|sub| sub.starts_with('ˈ'))
+                || s.get(start_idx..).is_some_and(|sub| sub.starts_with('\''))
+                || s.get(start_idx..).is_some_and(|sub| sub.starts_with('ˌ'))
+                || s.get(start_idx..).is_some_and(|sub| sub.starts_with('ː'))
+                || s.get(start_idx..).is_some_and(|sub| sub.starts_with('ˑ'))
+                || s.get(start_idx..).is_some_and(|sub| sub.starts_with('w'))
+                || s.get(start_idx..)
+                    .is_some_and(|sub| sub.starts_with('\u{200B}'))
+            {
+                i += 1;
+                continue;
+            }
+
             let mut matched = false;
             for len in (1..=char_len - i).rev() {
                 let start_idx_bytes = char_indices.get(i).map_or(s.len(), |(idx, _)| *idx);
                 let end_idx_bytes = char_indices.get(i + len).map_or(s.len(), |(idx, _)| *idx);
 
                 if s.get(start_idx_bytes..end_idx_bytes)
-                    .is_some_and(|substr| get_entry(substr).is_some())
+                    .is_some_and(|substr| crate::get_entry(substr).is_some())
                 {
                     i += len;
                     matched = true;

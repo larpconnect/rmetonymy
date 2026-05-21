@@ -1,4 +1,4 @@
-use crate::{IpaString, get_phoneme_data, resolve_alias};
+use crate::{IpaString, get_phoneme_data};
 use data::SpeFeature;
 use data::feature::Feature;
 use std::fmt::Display;
@@ -61,7 +61,7 @@ fn get_sonority(phoneme: &str) -> i32 {
 
 impl IpaWord {
     #[must_use]
-    #[allow(clippy::too_many_lines)]
+    #[expect(clippy::too_many_lines, reason = "complex algorithmic logic")]
     pub fn syllabify(ipa: &IpaString) -> Self {
         let s = ipa.as_str();
         if s.is_empty() {
@@ -104,8 +104,12 @@ impl IpaWord {
                 let start_idx_bytes = char_indices.get(i).map_or(s.len(), |(idx, _)| *idx);
                 let end_idx_bytes = char_indices.get(i + len).map_or(s.len(), |(idx, _)| *idx);
 
-                let substr = &s[start_idx_bytes..end_idx_bytes];
-                if crate::get_entry(substr).is_some() {
+                let substr = s.get(start_idx_bytes..end_idx_bytes).unwrap_or_default();
+                if crate::get_entry(substr).is_some()
+                    || substr == "ː"
+                    || substr == "ˑ"
+                    || substr == "w"
+                {
                     if let Some(data::IpaEntry::Modifier(_)) = crate::get_entry(substr) {
                         if let Some(last) = parsed_segments.last_mut() {
                             if !last.starts_with('.')
