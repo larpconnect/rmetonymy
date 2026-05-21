@@ -10,3 +10,11 @@ serde.workspace = true
 
 [lints]
 workspace = true
+
+[dev-dependencies]
+cucumber.workspace = true
+tokio.workspace = true
+
+[[test]]
+name = "cucumber_syllabification"
+harness = false
