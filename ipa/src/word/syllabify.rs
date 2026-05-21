@@ -60,6 +60,8 @@ fn get_sonority(phoneme: &str) -> i32 {
 }
 
 impl IpaWord {
+    #[must_use]
+    #[allow(clippy::too_many_lines)]
     pub fn syllabify(ipa: &IpaString) -> Self {
         let s = ipa.as_str();
         if s.is_empty() {
@@ -73,18 +75,25 @@ impl IpaWord {
         let mut parsed_segments = Vec::new();
 
         while i < char_len {
-            let start_idx = char_indices[i].0;
+            let Some(&(start_idx, _)) = char_indices.get(i) else {
+                break;
+            };
 
-            if s[start_idx..].starts_with('.') || s[start_idx..].starts_with('\u{200B}') {
+            if s.get(start_idx..).is_some_and(|s| s.starts_with('.'))
+                || s.get(start_idx..)
+                    .is_some_and(|s| s.starts_with('\u{200B}'))
+            {
                 parsed_segments.push(".".to_string());
                 let offset = 1;
                 i += offset;
                 continue;
-            } else if s[start_idx..].starts_with('ˈ') || s[start_idx..].starts_with('\'') {
+            } else if s.get(start_idx..).is_some_and(|s| s.starts_with('ˈ'))
+                || s.get(start_idx..).is_some_and(|s| s.starts_with('\''))
+            {
                 parsed_segments.push("ˈ".to_string());
                 i += 1;
                 continue;
-            } else if s[start_idx..].starts_with('ˌ') {
+            } else if s.get(start_idx..).is_some_and(|s| s.starts_with('ˌ')) {
                 parsed_segments.push("ˌ".to_string());
                 i += 1;
                 continue;
@@ -168,31 +177,35 @@ impl IpaWord {
 
             let mut breaks = Vec::new();
             for v_idx in 0..vowel_indices.len() - 1 {
-                let v1 = vowel_indices[v_idx];
-                let v2 = vowel_indices[v_idx + 1];
+                let Some(&v1) = vowel_indices.get(v_idx) else {
+                    continue;
+                };
+                let Some(&v2) = vowel_indices.get(v_idx + 1) else {
+                    continue;
+                };
                 let consonants_between = v2 - v1 - 1;
 
                 let b_idx = match consonants_between {
                     0 => v1 + 1, // V.V
                     1 => {
-                        let is_short = !is_long_vowel(&group[v1]);
+                        let is_short = !is_long_vowel(group.get(v1).map_or("", String::as_str));
                         let is_stressed = (stress == Stress::PrimaryStress
                             || stress == Stress::SecondaryStress)
                             && v_idx == 0;
-                        let c = &group[v1 + 1];
+                        let c = group.get(v1 + 1).map_or("", String::as_str);
 
                         // "Keep liquids (r and l etc) together with a preceding vowel. So farmer becomes far.mer"
-                        if is_liquid(c) || is_rhotic(c) {
-                            v1 + 2 // VC.V
-                        } else if is_short && is_stressed {
+                        if is_liquid(c) || is_rhotic(c) || (is_short && is_stressed) {
                             v1 + 2 // VC.V
                         } else {
                             v1 + 1 // V.CV
                         }
                     }
                     2 => {
-                        let c1_sonority = get_sonority(&group[v1 + 1]);
-                        let c2_sonority = get_sonority(&group[v1 + 2]);
+                        let c1_sonority =
+                            get_sonority(group.get(v1 + 1).map_or("", String::as_str));
+                        let c2_sonority =
+                            get_sonority(group.get(v1 + 2).map_or("", String::as_str));
 
                         if c1_sonority < c2_sonority {
                             v1 + 1 // V.CCV (Sonority Sequencing Principle)
@@ -220,7 +233,7 @@ impl IpaWord {
                 };
                 final_syllables.push(Syllable {
                     stress: sy_stress,
-                    phonemes: group[start..b].to_vec(),
+                    phonemes: group.get(start..b).unwrap_or_default().to_vec(),
                 });
                 start = b;
             }
@@ -231,7 +244,7 @@ impl IpaWord {
             };
             final_syllables.push(Syllable {
                 stress: sy_stress,
-                phonemes: group[start..].to_vec(),
+                phonemes: group.get(start..).unwrap_or_default().to_vec(),
             });
         }
 
@@ -253,7 +266,7 @@ impl Display for IpaWord {
                 Stress::Unstressed => {}
             }
             for p in &syl.phonemes {
-                write!(f, "{}", p)?;
+                write!(f, "{p}")?;
             }
         }
         Ok(())
