@@ -2406,7 +2406,7 @@
       "approximant"
     ],
     "aliases": [],
-    "sonority": 15
+    "sonority": 75
   },
   "ɫ": {
     "type": "consonant",
@@ -2425,10 +2425,11 @@
       "alveolar"
     ],
     "manner": [
-      "lateral_approximant"
+      "lateral",
+      "approximant"
     ],
     "aliases": [],
-    "sonority": 15
+    "sonority": 67
   },
   "n͡m": {
     "type": "consonant",
@@ -2443,12 +2444,13 @@
       "+voiced"
     ],
     "place": [
-      "labial_alveolar"
+      "bilabial",
+      "alveolar"
     ],
     "manner": [
       "nasal"
     ],
     "aliases": [],
-    "sonority": 20
+    "sonority": 57
   }
 }
