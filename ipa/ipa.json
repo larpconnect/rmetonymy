@@ -2265,5 +2265,190 @@
       "mid"
     ],
     "sonority": 90
+  },
+  "ʰ": {
+    "type": "modifier",
+    "added_features": [
+      "+aspirated"
+    ],
+    "removed_features": [],
+    "sonority": 0
+  },
+  "ː": {
+    "type": "modifier",
+    "added_features": [
+      "+long"
+    ],
+    "removed_features": [],
+    "sonority": 0
+  },
+  "˜": {
+    "type": "modifier",
+    "added_features": [
+      "+nasalized"
+    ],
+    "removed_features": [],
+    "sonority": 0
+  },
+  "ˠ": {
+    "type": "modifier",
+    "added_features": [
+      "+velarized"
+    ],
+    "removed_features": [],
+    "sonority": 0
+  },
+  "ʲ": {
+    "type": "modifier",
+    "added_features": [
+      "+palatalized"
+    ],
+    "removed_features": [],
+    "sonority": 0
+  },
+  "ʷ": {
+    "type": "modifier",
+    "added_features": [
+      "+labialized"
+    ],
+    "removed_features": [],
+    "sonority": 0
+  },
+  "ˀ": {
+    "type": "modifier",
+    "added_features": [
+      "+glottalized"
+    ],
+    "removed_features": [],
+    "sonority": 0
+  },
+  "ˁ": {
+    "type": "modifier",
+    "added_features": [
+      "+pharyngealized"
+    ],
+    "removed_features": [],
+    "sonority": 0
+  },
+  "ˤ": {
+    "type": "modifier",
+    "added_features": [
+      "+pharyngealized"
+    ],
+    "removed_features": [],
+    "sonority": 0
+  },
+  "ˑ": {
+    "type": "modifier",
+    "added_features": [
+      "+half_long"
+    ],
+    "removed_features": [],
+    "sonority": 0
+  },
+  "˘": {
+    "type": "modifier",
+    "added_features": [
+      "+extra_short"
+    ],
+    "removed_features": [],
+    "sonority": 0
+  },
+  "ˬ": {
+    "type": "modifier",
+    "added_features": [
+      "+voiced"
+    ],
+    "removed_features": [],
+    "sonority": 0
+  },
+  "˳": {
+    "type": "modifier",
+    "added_features": [],
+    "removed_features": [
+      "+voiced"
+    ],
+    "sonority": 0
+  },
+  "˚": {
+    "type": "modifier",
+    "added_features": [],
+    "removed_features": [
+      "+voiced"
+    ],
+    "sonority": 0
+  },
+  "˭": {
+    "type": "modifier",
+    "added_features": [],
+    "removed_features": [
+      "+aspirated"
+    ],
+    "sonority": 0
+  },
+  "ʍ": {
+    "type": "consonant",
+    "features": [
+      "+approximant",
+      "+back",
+      "+consonantal",
+      "+continuant",
+      "+dorsal",
+      "+high",
+      "+labial",
+      "+round",
+      "+sonorant"
+    ],
+    "place": [
+      "labiovelar"
+    ],
+    "manner": [
+      "approximant"
+    ],
+    "aliases": [],
+    "sonority": 15
+  },
+  "ɫ": {
+    "type": "consonant",
+    "features": [
+      "+anterior",
+      "+approximant",
+      "+consonantal",
+      "+continuant",
+      "+coronal",
+      "+lateral",
+      "+sonorant",
+      "+voiced",
+      "+velarized"
+    ],
+    "place": [
+      "alveolar"
+    ],
+    "manner": [
+      "lateral_approximant"
+    ],
+    "aliases": [],
+    "sonority": 15
+  },
+  "n͡m": {
+    "type": "consonant",
+    "features": [
+      "+anterior",
+      "+bilabial",
+      "+consonantal",
+      "+coronal",
+      "+labial",
+      "+nasal",
+      "+sonorant",
+      "+voiced"
+    ],
+    "place": [
+      "labial_alveolar"
+    ],
+    "manner": [
+      "nasal"
+    ],
+    "aliases": [],
+    "sonority": 20
   }
 }
