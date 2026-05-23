@@ -40,5 +40,13 @@ pub enum Feature {
     Bilabial,
     Stop,
     Nasalized,
+    ExtraShort,
+    Glottalized,
+    HalfLong,
+    Labialized,
+    Long,
+    Palatalized,
+    Pharyngealized,
+    Velarized,
     // Add any others found in tests
 }
