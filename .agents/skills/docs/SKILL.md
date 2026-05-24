@@ -19,6 +19,6 @@ This skill provides guidelines for generating high-quality technical documentati
 
 ## Specific Guidance
 
-* Prefer that pseudocode be written in mathematical pseudocode. If that is not possible, then use rust.
+* Prefer that pseudocode be written in mathematical pseudocode. If that is not possible, then use Rust.
 * Files should always be UTF-8
 * Files should have frontmatter with their `name`, `description`, and `target_audience` included as fields. 
