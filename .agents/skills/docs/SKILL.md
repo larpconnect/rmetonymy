@@ -7,7 +7,7 @@ description: This skill handles the creation of markdown documents to document t
 
 ## Domain Context
 
-This skill handles the creation of markdown documents to document the system.
+This skill provides guidelines for generating high-quality technical documentation for the system.
 
 ## Technical Constraints
 
