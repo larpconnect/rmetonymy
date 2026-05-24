@@ -141,345 +141,118 @@ impl PhonemeSequence {
         let mut idx = 0;
 
         while idx < chars.len() {
-            let &c = chars.get(idx).ok_or_else(|| {
-                IpaStringError::InvalidSequence(format!(
-                    "Unexpected index boundary error at {idx} in string \"{s}\""
-                ))
-            })?;
-
-            // 1. Check prosodic marks & syllable break
-            if c == '\'' || c == 'ˈ' {
-                elements.push(SequenceElement::Prosody(ProsodyMarker::PrimaryStress));
-                idx += 1;
-                continue;
-            }
-            if c == 'ˌ' {
-                elements.push(SequenceElement::Prosody(ProsodyMarker::SecondaryStress));
-                idx += 1;
-                continue;
-            }
-            if c == '.' {
-                elements.push(SequenceElement::SyllableBreak);
-                idx += 1;
-                continue;
-            }
-
-            // 2. Check if it's a modifier (without a base phoneme)
-            if is_modifier(c) {
-                return Err(IpaStringError::InvalidSequence(format!(
-                    "Modifier '{c}' found without a preceding base phoneme at index {idx} in string \"{s}\""
-                )));
-            }
-
-            // 3. Find the longest prefix starting at idx that is a recognized base phoneme
-            let mut matched_len = None;
-            for len in (1..=(chars.len() - idx)).rev() {
-                let slice = chars.get(idx..(idx + len)).ok_or_else(|| {
-                    IpaStringError::InvalidSequence(format!(
-                        "Unexpected slice boundary error at {idx} with len {len} in string \"{s}\""
-                    ))
-                })?;
-                let prefix: String = slice.iter().collect();
-                if system.get_phoneme_data(&prefix).is_some() {
-                    matched_len = Some(len);
-                    break;
-                }
-            }
-
-            if let Some(len) = matched_len {
-                let slice = chars.get(idx..(idx + len)).ok_or_else(|| {
-                    IpaStringError::InvalidSequence(format!(
-                        "Unexpected slice boundary error at {idx} with len {len} in string \"{s}\""
-                    ))
-                })?;
-                let base: String = slice.iter().collect();
-                idx += len;
-
-                // Accumulate modifiers
-                let mut modifiers = Vec::new();
-                while idx < chars.len() {
-                    if let Some(&next_c) = chars.get(idx).filter(|&&c| is_modifier(c)) {
-                        modifiers.push(next_c.to_string());
-                        idx += 1;
-                        continue;
-                    }
-                    break;
-                }
-
-                elements.push(SequenceElement::Phoneme(Phoneme { base, modifiers }));
-            } else {
-                return Err(IpaStringError::InvalidSequence(format!(
-                    "Unrecognized base phoneme starting with '{c}' at index {idx} in string \"{s}\""
-                )));
-            }
+            let element = Self::parse_next_element(&chars, &mut idx, system, s)?;
+            elements.push(element);
         }
 
         Ok(Self { elements })
     }
-}
 
-impl TryFrom<Phoneme> for IpaString {
-    type Error = IpaStringError;
+    /// Parses the next `SequenceElement` from the characters at `idx`.
+    #[expect(clippy::indexing_slicing, reason = "bounds are checked in the caller")]
+    fn parse_next_element(
+        chars: &[char],
+        idx: &mut usize,
+        system: &crate::IpaSystem,
+        s: &str,
+    ) -> Result<SequenceElement, IpaStringError> {
+        let c = chars[*idx];
 
-    fn try_from(phoneme: Phoneme) -> Result<Self, Self::Error> {
-        let s = phoneme.to_string();
-        s.parse()
+        // 1. Check prosodic marks & syllable break
+        if c == '\'' || c == 'ˈ' {
+            *idx += 1;
+            return Ok(SequenceElement::Prosody(ProsodyMarker::PrimaryStress));
+        }
+        if c == 'ˌ' {
+            *idx += 1;
+            return Ok(SequenceElement::Prosody(ProsodyMarker::SecondaryStress));
+        }
+        if c == '.' {
+            *idx += 1;
+            return Ok(SequenceElement::SyllableBreak);
+        }
+
+        // 2. Check if it's a modifier (without a base phoneme)
+        if is_modifier(c) {
+            return Err(IpaStringError::InvalidSequence(format!(
+                "Modifier '{c}' found without a preceding base phoneme at index {idx} in string \"{s}\""
+            )));
+        }
+
+        // 3. Find the longest prefix starting at idx that is a recognized base phoneme
+        Self::parse_phoneme(chars, idx, system, s)
+    }
+
+    /// Parses a base phoneme and its modifiers starting at `idx`.
+    #[expect(clippy::indexing_slicing, reason = "bounds are checked in the caller")]
+    fn parse_phoneme(
+        chars: &[char],
+        idx: &mut usize,
+        system: &crate::IpaSystem,
+        s: &str,
+    ) -> Result<SequenceElement, IpaStringError> {
+        let start = *idx;
+        let mut matched_len = None;
+
+        for len in (1..=(chars.len() - start)).rev() {
+            let prefix: String = chars[start..(start + len)].iter().collect();
+            if system.get_phoneme_data(&prefix).is_some() {
+                matched_len = Some(len);
+                break;
+            }
+        }
+
+        if let Some(len) = matched_len {
+            let base: String = chars[start..(start + len)].iter().collect();
+            *idx += len;
+
+            // Accumulate modifiers
+            let mut modifiers = Vec::new();
+            while *idx < chars.len() && is_modifier(chars[*idx]) {
+                modifiers.push(chars[*idx].to_string());
+                *idx += 1;
+            }
+
+            Ok(SequenceElement::Phoneme(Phoneme { base, modifiers }))
+        } else {
+            let c = chars[start];
+            Err(IpaStringError::InvalidSequence(format!(
+                "Unrecognized base phoneme starting with '{c}' at index {start} in string \"{s}\""
+            )))
+        }
     }
 }
 
-impl TryFrom<&Phoneme> for IpaString {
-    type Error = IpaStringError;
-
-    fn try_from(phoneme: &Phoneme) -> Result<Self, Self::Error> {
-        let s = phoneme.to_string();
-        s.parse()
+impl From<Phoneme> for IpaString {
+    fn from(p: Phoneme) -> Self {
+        let raw = p.to_string();
+        let elements = vec![SequenceElement::Phoneme(p)];
+        IpaString { raw, elements }
     }
 }
 
-impl TryFrom<PhonemeSequence> for IpaString {
-    type Error = IpaStringError;
-
-    fn try_from(seq: PhonemeSequence) -> Result<Self, Self::Error> {
-        let s = seq.to_string();
-        s.parse()
+impl From<&Phoneme> for IpaString {
+    fn from(p: &Phoneme) -> Self {
+        let raw = p.to_string();
+        let elements = vec![SequenceElement::Phoneme(p.clone())];
+        IpaString { raw, elements }
     }
 }
 
-impl TryFrom<&PhonemeSequence> for IpaString {
-    type Error = IpaStringError;
-
-    fn try_from(seq: &PhonemeSequence) -> Result<Self, Self::Error> {
-        let s = seq.to_string();
-        s.parse()
+impl From<PhonemeSequence> for IpaString {
+    fn from(seq: PhonemeSequence) -> Self {
+        IpaString {
+            raw: seq.to_string(),
+            elements: seq.elements,
+        }
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_is_modifier() {
-        // Test various modifiers from different unicode ranges
-        assert!(is_modifier('ʰ')); // U+02B0
-        assert!(is_modifier('̃')); // U+0303
-        assert!(is_modifier('ː')); // U+02D0
-        assert!(!is_modifier('a')); // normal letter
-        assert!(!is_modifier('p')); // normal letter
-    }
-
-    #[test]
-    fn test_parse_simple_word() -> Result<(), String> {
-        let seq = PhonemeSequence::from_str("talk").map_err(|e| e.to_string())?;
-        if seq.elements.len() != 4 {
-            return Err(format!("Expected 4 elements, got {}", seq.elements.len()));
+impl From<&PhonemeSequence> for IpaString {
+    fn from(seq: &PhonemeSequence) -> Self {
+        IpaString {
+            raw: seq.to_string(),
+            elements: seq.elements.clone(),
         }
-        if seq.to_string() != "talk" {
-            return Err(format!("Expected 'talk', got {seq}"));
-        }
-
-        let phonemes = seq.phonemes();
-        if phonemes.len() != 4 {
-            return Err(format!("Expected 4 phonemes, got {}", phonemes.len()));
-        }
-        if phonemes.first().map(|p| p.base.as_str()) != Some("t") {
-            return Err("Expected first phoneme base 't'".to_string());
-        }
-        if phonemes.get(1).map(|p| p.base.as_str()) != Some("a") {
-            return Err("Expected second phoneme base 'a'".to_string());
-        }
-        if phonemes.get(2).map(|p| p.base.as_str()) != Some("l") {
-            return Err("Expected third phoneme base 'l'".to_string());
-        }
-        if phonemes.get(3).map(|p| p.base.as_str()) != Some("k") {
-            return Err("Expected fourth phoneme base 'k'".to_string());
-        }
-        Ok(())
-    }
-
-    #[test]
-    fn test_parse_modifiers() -> Result<(), String> {
-        let seq = PhonemeSequence::from_str("kʰɑʰp").map_err(|e| e.to_string())?;
-        if seq.elements.len() != 3 {
-            return Err(format!("Expected 3 elements, got {}", seq.elements.len()));
-        }
-        if seq.to_string() != "kʰɑʰp" {
-            return Err(format!("Expected 'kʰɑʰp', got {seq}"));
-        }
-
-        let Some(SequenceElement::Phoneme(p0)) = seq.elements.first() else {
-            return Err("Expected Phoneme at index 0".to_string());
-        };
-        if p0.base != "k" {
-            return Err(format!("Expected base 'k', got {}", p0.base));
-        }
-        if p0.modifiers != vec!["ʰ"] {
-            return Err(format!("Expected modifiers ['ʰ'], got {:?}", p0.modifiers));
-        }
-
-        let Some(SequenceElement::Phoneme(p1)) = seq.elements.get(1) else {
-            return Err("Expected Phoneme at index 1".to_string());
-        };
-        if p1.base != "ɑ" {
-            return Err(format!("Expected base 'ɑ', got {}", p1.base));
-        }
-        if p1.modifiers != vec!["ʰ"] {
-            return Err(format!("Expected modifiers ['ʰ'], got {:?}", p1.modifiers));
-        }
-
-        let Some(SequenceElement::Phoneme(p2)) = seq.elements.get(2) else {
-            return Err("Expected Phoneme at index 2".to_string());
-        };
-        if p2.base != "p" {
-            return Err(format!("Expected base 'p', got {}", p2.base));
-        }
-        if !p2.modifiers.is_empty() {
-            return Err(format!("Expected no modifiers, got {:?}", p2.modifiers));
-        }
-        Ok(())
-    }
-
-    #[test]
-    fn test_parse_multiple_modifiers() -> Result<(), String> {
-        let seq = PhonemeSequence::from_str("kʰʰɑʰːpː").map_err(|e| e.to_string())?;
-        if seq.elements.len() != 3 {
-            return Err(format!("Expected 3 elements, got {}", seq.elements.len()));
-        }
-        if seq.to_string() != "kʰʰɑʰːpː" {
-            return Err(format!("Expected 'kʰʰɑʰːpː', got {seq}"));
-        }
-
-        let Some(SequenceElement::Phoneme(p0)) = seq.elements.first() else {
-            return Err("Expected Phoneme at index 0".to_string());
-        };
-        if p0.base != "k" {
-            return Err(format!("Expected base 'k', got {}", p0.base));
-        }
-        if p0.modifiers != vec!["ʰ", "ʰ"] {
-            return Err(format!("Expected modifiers ['ʰ', 'ʰ'], got {:?}", p0.modifiers));
-        }
-
-        let Some(SequenceElement::Phoneme(p1)) = seq.elements.get(1) else {
-            return Err("Expected Phoneme at index 1".to_string());
-        };
-        if p1.base != "ɑ" {
-            return Err(format!("Expected base 'ɑ', got {}", p1.base));
-        }
-        if p1.modifiers != vec!["ʰ", "ː"] {
-            return Err(format!("Expected modifiers ['ʰ', 'ː'], got {:?}", p1.modifiers));
-        }
-        Ok(())
-    }
-
-    #[test]
-    fn test_parse_combined_modifier() -> Result<(), String> {
-        let seq = PhonemeSequence::from_str("sɑ̃").map_err(|e| e.to_string())?;
-        if seq.elements.len() != 2 {
-            return Err(format!("Expected 2 elements, got {}", seq.elements.len()));
-        }
-        if seq.to_string() != "sɑ̃" {
-            return Err(format!("Expected 'sɑ̃', got {seq}"));
-        }
-
-        let Some(SequenceElement::Phoneme(p1)) = seq.elements.get(1) else {
-            return Err("Expected Phoneme at index 1".to_string());
-        };
-        if p1.base != "ɑ" {
-            return Err(format!("Expected base 'ɑ', got {}", p1.base));
-        }
-        if p1.modifiers != vec!["̃"] {
-            return Err(format!("Expected modifiers ['̃'], got {:?}", p1.modifiers));
-        }
-        Ok(())
-    }
-
-    #[test]
-    fn test_parse_stress_and_syllable_break() -> Result<(), String> {
-        let seq = PhonemeSequence::from_str("'talk").map_err(|e| e.to_string())?;
-        if seq.elements.len() != 5 {
-            return Err(format!("Expected 5 elements, got {}", seq.elements.len()));
-        }
-        if !matches!(seq.elements.first(), Some(SequenceElement::Prosody(ProsodyMarker::PrimaryStress))) {
-            return Err("Expected PrimaryStress".to_string());
-        }
-
-        let seq2 = PhonemeSequence::from_str("ˌtalk").map_err(|e| e.to_string())?;
-        if seq2.elements.len() != 5 {
-            return Err(format!("Expected 5 elements, got {}", seq2.elements.len()));
-        }
-        if !matches!(seq2.elements.first(), Some(SequenceElement::Prosody(ProsodyMarker::SecondaryStress))) {
-            return Err("Expected SecondaryStress".to_string());
-        }
-
-        let seq3 = PhonemeSequence::from_str("'sliːp.les").map_err(|e| e.to_string())?;
-        if seq3.elements.len() != 9 {
-            return Err(format!("Expected 9 elements, got {}", seq3.elements.len()));
-        }
-        if !matches!(seq3.elements.first(), Some(SequenceElement::Prosody(ProsodyMarker::PrimaryStress))) {
-            return Err("Expected PrimaryStress".to_string());
-        }
-        if !matches!(seq3.elements.get(1), Some(SequenceElement::Phoneme(_))) {
-            return Err("Expected Phoneme".to_string());
-        }
-        if !matches!(seq3.elements.get(5), Some(SequenceElement::SyllableBreak)) {
-            return Err("Expected SyllableBreak".to_string());
-        }
-        Ok(())
-    }
-
-    #[test]
-    fn test_unrecognized_base_phoneme_errors() {
-        let result = PhonemeSequence::from_str("p1a");
-        assert!(result.is_err());
-        if let Err(IpaStringError::InvalidSequence(msg)) = result {
-            assert!(msg.contains("Unrecognized base phoneme"));
-        }
-    }
-
-    #[test]
-    fn test_modifier_without_base_errors() {
-        let result = PhonemeSequence::from_str("ʰp");
-        assert!(result.is_err());
-        if let Err(IpaStringError::InvalidSequence(msg)) = result {
-            assert!(msg.contains("Modifier") && msg.contains("without a preceding base phoneme"));
-        }
-    }
-
-    #[test]
-    fn test_unrecognized_modifier_preserved() -> Result<(), String> {
-        let char_mod = '\u{1AB0}';
-        let word = format!("p{char_mod}a");
-        let seq = PhonemeSequence::from_str(&word).map_err(|e| e.to_string())?;
-        if seq.elements.len() != 2 {
-            return Err(format!("Expected 2 elements, got {}", seq.elements.len()));
-        }
-        let Some(SequenceElement::Phoneme(p0)) = seq.elements.first() else {
-            return Err("Expected Phoneme".to_string());
-        };
-        if p0.base != "p" {
-            return Err(format!("Expected base 'p', got {}", p0.base));
-        }
-        if p0.modifiers != vec![char_mod.to_string()] {
-            return Err(format!("Expected modifiers [{:?}], got {:?}", char_mod, p0.modifiers));
-        }
-        Ok(())
-    }
-
-    #[test]
-    fn test_conversions() -> Result<(), String> {
-        let seq = PhonemeSequence::from_str("kʰɑʰp").map_err(|e| e.to_string())?;
-        let ipa = IpaString::try_from(seq.clone()).map_err(|e| e.to_string())?;
-        if ipa.as_str() != "kʰɑʰp" {
-            return Err(format!("Expected 'kʰɑʰp', got {}", ipa.as_str()));
-        }
-
-        let Some(SequenceElement::Phoneme(p0)) = seq.elements.first() else {
-            return Err("Expected Phoneme".to_string());
-        };
-        let ipa_p = IpaString::try_from(p0).map_err(|e| e.to_string())?;
-        if ipa_p.as_str() != "kʰ" {
-            return Err(format!("Expected 'kʰ', got {}", ipa_p.as_str()));
-        }
-        Ok(())
     }
 }

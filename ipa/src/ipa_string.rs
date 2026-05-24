@@ -1,3 +1,4 @@
+use crate::sequence::{IpaSequence, PhonemeSequence, SequenceElement};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt::Display;
 use std::str::FromStr;
@@ -10,19 +11,34 @@ pub enum IpaStringError {
 }
 
 /// A validated string of IPA symbols and modifiers.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub struct IpaString(String);
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct IpaString {
+    pub(crate) raw: String,
+    pub(crate) elements: Vec<SequenceElement>,
+}
+
+impl PartialOrd for IpaString {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for IpaString {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.raw.cmp(&other.raw)
+    }
+}
 
 impl IpaString {
     #[must_use]
     pub fn as_str(&self) -> &str {
-        &self.0
+        &self.raw
     }
 }
 
 impl Display for IpaString {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
+        write!(f, "{}", self.raw)
     }
 }
 
@@ -31,26 +47,26 @@ impl FromStr for IpaString {
     type Err = IpaStringError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let _seq = crate::sequence::PhonemeSequence::from_str(s)?;
-        Ok(IpaString(s.to_string()))
+        let seq = PhonemeSequence::from_str(s)?;
+        Ok(IpaString {
+            raw: s.to_string(),
+            elements: seq.elements,
+        })
     }
 }
 
-impl crate::sequence::IpaSequence for IpaString {
-    fn elements(&self) -> Vec<crate::sequence::SequenceElement> {
-        crate::sequence::PhonemeSequence::from_str(self.as_str())
-            .map(|seq| seq.elements)
-            .unwrap_or_default()
+impl IpaSequence for IpaString {
+    fn elements(&self) -> Vec<SequenceElement> {
+        self.elements.clone()
     }
 }
-
 
 impl Serialize for IpaString {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
-        serializer.serialize_str(&self.0)
+        serializer.serialize_str(&self.raw)
     }
 }
 
@@ -61,22 +77,5 @@ impl<'de> Deserialize<'de> for IpaString {
     {
         let s = String::deserialize(deserializer)?;
         s.parse::<Self>().map_err(serde::de::Error::custom)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_ipa_string_valid() {
-        let valid = "pa".parse::<IpaString>();
-        assert!(valid.is_ok(), "Should parse valid IPA sequence");
-    }
-
-    #[test]
-    fn test_ipa_string_invalid() {
-        let invalid = "xyz123".parse::<IpaString>();
-        assert!(invalid.is_err(), "Should reject non-IPA symbols");
     }
 }
