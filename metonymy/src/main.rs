@@ -31,6 +31,30 @@ enum Commands {
         #[arg(long)]
         phoneme: String,
     },
+    /// Generate words or other linguistic constructs
+    Generate(GenerateCmd),
+}
+
+#[derive(Parser)]
+pub struct GenerateCmd {
+    /// Maximum number of attempts to generate a word without illegal patterns
+    #[arg(long, default_value_t = 8)]
+    pub max_attempts: usize,
+
+    #[command(subcommand)]
+    pub subcommand: GenerateSubcommand,
+}
+
+#[derive(Subcommand)]
+pub enum GenerateSubcommand {
+    /// Generate a word for a definition and type
+    Word {
+        /// The definition of the word (e.g. red)
+        definition: String,
+
+        /// The grammatical type (e.g. adjective or adjective.masculine)
+        word_type: String,
+    },
 }
 
 fn load_ipa_system(phone_config: Option<&PathBuf>) -> anyhow::Result<IpaSystem> {
@@ -88,8 +112,6 @@ fn handle_lookup(phoneme: &str, phone_config: Option<&PathBuf>) -> anyhow::Resul
 
     println!("Looking up phoneme: {phoneme}");
 
-    // Fallback logic for affricates and diacritics
-    // This also handles exact matches (when modifier is empty)
     match find_base_and_modifier(&system, phoneme) {
         Some((base, "")) => {
             print_phoneme_info(base, &system);
@@ -111,8 +133,50 @@ fn handle_lookup(phoneme: &str, phone_config: Option<&PathBuf>) -> anyhow::Resul
     Ok(())
 }
 
+fn handle_generate(
+    cmd: &GenerateCmd,
+    language_path: Option<&PathBuf>,
+) -> anyhow::Result<()> {
+    let lang_path = language_path.context("Language configuration file (--language) is required for generation")?;
+    let lang_json = fs::read_to_string(lang_path)
+        .with_context(|| format!("Failed to read language config from {}", lang_path.display()))?;
+    
+    let config: language::config::LanguageConfig = serde_json::from_str(&lang_json)
+        .context("Failed to parse language config JSON")?;
+
+    config.validate().context("Language configuration validation failed")?;
+
+    match &cmd.subcommand {
+        GenerateSubcommand::Word { definition, word_type } => {
+            let mut rng = language::generator::thread_rng();
+            let mut warning_logged = false;
+            let word = language::generator::generate_word(
+                word_type,
+                &config,
+                &mut rng,
+                cmd.max_attempts,
+                &mut warning_logged,
+            )?;
+            println!("{definition} : {word_type} = {word}");
+        }
+    }
+
+    Ok(())
+}
+
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
+
+    let level = if cli.verbose {
+        tracing::Level::DEBUG
+    } else {
+        tracing::Level::INFO
+    };
+
+    tracing_subscriber::fmt()
+        .with_max_level(level)
+        .with_writer(std::io::stderr)
+        .init();
 
     if cli.verbose {
         println!("Metonymy is running in verbose mode...");
@@ -125,9 +189,11 @@ fn main() -> anyhow::Result<()> {
             Commands::Lookup { phoneme } => {
                 handle_lookup(&phoneme, cli.phone_config.as_ref())?;
             }
+            Commands::Generate(gen_cmd) => {
+                handle_generate(&gen_cmd, cli.language.as_ref())?;
+            }
         }
     } else {
-        // Wire in the submodules eventually
         soundchange::parse_soundchange();
     }
 

@@ -1,0 +1,42 @@
+// generator.pest
+
+// A digit 0-9
+digit = _{ '0'..'9' }
+
+// Number followed by %, e.g., 50%
+probability = @{ digit{1, 2} ~ "%" }
+
+// Sound class base (same as phonotactics.pest)
+sound_class_base = _{ ASCII_ALPHA_UPPER | '\u{0391}'..'\u{03A9}' | '\u{05D0}'..'\u{05EA}' }
+subscript = _{ '\u{2080}'..'\u{2089}' }
+sound_class = @{ sound_class_base ~ subscript? }
+
+// Optional group: ( ... ) [probability]
+optional_group = { "(" ~ pattern ~ ")" ~ probability? }
+
+// Grammar reference: [noun.masculine] or [noun]
+primary_type = @{ ASCII_ALPHA_LOWER+ }
+secondary_type = @{ (ASCII_ALPHA_LOWER | ASCII_DIGIT | "_"){1, 32} }
+grammar_ref = { "[" ~ primary_type ~ ("." ~ secondary_type)? ~ "]" }
+
+// Set selector: {p,t,k}
+set_char = _{ !( "{" | "}" | "," | "(" | ")" | "[" | "]" | "." | "ˈ" | "%" | " " | "\t" | "\r" | "\n" ) ~ ANY }
+set_element = @{ set_char+ }
+set_selector = { "{" ~ set_element ~ ("," ~ set_element)* ~ "}" }
+
+// Syllable break and stress markers
+syllable_break = { "." }
+stress_marker = { "ˈ" }
+
+// Literal (IPA characters)
+literal_char = _{ !( "(" | ")" | "{" | "}" | "[" | "]" | "." | "ˈ" | "%" | sound_class_base | " " | "\t" | "\r" | "\n" ) ~ ANY }
+literal = @{ literal_char+ }
+
+// A pattern element
+pattern_element = _{ optional_group | sound_class | set_selector | grammar_ref | syllable_break | stress_marker | literal }
+
+// The entire pattern
+pattern = { pattern_element+ }
+
+// Top-level rule
+main = { SOI ~ pattern ~ EOI }

@@ -58,6 +58,26 @@ fn the_output_should_contain(
     drop(expected);
 }
 
+#[then(expr = "the output should contain a generated word for {string} as {string}")]
+fn the_output_should_contain_generated_word(
+    world: &mut MetonymyWorld,
+    definition: String,
+    word_type: String,
+) {
+    let prefix = format!("{} : {} =", definition, word_type);
+    let index = world.output.find(&prefix).unwrap_or_else(|| {
+        panic!("Expected output to contain '{}', but was:\n{}", prefix, world.output);
+    });
+    let after = &world.output[index + prefix.len()..];
+    let word = after.split_whitespace().next().unwrap_or("");
+    assert!(
+        !word.is_empty(),
+        "Expected a generated word after '{}', but found none. Output:\n{}",
+        prefix,
+        world.output
+    );
+}
+
 #[tokio::main]
 async fn main() {
     MetonymyWorld::cucumber()

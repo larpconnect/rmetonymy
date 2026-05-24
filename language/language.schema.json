@@ -52,6 +52,24 @@
           },
           "additionalProperties": false,
           "description": "Map of sound classes. C, D, L, V are considered present by default."
+        },
+        "phonotactics": {
+          "type": "object",
+          "properties": {
+            "generators": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/word_generator"
+              }
+            }
+          },
+          "required": ["generators"]
+        },
+        "illegal_patterns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       },
       "required": ["sound_classes"]
@@ -73,25 +91,54 @@
           "type": "object",
           "oneOf": [
             {
-              "type": "object",
-              "properties": {
-                "type": { "const": "Zipf" },
-                "a": { "type": "number" },
-                "b": { "type": "number" }
-              },
-              "required": ["type", "a", "b"]
-            },
-            {
-              "type": "object",
-              "properties": {
-                "type": { "const": "Equiprobable" }
-              },
-              "required": ["type"]
+              "$ref": "#/$defs/generator_config"
             }
           ]
         }
       },
       "required": ["values"]
+    },
+    "generator_config": {
+      "type": "object",
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "type": { "enum": ["Zipf", "zipf"] },
+            "config": {
+              "type": "object",
+              "properties": {
+                "a": { "oneOf": [{ "type": "number" }, { "type": "string" }] },
+                "b": { "oneOf": [{ "type": "number" }, { "type": "string" }] }
+              },
+              "required": ["a", "b"]
+            }
+          },
+          "required": ["type"]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": { "enum": ["Equiprobable", "equiprobable"] }
+          },
+          "required": ["type"]
+        }
+      ]
+    },
+    "word_generator": {
+      "type": "object",
+      "properties": {
+        "patterns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": ["patterns"],
+      "allOf": [
+        { "$ref": "#/$defs/generator_config" }
+      ]
     }
   }
 }
