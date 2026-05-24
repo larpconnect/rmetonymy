@@ -24,3 +24,8 @@ workspace = true
 [[test]]
 name = "sound_matcher_cucumber"
 harness = false
+
+[[test]]
+name = "syllabification_cucumber"
+harness = false
+

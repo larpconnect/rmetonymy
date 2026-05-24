@@ -179,30 +179,30 @@ mod tests {
 
         for case in valid_cases {
             let res = PhonotacticsParser::parse(Rule::main, case);
-            assert!(res.is_ok(), "Failed to parse: {}", case);
+            assert!(res.ok().is_some(), "Failed to parse: {case}");
         }
     }
 
     #[test]
     fn test_phonotactic_pattern_parsing() {
-        let p = "CV(C)50%".parse::<PhonotacticPattern>().unwrap();
-        if let PhonotacticPattern::Sequence(seq) = p {
-            assert_eq!(seq.len(), 3);
-            assert_eq!(seq[0], PhonotacticPattern::SoundClass("C".parse().unwrap()));
-            assert_eq!(seq[1], PhonotacticPattern::SoundClass("V".parse().unwrap()));
+        let p = "CV(C)50%".parse::<PhonotacticPattern>().expect("valid pattern");
+        assert!(matches!(p, PhonotacticPattern::Sequence(_)));
+        let PhonotacticPattern::Sequence(seq) = p else {
+            return;
+        };
+        assert_eq!(seq.len(), 3);
+        assert_eq!(seq.first(), Some(&PhonotacticPattern::SoundClass("C".parse().expect("valid C"))));
+        assert_eq!(seq.get(1), Some(&PhonotacticPattern::SoundClass("V".parse().expect("valid V"))));
 
-            if let PhonotacticPattern::OptionalGroup(inner, prob) = &seq[2] {
-                assert_eq!(
-                    **inner,
-                    PhonotacticPattern::SoundClass("C".parse().unwrap())
-                );
-                assert_eq!(*prob, 50);
-            } else {
-                panic!("Expected OptionalGroup");
-            }
-        } else {
-            panic!("Expected Sequence");
-        }
+        assert!(matches!(seq.get(2), Some(PhonotacticPattern::OptionalGroup(_, _))));
+        let Some(PhonotacticPattern::OptionalGroup(inner, prob)) = seq.get(2) else {
+            return;
+        };
+        assert_eq!(
+            **inner,
+            PhonotacticPattern::SoundClass("C".parse().expect("valid C"))
+        );
+        assert_eq!(*prob, 50);
     }
 
     #[test]
@@ -220,7 +220,7 @@ mod tests {
 
         for case in invalid_cases {
             let res = case.parse::<PhonotacticPattern>();
-            assert!(res.is_err(), "Should have failed to parse: {}", case);
+            assert!(res.err().is_some(), "Should have failed to parse: {case}");
         }
     }
 }

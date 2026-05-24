@@ -96,22 +96,22 @@ mod tests {
 
     #[test]
     fn test_sound_class_key_valid() {
-        assert!("C".parse::<SoundClassKey>().is_ok());
-        assert!("Z".parse::<SoundClassKey>().is_ok());
-        assert!("Γ".parse::<SoundClassKey>().is_ok());
-        assert!("א".parse::<SoundClassKey>().is_ok());
-        assert!("A₀".parse::<SoundClassKey>().is_ok());
-        assert!("Ω₉".parse::<SoundClassKey>().is_ok());
-        assert!("ת₅".parse::<SoundClassKey>().is_ok());
+        let _ = "C".parse::<SoundClassKey>().expect("valid");
+        let _ = "Z".parse::<SoundClassKey>().expect("valid");
+        let _ = "Γ".parse::<SoundClassKey>().expect("valid");
+        let _ = "א".parse::<SoundClassKey>().expect("valid");
+        let _ = "A₀".parse::<SoundClassKey>().expect("valid");
+        let _ = "Ω₉".parse::<SoundClassKey>().expect("valid");
+        let _ = "ת₅".parse::<SoundClassKey>().expect("valid");
     }
 
     #[test]
     fn test_sound_class_key_invalid() {
-        assert!("c".parse::<SoundClassKey>().is_err()); // Lowercase
-        assert!("AA".parse::<SoundClassKey>().is_err()); // Too many characters
-        assert!("A0".parse::<SoundClassKey>().is_err()); // ASCII digit instead of subscript
-        assert!("A₀₀".parse::<SoundClassKey>().is_err()); // Too many subscripts
-        assert!("".parse::<SoundClassKey>().is_err()); // Empty
-        assert!("1".parse::<SoundClassKey>().is_err()); // Number
+        assert!("c".parse::<SoundClassKey>().err().is_some()); // Lowercase
+        assert!("AA".parse::<SoundClassKey>().err().is_some()); // Too many characters
+        assert!("A0".parse::<SoundClassKey>().err().is_some()); // ASCII digit instead of subscript
+        assert!("A₀₀".parse::<SoundClassKey>().err().is_some()); // Too many subscripts
+        assert!("".parse::<SoundClassKey>().err().is_some()); // Empty
+        assert!("1".parse::<SoundClassKey>().err().is_some()); // Number
     }
 }
