@@ -1,4 +1,3 @@
-use crate::get_entry;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt::Display;
 use std::str::FromStr;
@@ -32,36 +31,19 @@ impl FromStr for IpaString {
     type Err = IpaStringError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.is_empty() {
-            return Ok(IpaString(s.to_string()));
-        }
-
-        let mut i = 0;
-        let char_indices: Vec<(usize, char)> = s.char_indices().collect();
-        let char_len = char_indices.len();
-
-        while i < char_len {
-            let mut matched = false;
-            for len in (1..=char_len - i).rev() {
-                let start_idx_bytes = char_indices.get(i).map_or(s.len(), |(idx, _)| *idx);
-                let end_idx_bytes = char_indices.get(i + len).map_or(s.len(), |(idx, _)| *idx);
-
-                if s.get(start_idx_bytes..end_idx_bytes)
-                    .is_some_and(|substr| get_entry(substr).is_some())
-                {
-                    i += len;
-                    matched = true;
-                    break;
-                }
-            }
-            if !matched {
-                return Err(IpaStringError::InvalidSequence(s.to_string()));
-            }
-        }
-
+        let _seq = crate::sequence::PhonemeSequence::from_str(s)?;
         Ok(IpaString(s.to_string()))
     }
 }
+
+impl crate::sequence::IpaSequence for IpaString {
+    fn elements(&self) -> Vec<crate::sequence::SequenceElement> {
+        crate::sequence::PhonemeSequence::from_str(self.as_str())
+            .map(|seq| seq.elements)
+            .unwrap_or_default()
+    }
+}
+
 
 impl Serialize for IpaString {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>

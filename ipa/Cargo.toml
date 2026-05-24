@@ -10,3 +10,12 @@ serde.workspace = true
 
 [lints]
 workspace = true
+
+[dev-dependencies]
+cucumber.workspace = true
+tokio.workspace = true
+
+[[test]]
+name = "sequence_cucumber"
+harness = false
+

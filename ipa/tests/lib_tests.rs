@@ -67,10 +67,13 @@ fn test_combine_with_modifier_mod_is_not_modifier() {
 }
 
 #[test]
-fn test_ipa_system_new_parse_error() {
+fn test_ipa_system_new_parse_error() -> Result<(), String> {
     let json_data = r"{ invalid json }";
     let result = IpaSystem::new(json_data);
-    assert!(result.is_err());
+    if result.is_ok() {
+        return Err("Expected IpaSystem::new to fail with invalid JSON".to_string());
+    }
+    Ok(())
 }
 
 #[test]
