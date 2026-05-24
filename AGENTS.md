@@ -65,47 +65,6 @@ This repository implements the standardized Agent Skill Files protocol to modula
 
 ---
 
-## Specific Directives
-- **Ownership/Memory**: Prefer `&str` for reading, `String` for modifying, and `Cow<&str>` for conditional modification.
-  - Prefer `Cow<'a, str>` for types that are frequently passed between the parser and the data layer to minimize allocations
-- **Async/Await**: Use `tokio` as the default runtime unless specified.
-- **Errors**: Prefer `thiserror` for libraries and `anyhow` for applications.
-  - **Application Level**: Use `anyhow` (or `miette` for pretty printing) in `main.rs` and within the top level of the repl and batch systems to handle errors.
-  - **Library Level**: Use `thiserror` for any library or sub-module. 
-  - **Panic Policy**: Never panic. Avoid `.unwrap()` and `.expect()`. Use `?` propagation or distinct error handling blocks.
-  - Use anyhow::Result for fallible operations; use thiserror for domain-specific error types.
-- **Type System**: 
-  - **Type Safety**: Prefer enums or algebraic data types over bools or strings when dealing with features of sounds or other domain-specific values.
-  - **Newtypes**: Use "Newtypes" (`struct UserId(String)`) to prevent primitive obsession.
-  - **Enums**: Use rich Enums to represent state transitions and command variants.
-  - **Traits**: Prefer generic functions with Trait bounds (`fn execute<T: Runnable>(...)`) over concrete types when decoupled logic allows.
-- **Error Handling:** Use `thiserror`. 
-- **Pattern Matching:** Must be exhaustive, avoid `_` where possible.
-- **Lints:** NO new warnings are permitted. All `clippy` checks must pass and `cargo clippy --fix` should be run before submitting.
-- **Git Flow:** Only work on feature branches. Never push to `main` or `develop`. When asked to push, push to a branch other than `main` or `develop` and open a pull request.
-  - **Rebase**: Always ensure that changes are rebased on top of and up to date with the `main` branch before pushing them. Avoid the need for merge commits.
-  - **PRs**: Always check to see if a PR has already been merged before continuing to work on it. If it has been merged, create a new PR for the commit. Do not open a new PR if one has already been opened for a given conversation.
-  - **Jules Branches**: Branches created by `jules` should be prefix the branch name with `jules/`.
-  - **PR Units**: Favor small units of work as individual PRs which are easier to independently review.
-- **Scope:** Do not introduce new features that are outside the current prompt's explicit scope.
-- **Ambiguity:** Stop and ask for human input if the requirements are unclear or conflicting.
-- **Plan Review**: The agent must output a structured "Action Plan" before execution
-- For collections that are usually small (e.g., CLI arguments or tags), prefer the `smallvec` or `tinyvec` crates to keep data on the stack
-- Prefer a Context or State struct that implements Send + Sync. This struct should be passed to command executors rather than using global statics
-- The core logic must reside in a library crate (lib.rs), with the REPL and Batch logic acting as thin wrappers (consumers) of that library
-- Feature Gating: Use Cargo features to separate REPL-only dependencies (like rustyline) and Batch-only dependencies. The core library should remain as lightweight as possible
-- Avoid 'Macro-heavy' crates unless they provide significant value (like `serde` or `clap`).
-- Fix any test or type errors until the whole suite is green. Do not submit code with broken tests or that does not compile. 
-- Do not modify files in `/generated` directories.
-- Do not bypass CI/CD checks.
-- Background jobs go in /src/worker/jobs/ and must implement the Job trait from crates_io_worker. Jobs must be idempotent.
-- Never ignore deprecation warnings; fix them immediately or use #[expect(deprecated)].
-- All configuration files should be UTF-8. `unicode-normalization` should be used for unicode processing.
-- Prefer `IndexMap` (from the `indexmap` crate) to `HashMap` to provide deterministic ordering for tests.
-
-
----
-
 ## Clean Code
 
 These rules take precedence over having all of the code for a given task together in "one place."
