@@ -185,16 +185,31 @@ mod tests {
 
     #[test]
     fn test_phonotactic_pattern_parsing() {
-        let p = "CV(C)50%".parse::<PhonotacticPattern>().expect("valid pattern");
+        let p = "CV(C)50%"
+            .parse::<PhonotacticPattern>()
+            .expect("valid pattern");
         assert!(matches!(p, PhonotacticPattern::Sequence(_)));
         let PhonotacticPattern::Sequence(seq) = p else {
             return;
         };
         assert_eq!(seq.len(), 3);
-        assert_eq!(seq.first(), Some(&PhonotacticPattern::SoundClass("C".parse().expect("valid C"))));
-        assert_eq!(seq.get(1), Some(&PhonotacticPattern::SoundClass("V".parse().expect("valid V"))));
+        assert_eq!(
+            seq.first(),
+            Some(&PhonotacticPattern::SoundClass(
+                "C".parse().expect("valid C")
+            ))
+        );
+        assert_eq!(
+            seq.get(1),
+            Some(&PhonotacticPattern::SoundClass(
+                "V".parse().expect("valid V")
+            ))
+        );
 
-        assert!(matches!(seq.get(2), Some(PhonotacticPattern::OptionalGroup(_, _))));
+        assert!(matches!(
+            seq.get(2),
+            Some(PhonotacticPattern::OptionalGroup(_, _))
+        ));
         let Some(PhonotacticPattern::OptionalGroup(inner, prob)) = seq.get(2) else {
             return;
         };

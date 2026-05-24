@@ -18,6 +18,8 @@ tokio = { version = "1.52.1", features = ["macros", "rt-multi-thread"] }
 cucumber = "0.23.0"
 uuid = { version = "1", features = ["v7", "serde"] }
 time = { version = "0.3", features = ["serde", "parsing", "formatting", "macros"] }
+tracing = "0.1"
+
 
 [workspace.lints.clippy]
 pedantic = "warn"

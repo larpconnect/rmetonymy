@@ -1,4 +1,5 @@
 pub mod config;
+pub mod generator;
 pub mod matcher;
 pub mod phonology;
 pub mod phonotactics;

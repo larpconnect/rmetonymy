@@ -61,7 +61,10 @@ fn pattern_should_match(c_world: &mut SoundMatcherWorld) {
 
 #[then(expr = "the pattern should not match")]
 fn pattern_should_not_match(c_world: &mut SoundMatcherWorld) {
-    assert!(!c_world.matches, "Expected pattern to not match, but it did");
+    assert!(
+        !c_world.matches,
+        "Expected pattern to not match, but it did"
+    );
 }
 
 #[tokio::main]

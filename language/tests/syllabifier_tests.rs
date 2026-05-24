@@ -19,7 +19,9 @@ fn get_test_config() -> LanguageConfig {
 
 #[test]
 fn test_validate_sequence_empty() {
-    let seq = PhonemeSequence { elements: Vec::new() };
+    let seq = PhonemeSequence {
+        elements: Vec::new(),
+    };
     let res = validate_sequence(&seq);
     assert!(res.ok().is_some());
 }
@@ -80,7 +82,7 @@ fn test_syllabify_sequence_direct() {
     let system = ipa::DEFAULT_SYSTEM.as_ref().expect("valid ipa system");
     let ipa_str = IpaString::from_str("əmɛɹɪkən").expect("valid ipa");
     let seq = PhonemeSequence::parse_with_system(ipa_str.as_str(), system).expect("valid parse");
-    
+
     let word = syllabify_sequence(&seq, &config).expect("syllabification success");
     assert_eq!(word.to_string(), "ə.mɛɹ.ɪ.kən");
 }

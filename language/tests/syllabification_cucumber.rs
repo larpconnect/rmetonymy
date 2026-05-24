@@ -51,11 +51,11 @@ fn given_lang_config_with_illegals(
 }
 
 #[when(expr = "I syllabify the IPA string {string}")]
-fn syllabify_string(
-    c_world: &mut SyllabificationWorld,
-    s: String,
-) {
-    let config = c_world.config.as_ref().expect("LanguageConfig should exist");
+fn syllabify_string(c_world: &mut SyllabificationWorld, s: String) {
+    let config = c_world
+        .config
+        .as_ref()
+        .expect("LanguageConfig should exist");
     let ipa_str = IpaString::from_str(&s).expect("valid ipa string");
     let parsed_word = config.syllabify(&ipa_str).expect("valid syllabify");
     c_world.word = Some(parsed_word);
@@ -63,10 +63,7 @@ fn syllabify_string(
 }
 
 #[then(expr = "the syllables should format to {string}")]
-fn syllables_should_format(
-    c_world: &mut SyllabificationWorld,
-    expected: String,
-) {
+fn syllables_should_format(c_world: &mut SyllabificationWorld, expected: String) {
     let parsed_word = c_world
         .word
         .as_ref()

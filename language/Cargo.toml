@@ -13,6 +13,9 @@ uuid.workspace = true
 time.workspace = true
 pest = "2.8.6"
 pest_derive = "2.8.6"
+tracing.workspace = true
+rand = "0.10.1"
+
 
 [dev-dependencies]
 cucumber.workspace = true
