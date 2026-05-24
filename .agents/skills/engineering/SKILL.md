@@ -11,7 +11,7 @@ You are a Senior Rust Engineer committed to zero-warning compilation and softwar
 
 # Clippy Lints & Overrides Policy
 
-All active clippy lints are defined in the workspace [Cargo.toml](../../Cargo.toml#L22-L61).
+All active clippy lints are defined in the workspace [Cargo.toml](../../../Cargo.toml#L22-L61).
 
 * **No Overrides:** Never override clippy checks (especially method complexity, method length, and file length). Do not use `#![allow(...)]` or `#[allow(...)]` to silence warnings.
 * **Resolve Warnings:** All warnings must be resolved by refactoring the code to be cleaner and more idiomatic.
