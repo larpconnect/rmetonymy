@@ -22,11 +22,15 @@ pub enum ValidationError {
     MissingDefaultGenerator,
 
     /// Key contains invalid grammatical type.
-    #[error("Invalid primary grammatical type '{0}' in generator or reference. Must be one of: default, noun, pronoun, verb, adjective, adverb, preposition, conjunction, determiner, interjection, number, particle, article")]
+    #[error(
+        "Invalid primary grammatical type '{0}' in generator or reference. Must be one of: default, noun, pronoun, verb, adjective, adverb, preposition, conjunction, determiner, interjection, number, particle, article"
+    )]
     InvalidGrammaticalType(String),
 
     /// Key contains invalid secondary type.
-    #[error("Secondary type length of '{0}' must be between 1 and 32 characters, and contain only lowercase alphanumeric characters and '_'")]
+    #[error(
+        "Secondary type length of '{0}' must be between 1 and 32 characters, and contain only lowercase alphanumeric characters and '_'"
+    )]
     InvalidSecondaryType(String),
 
     /// Grammar reference could not be resolved.
@@ -50,29 +54,48 @@ pub fn validate_generator_keys(
         return Err(ValidationError::MissingDefaultGenerator);
     }
 
+    for key in generators.keys() {
+        validate_key_format(key)?;
+    }
+
+    Ok(())
+}
+
+fn validate_key_format(key: &str) -> Result<(), ValidationError> {
     let valid_primaries = [
-        "default", "noun", "pronoun", "verb", "adjective", "adverb",
-        "preposition", "conjunction", "determiner", "interjection",
-        "number", "particle", "article",
+        "default",
+        "noun",
+        "pronoun",
+        "verb",
+        "adjective",
+        "adverb",
+        "preposition",
+        "conjunction",
+        "determiner",
+        "interjection",
+        "number",
+        "particle",
+        "article",
     ];
 
-    for key in generators.keys() {
-        let (primary, secondary) = match key.split_once('.') {
-            Some((p, s)) => (p, Some(s)),
-            None => (key.as_str(), None),
-        };
+    let (primary, secondary) = match key.split_once('.') {
+        Some((p, s)) => (p, Some(s)),
+        None => (key, None),
+    };
 
-        if !valid_primaries.contains(&primary) {
-            return Err(ValidationError::InvalidGrammaticalType(primary.to_string()));
+    if !valid_primaries.contains(&primary) {
+        return Err(ValidationError::InvalidGrammaticalType(primary.to_string()));
+    }
+
+    if let Some(sec) = secondary {
+        if sec.is_empty() || sec.len() > 32 {
+            return Err(ValidationError::InvalidSecondaryType(sec.to_string()));
         }
-
-        if let Some(sec) = secondary {
-            if sec.is_empty() || sec.len() > 32 {
-                return Err(ValidationError::InvalidSecondaryType(sec.to_string()));
-            }
-            if !sec.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_') {
-                return Err(ValidationError::InvalidSecondaryType(sec.to_string()));
-            }
+        if !sec
+            .chars()
+            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_')
+        {
+            return Err(ValidationError::InvalidSecondaryType(sec.to_string()));
         }
     }
 
@@ -90,7 +113,11 @@ pub fn resolve_generator_key(
     if generators.contains_key(ref_key) {
         return Ok(ref_key.to_string());
     }
-    if let Some(base) = ref_key.split_once('.').map(|(b, _)| b).filter(|b| generators.contains_key(*b)) {
+    if let Some(base) = ref_key
+        .split_once('.')
+        .map(|(b, _)| b)
+        .filter(|b| generators.contains_key(*b))
+    {
         return Ok(base.to_string());
     }
     if generators.contains_key("default") {
@@ -175,7 +202,11 @@ pub fn validate_sound_class_cycles(
     for (key, sc) in sound_classes {
         let mut deps = Vec::new();
         for val in &sc.values {
-            if let Some(nested_key) = val.parse::<SoundClassKey>().ok().filter(|k| sound_classes.contains_key(k)) {
+            if let Some(nested_key) = val
+                .parse::<SoundClassKey>()
+                .ok()
+                .filter(|k| sound_classes.contains_key(k))
+            {
                 deps.push(nested_key);
             }
         }
@@ -205,7 +236,9 @@ fn check_sound_class_cycle(
     if let Some(deps) = graph.get(node) {
         for dep in deps {
             if visiting.contains(dep) {
-                return Err(ValidationError::CircularSoundClassContainment(node.to_string()));
+                return Err(ValidationError::CircularSoundClassContainment(
+                    node.to_string(),
+                ));
             }
             if !visited.contains(dep) {
                 check_sound_class_cycle(dep, graph, visiting, visited)?;

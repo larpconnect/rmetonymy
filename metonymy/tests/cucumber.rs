@@ -45,10 +45,7 @@ fn it_should_execute_successfully(world: &mut MetonymyWorld) {
 }
 
 #[then(expr = "the output should contain {string}")]
-fn the_output_should_contain(
-    world: &mut MetonymyWorld,
-    expected: String,
-) {
+fn the_output_should_contain(world: &mut MetonymyWorld, expected: String) {
     assert!(
         world.output.contains(&expected),
         "Expected output to contain '{}', but it was:\n{}",
@@ -64,18 +61,26 @@ fn the_output_should_contain_generated_word(
     definition: String,
     word_type: String,
 ) {
-    let prefix = format!("{} : {} =", definition, word_type);
-    let index = world.output.find(&prefix).unwrap_or_else(|| {
-        panic!("Expected output to contain '{}', but was:\n{}", prefix, world.output);
-    });
-    let after = &world.output[index + prefix.len()..];
-    let word = after.split_whitespace().next().unwrap_or("");
+    let prefix = format!("{definition} : {word_type} =");
+    let contains_prefix = world.output.contains(&prefix);
     assert!(
-        !word.is_empty(),
-        "Expected a generated word after '{}', but found none. Output:\n{}",
-        prefix,
+        contains_prefix,
+        "Expected output to contain '{prefix}', but was:\n{}",
         world.output
     );
+    let Some((_, after)) = world.output.split_once(&prefix) else {
+        drop(definition);
+        drop(word_type);
+        return;
+    };
+    let generated_word = after.split_whitespace().next().unwrap_or("");
+    assert!(
+        !generated_word.is_empty(),
+        "Expected a generated word after '{prefix}', but found none. Output:\n{}",
+        world.output
+    );
+    drop(definition);
+    drop(word_type);
 }
 
 #[tokio::main]

@@ -125,75 +125,87 @@ impl FromStr for WordPattern {
 
 fn parse_pattern(pair: pest::iterators::Pair<Rule>) -> Result<WordPattern, GeneratorError> {
     let mut elements = Vec::new();
-
     for inner in pair.into_inner() {
-        match inner.as_rule() {
-            Rule::sound_class => {
-                let key = inner
-                    .as_str()
-                    .parse::<SoundClassKey>()
-                    .map_err(|e| GeneratorError::ParseError(e.to_string()))?;
-                elements.push(WordPatternElement::SoundClass(key));
+        if let Some(el) = parse_pattern_element(inner)? {
+            elements.push(el);
+        }
+    }
+    Ok(WordPattern { elements })
+}
+
+fn parse_pattern_element(
+    inner: pest::iterators::Pair<Rule>,
+) -> Result<Option<WordPatternElement>, GeneratorError> {
+    match inner.as_rule() {
+        Rule::sound_class => {
+            let key = inner
+                .as_str()
+                .parse::<SoundClassKey>()
+                .map_err(|e| GeneratorError::ParseError(e.to_string()))?;
+            Ok(Some(WordPatternElement::SoundClass(key)))
+        }
+        Rule::literal => Ok(Some(WordPatternElement::Literal(
+            inner.as_str().to_string(),
+        ))),
+        Rule::syllable_break => Ok(Some(WordPatternElement::SyllableBreak)),
+        Rule::stress_marker => Ok(Some(WordPatternElement::StressMarker)),
+        Rule::grammar_ref => Ok(Some(parse_grammar_ref(inner))),
+        Rule::set_selector => Ok(Some(parse_set_selector(inner))),
+        Rule::optional_group => parse_optional_group(inner).map(Some),
+        _ => Ok(None),
+    }
+}
+
+fn parse_grammar_ref(pair: pest::iterators::Pair<Rule>) -> WordPatternElement {
+    let mut primary = String::new();
+    let mut secondary = None;
+    for ref_inner in pair.into_inner() {
+        match ref_inner.as_rule() {
+            Rule::primary_type => {
+                primary = ref_inner.as_str().to_string();
             }
-            Rule::literal => {
-                elements.push(WordPatternElement::Literal(inner.as_str().to_string()));
-            }
-            Rule::syllable_break => {
-                elements.push(WordPatternElement::SyllableBreak);
-            }
-            Rule::stress_marker => {
-                elements.push(WordPatternElement::StressMarker);
-            }
-            Rule::grammar_ref => {
-                let mut primary = String::new();
-                let mut secondary = None;
-                for ref_inner in inner.into_inner() {
-                    match ref_inner.as_rule() {
-                        Rule::primary_type => {
-                            primary = ref_inner.as_str().to_string();
-                        }
-                        Rule::secondary_type => {
-                            secondary = Some(ref_inner.as_str().to_string());
-                        }
-                        _ => {}
-                    }
-                }
-                elements.push(WordPatternElement::GrammarRef { primary, secondary });
-            }
-            Rule::set_selector => {
-                let mut choices = Vec::new();
-                for set_inner in inner.into_inner() {
-                    if set_inner.as_rule() == Rule::set_element {
-                        choices.push(set_inner.as_str().to_string());
-                    }
-                }
-                elements.push(WordPatternElement::Set(choices));
-            }
-            Rule::optional_group => {
-                let mut prob = 20;
-                let mut inner_pattern = None;
-                for opt_inner in inner.into_inner() {
-                    match opt_inner.as_rule() {
-                        Rule::pattern => {
-                            inner_pattern = Some(parse_pattern(opt_inner)?);
-                        }
-                        Rule::probability => {
-                            let s = opt_inner.as_str();
-                            let s = s.strip_suffix('%').unwrap_or(s);
-                            prob = s.parse::<u8>().unwrap_or(20);
-                        }
-                        _ => {}
-                    }
-                }
-                if let Some(pat) = inner_pattern {
-                    elements.push(WordPatternElement::Optional(Box::new(pat), prob));
-                }
+            Rule::secondary_type => {
+                secondary = Some(ref_inner.as_str().to_string());
             }
             _ => {}
         }
     }
+    WordPatternElement::GrammarRef { primary, secondary }
+}
 
-    Ok(WordPattern { elements })
+fn parse_set_selector(pair: pest::iterators::Pair<Rule>) -> WordPatternElement {
+    let mut choices = Vec::new();
+    for set_inner in pair.into_inner() {
+        if set_inner.as_rule() == Rule::set_element {
+            choices.push(set_inner.as_str().to_string());
+        }
+    }
+    WordPatternElement::Set(choices)
+}
+
+fn parse_optional_group(
+    pair: pest::iterators::Pair<Rule>,
+) -> Result<WordPatternElement, GeneratorError> {
+    let mut prob = 20;
+    let mut inner_pattern = None;
+    for opt_inner in pair.into_inner() {
+        match opt_inner.as_rule() {
+            Rule::pattern => {
+                inner_pattern = Some(parse_pattern(opt_inner)?);
+            }
+            Rule::probability => {
+                let s = opt_inner.as_str();
+                let s = s.strip_suffix('%').unwrap_or(s);
+                prob = s
+                    .parse::<u8>()
+                    .map_err(|e| GeneratorError::ParseError(format!("Invalid probability: {e}")))?;
+            }
+            _ => {}
+        }
+    }
+    let pat = inner_pattern
+        .ok_or_else(|| GeneratorError::ParseError("Empty optional group pattern".to_string()))?;
+    Ok(WordPatternElement::Optional(Box::new(pat), prob))
 }
 
 impl Serialize for WordPattern {

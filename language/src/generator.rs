@@ -3,7 +3,7 @@
 //! Provides the random generation engine, routing fallbacks, and integration
 //! with the syllabifier and illegal pattern checks.
 
-use crate::config::{GeneratorConfig, LanguageConfig};
+use crate::config::{GeneratorConfig, LanguageConfig, SoundClass};
 use crate::sound_class::SoundClassKey;
 use std::str::FromStr;
 use thiserror::Error;
@@ -15,8 +15,8 @@ pub mod validation;
 pub use pattern::{GeneratorError, GeneratorPatternParser, WordPattern, WordPatternElement};
 pub use rng::{Rng, RngExt, SeedableRng, StdRng, thread_rng};
 pub use validation::{
-    ValidationError, resolve_generator_key, validate_generator_cycles,
-    validate_generator_keys, validate_pattern_sound_classes, validate_sound_class_cycles,
+    ValidationError, resolve_generator_key, validate_generator_cycles, validate_generator_keys,
+    validate_pattern_sound_classes, validate_sound_class_cycles,
 };
 
 /// Configuration for a word generator.
@@ -58,38 +58,56 @@ pub enum GenerationError {
 }
 
 /// Samples a random index using the configured probability distribution.
-#[expect(clippy::cast_precision_loss, reason = "RNG choices safely scaled to length of patterns or classes")]
-pub fn sample_index<R: Rng + ?Sized>(num_choices: usize, config: &GeneratorConfig, rng: &mut R) -> usize {
+#[expect(
+    clippy::cast_precision_loss,
+    reason = "RNG choices safely scaled to length of patterns or classes"
+)]
+pub fn sample_index<R: Rng + ?Sized>(
+    num_choices: usize,
+    config: &GeneratorConfig,
+    rng: &mut R,
+) -> usize {
     if num_choices == 0 {
         return 0;
     }
     match config {
-        GeneratorConfig::Equiprobable => {
-            rng.random_range(0..num_choices)
-        }
-        GeneratorConfig::Zipf { config: zipf_config } => {
+        GeneratorConfig::Equiprobable => rng.random_range(0..num_choices),
+        GeneratorConfig::Zipf {
+            config: zipf_config,
+        } => {
             let a = zipf_config.a;
             let b = zipf_config.b;
 
-            let mut weights = Vec::with_capacity(num_choices);
             let mut sum = 0.0;
             for i in 1..=num_choices {
-                let w = 1.0 / (i as f64 + b).powf(a);
-                weights.push(w);
-                sum += w;
+                sum += 1.0 / (i as f64 + b).powf(a);
             }
 
             let r = rng.random::<f64>() * sum;
             let mut accum = 0.0;
-            for (idx, w) in weights.iter().enumerate() {
+            for i in 1..=num_choices {
+                let w = 1.0 / (i as f64 + b).powf(a);
                 accum += w;
                 if accum >= r {
-                    return idx;
+                    return i - 1;
                 }
             }
             num_choices - 1
         }
     }
+}
+
+fn get_generator<'a>(
+    gen_key: &str,
+    config: &'a LanguageConfig,
+) -> Result<&'a WordGenerator, GenerationError> {
+    let resolved_key = resolve_generator_key(gen_key, &config.phonology.phonotactics.generators)?;
+    config
+        .phonology
+        .phonotactics
+        .generators
+        .get(&resolved_key)
+        .ok_or_else(|| GenerationError::UndefinedGenerator(resolved_key.clone()))
 }
 
 fn generate_word_internal<R: Rng + ?Sized>(
@@ -102,21 +120,17 @@ fn generate_word_internal<R: Rng + ?Sized>(
         return Err(GenerationError::CircularGeneration(gen_key.to_string()));
     }
 
-    let resolved_key = resolve_generator_key(gen_key, &config.phonology.phonotactics.generators)?;
-    let generator = config
-        .phonology
-        .phonotactics
-        .generators
-        .get(&resolved_key)
-        .ok_or_else(|| GenerationError::UndefinedGenerator(resolved_key.clone()))?;
+    let generator = get_generator(gen_key, config)?;
 
     if generator.patterns.is_empty() {
         return Ok(String::new());
     }
 
     let pat_idx = sample_index(generator.patterns.len(), &generator.generator, rng);
-    let pattern = generator.patterns.get(pat_idx)
-        .ok_or_else(|| GenerationError::UndefinedGenerator("Pattern index out of bounds".to_string()))?;
+    let pattern = generator
+        .patterns
+        .get(pat_idx)
+        .expect("pattern index out of bounds");
 
     let mut result = String::new();
     for el in &pattern.elements {
@@ -127,6 +141,62 @@ fn generate_word_internal<R: Rng + ?Sized>(
     Ok(result)
 }
 
+fn evaluate_optional<R: Rng + ?Sized>(
+    inner_pattern: &WordPattern,
+    prob: u8,
+    config: &LanguageConfig,
+    rng: &mut R,
+    depth: usize,
+) -> Result<String, GenerationError> {
+    let r = rng.random::<f64>() * 100.0;
+    if r < f64::from(prob) {
+        let mut result = String::new();
+        for inner_el in &inner_pattern.elements {
+            let s = evaluate_element(inner_el, config, rng, depth)?;
+            result.push_str(&s);
+        }
+        Ok(result)
+    } else {
+        Ok(String::new())
+    }
+}
+
+fn evaluate_set<R: Rng + ?Sized>(
+    choices: &[String],
+    config: &LanguageConfig,
+    rng: &mut R,
+) -> Result<String, GenerationError> {
+    if choices.is_empty() {
+        return Ok(String::new());
+    }
+    let idx = rng.random_range(0..choices.len());
+    let selected = choices.get(idx).expect("set choice index out of bounds");
+
+    if let Some(nested_key) = selected
+        .parse::<SoundClassKey>()
+        .ok()
+        .filter(|k| config.phonology.sound_classes.contains_key(k))
+    {
+        return select_from_sound_class(&nested_key, config, rng, 0);
+    }
+    Ok(selected.clone())
+}
+
+fn evaluate_grammar_ref<R: Rng + ?Sized>(
+    primary: &str,
+    secondary: Option<&str>,
+    config: &LanguageConfig,
+    rng: &mut R,
+    depth: usize,
+) -> Result<String, GenerationError> {
+    let mut ref_key = primary.to_string();
+    if let Some(sec) = secondary {
+        ref_key.push('.');
+        ref_key.push_str(sec);
+    }
+    generate_word_internal(&ref_key, config, rng, depth + 1)
+}
+
 fn evaluate_element<R: Rng + ?Sized>(
     el: &WordPatternElement,
     config: &LanguageConfig,
@@ -134,47 +204,29 @@ fn evaluate_element<R: Rng + ?Sized>(
     depth: usize,
 ) -> Result<String, GenerationError> {
     match el {
-        WordPatternElement::SoundClass(sc_key) => {
-            select_from_sound_class(sc_key, config, rng, 0)
-        }
+        WordPatternElement::SoundClass(sc_key) => select_from_sound_class(sc_key, config, rng, 0),
         WordPatternElement::Literal(s) => Ok(s.clone()),
         WordPatternElement::SyllableBreak => Ok(".".to_string()),
         WordPatternElement::StressMarker => Ok("ˈ".to_string()),
         WordPatternElement::Optional(inner_pattern, prob) => {
-            let r = rng.random::<f64>() * 100.0;
-            if r < f64::from(*prob) {
-                let mut result = String::new();
-                for inner_el in &inner_pattern.elements {
-                    let s = evaluate_element(inner_el, config, rng, depth)?;
-                    result.push_str(&s);
-                }
-                Ok(result)
-            } else {
-                Ok(String::new())
-            }
+            evaluate_optional(inner_pattern, *prob, config, rng, depth)
         }
-        WordPatternElement::Set(choices) => {
-            if choices.is_empty() {
-                return Ok(String::new());
-            }
-            let idx = rng.random_range(0..choices.len());
-            let selected = choices.get(idx)
-                .ok_or_else(|| GenerationError::UndefinedGenerator("Empty set choices".to_string()))?;
-
-            if let Some(nested_key) = selected.parse::<SoundClassKey>().ok().filter(|k| config.phonology.sound_classes.contains_key(k)) {
-                return select_from_sound_class(&nested_key, config, rng, 0);
-            }
-            Ok(selected.clone())
-        }
+        WordPatternElement::Set(choices) => evaluate_set(choices, config, rng),
         WordPatternElement::GrammarRef { primary, secondary } => {
-            let mut ref_key = primary.clone();
-            if let Some(sec) = secondary {
-                ref_key.push('.');
-                ref_key.push_str(sec);
-            }
-            generate_word_internal(&ref_key, config, rng, depth + 1)
+            evaluate_grammar_ref(primary, secondary.as_deref(), config, rng, depth)
         }
     }
+}
+
+fn get_sound_class<'a>(
+    sc_key: &SoundClassKey,
+    config: &'a LanguageConfig,
+) -> Result<&'a SoundClass, GenerationError> {
+    config
+        .phonology
+        .sound_classes
+        .get(sc_key)
+        .ok_or_else(|| GenerationError::UndefinedSoundClass(sc_key.to_string()))
 }
 
 fn select_from_sound_class<R: Rng + ?Sized>(
@@ -187,22 +239,27 @@ fn select_from_sound_class<R: Rng + ?Sized>(
         return Err(GenerationError::CircularSoundClass(sc_key.to_string()));
     }
 
-    let sc = config
-        .phonology
-        .sound_classes
-        .get(sc_key)
-        .ok_or_else(|| GenerationError::UndefinedSoundClass(sc_key.to_string()))?;
+    let sc = get_sound_class(sc_key, config)?;
 
     if sc.values.is_empty() {
         return Err(GenerationError::EmptySoundClass(sc_key.to_string()));
     }
 
-    let gen_config = sc.generator.as_ref().unwrap_or(&GeneratorConfig::Equiprobable);
+    let gen_config = sc
+        .generator
+        .as_ref()
+        .unwrap_or(&GeneratorConfig::Equiprobable);
     let idx = sample_index(sc.values.len(), gen_config, rng);
-    let selected = sc.values.get(idx)
-        .ok_or_else(|| GenerationError::EmptySoundClass(sc_key.to_string()))?;
+    let selected = sc
+        .values
+        .get(idx)
+        .expect("sound class value index out of bounds");
 
-    if let Some(nested_key) = selected.parse::<SoundClassKey>().ok().filter(|k| config.phonology.sound_classes.contains_key(k)) {
+    if let Some(nested_key) = selected
+        .parse::<SoundClassKey>()
+        .ok()
+        .filter(|k| config.phonology.sound_classes.contains_key(k))
+    {
         return select_from_sound_class(&nested_key, config, rng, depth + 1);
     }
 
@@ -235,14 +292,15 @@ pub fn generate_word<R: Rng + ?Sized>(
     let mut last_generated = String::new();
     for _attempt in 1..=max_attempts {
         let word = generate_word_internal(gen_key, config, rng, 0)?;
-        last_generated.clone_from(&word);
-        if let Ok(seq) = ipa::sequence::PhonemeSequence::from_str(&word)
-            && let Ok(syllabified_word) = crate::syllabifier::syllabify_sequence(&seq, config)
-        {
+        last_generated = word;
+        let syllabified = ipa::sequence::PhonemeSequence::from_str(&last_generated)
+            .ok()
+            .and_then(|seq| crate::syllabifier::syllabify_sequence(&seq, config).ok());
+        if let Some(syllabified_word) = syllabified {
             let syllabified_str = syllabified_word.to_string();
-            last_generated.clone_from(&syllabified_str);
-            if !matches_illegal_patterns(&syllabified_str, config) {
-                return Ok(syllabified_str);
+            last_generated = syllabified_str;
+            if !matches_illegal_patterns(&last_generated, config) {
+                return Ok(last_generated);
             }
         }
     }

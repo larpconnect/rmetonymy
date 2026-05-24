@@ -40,8 +40,12 @@ impl LanguageConfig {
     pub fn validate(&self) -> Result<(), crate::generator::ValidationError> {
         crate::generator::validate_generator_keys(&self.phonology.phonotactics.generators)?;
         crate::generator::validate_sound_class_cycles(&self.phonology.sound_classes)?;
-        let defined: std::collections::HashSet<_> = self.phonology.sound_classes.keys().cloned().collect();
-        crate::generator::validate_pattern_sound_classes(&self.phonology.phonotactics.generators, &defined)?;
+        let defined: std::collections::HashSet<_> =
+            self.phonology.sound_classes.keys().cloned().collect();
+        crate::generator::validate_pattern_sound_classes(
+            &self.phonology.phonotactics.generators,
+            &defined,
+        )?;
         crate::generator::validate_generator_cycles(&self.phonology.phonotactics.generators)?;
         Ok(())
     }
@@ -153,7 +157,10 @@ where
             Ok(val)
         }
 
-        #[expect(clippy::cast_precision_loss, reason = "Casting deserialized integer value to f64")]
+        #[expect(
+            clippy::cast_precision_loss,
+            reason = "Casting deserialized integer value to f64"
+        )]
         fn visit_i64<E>(self, val: i64) -> Result<Self::Value, E>
         where
             E: de::Error,
@@ -161,7 +168,10 @@ where
             Ok(val as f64)
         }
 
-        #[expect(clippy::cast_precision_loss, reason = "Casting deserialized unsigned integer value to f64")]
+        #[expect(
+            clippy::cast_precision_loss,
+            reason = "Casting deserialized unsigned integer value to f64"
+        )]
         fn visit_u64<E>(self, val: u64) -> Result<Self::Value, E>
         where
             E: de::Error,
@@ -239,7 +249,8 @@ mod tests {
 
         let config: LanguageConfig = serde_json::from_str(json_str).expect("deserialize config");
 
-        let expected_uuid = Uuid::parse_str("018f4a3e-6b9f-7a1a-9b1a-2b3c4d5e6f7a").expect("parse uuid");
+        let expected_uuid =
+            Uuid::parse_str("018f4a3e-6b9f-7a1a-9b1a-2b3c4d5e6f7a").expect("parse uuid");
         assert_eq!(config.id, expected_uuid);
         assert_eq!(config.name.endonym.as_str(), "p");
         assert!(config.name.exonym.is_none());
@@ -252,13 +263,13 @@ mod tests {
 
         // Ensure explicit class is parsed
         let class_key_a = "A".parse::<SoundClassKey>().expect("parse A");
-        let class_a = phonology
-            .get(&class_key_a)
-            .expect("A should exist");
+        let class_a = phonology.get(&class_key_a).expect("A should exist");
         assert_eq!(class_a.values, vec!["p", "t", "k"]);
         assert_eq!(
             class_a.generator,
-            Some(GeneratorConfig::Zipf { config: ZipfConfig { a: 1.0, b: 2.0 } })
+            Some(GeneratorConfig::Zipf {
+                config: ZipfConfig { a: 1.0, b: 2.0 }
+            })
         );
 
         // Ensure default classes are inserted automatically
@@ -271,9 +282,7 @@ mod tests {
         assert!(phonology.contains_key(&class_key_l));
         assert!(phonology.contains_key(&class_key_v));
 
-        let class_c = phonology
-            .get(&class_key_c)
-            .expect("C should exist");
+        let class_c = phonology.get(&class_key_c).expect("C should exist");
         assert!(class_c.values.is_empty());
         assert!(class_c.generator.is_none());
 
@@ -283,16 +292,15 @@ mod tests {
             .generators
             .get("noun.masculine")
             .expect("noun.masculine should exist");
-        
+
         let pat1 = "CV(C)".parse::<WordPattern>().expect("parse pat1");
         let pat2 = "CV(CV)".parse::<WordPattern>().expect("parse pat2");
-        assert_eq!(
-            noun_masculine.patterns,
-            vec![pat1, pat2]
-        );
+        assert_eq!(noun_masculine.patterns, vec![pat1, pat2]);
         assert_eq!(
             noun_masculine.generator,
-            GeneratorConfig::Zipf { config: ZipfConfig { a: 1.5, b: 1.0 } }
+            GeneratorConfig::Zipf {
+                config: ZipfConfig { a: 1.5, b: 1.0 }
+            }
         );
     }
 
@@ -305,8 +313,8 @@ mod tests {
             }
         }"#;
 
-        let sound_class: SoundClass = serde_json::from_str(json_str).expect("deserialize sound class");
+        let sound_class: SoundClass =
+            serde_json::from_str(json_str).expect("deserialize sound class");
         assert_eq!(sound_class.generator, Some(GeneratorConfig::Equiprobable));
     }
 }
-

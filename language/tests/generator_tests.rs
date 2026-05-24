@@ -1,11 +1,11 @@
-use language::config::{GeneratorConfig, LanguageConfig, NameConfig, MetadataConfig, PhonologyConfig, SoundClass, PhonotacticsConfig, ZipfConfig};
-use language::generator::{
-    WordPattern, Rng, StdRng, SeedableRng,
-    sample_index, generate_word
+use language::config::{
+    GeneratorConfig, LanguageConfig, MetadataConfig, NameConfig, PhonologyConfig,
+    PhonotacticsConfig, SoundClass, ZipfConfig,
 };
-use uuid::Uuid;
-use time::OffsetDateTime;
+use language::generator::{SeedableRng, StdRng, WordPattern, generate_word, sample_index};
 use std::collections::BTreeMap;
+use time::OffsetDateTime;
+use uuid::Uuid;
 
 #[test]
 fn test_word_pattern_parsing_and_display() {
@@ -28,7 +28,7 @@ fn test_word_pattern_parsing_and_display() {
     ];
 
     for case in cases {
-        let parsed: WordPattern = case.parse().unwrap_or_else(|e| panic!("failed to parse '{case}': {e}"));
+        let parsed: WordPattern = case.parse().expect("failed to parse pattern");
         let displayed = parsed.to_string();
         assert_eq!(displayed, case, "Display mismatch for case: {case}");
     }
@@ -37,7 +37,7 @@ fn test_word_pattern_parsing_and_display() {
 #[test]
 fn test_rng_zipf_selection() {
     let config = GeneratorConfig::Zipf {
-        config: ZipfConfig { a: 1.0, b: 0.0 }
+        config: ZipfConfig { a: 1.0, b: 0.0 },
     };
     let mut rng = StdRng::seed_from_u64(12345);
     let mut count_0 = 0;
@@ -60,29 +60,41 @@ fn test_rng_zipf_selection() {
 #[test]
 fn test_word_generation() {
     let mut sound_classes = BTreeMap::new();
-    sound_classes.insert("C".parse().unwrap(), SoundClass {
-        values: vec!["p".to_string(), "t".to_string(), "k".to_string()],
-        generator: None,
-    });
-    sound_classes.insert("V".parse().unwrap(), SoundClass {
-        values: vec!["a".to_string(), "e".to_string(), "i".to_string()],
-        generator: None,
-    });
+    sound_classes.insert(
+        "C".parse().expect("valid sound class key"),
+        SoundClass {
+            values: vec!["p".to_string(), "t".to_string(), "k".to_string()],
+            generator: None,
+        },
+    );
+    sound_classes.insert(
+        "V".parse().expect("valid sound class key"),
+        SoundClass {
+            values: vec!["a".to_string(), "e".to_string(), "i".to_string()],
+            generator: None,
+        },
+    );
 
     let mut generators = BTreeMap::new();
-    generators.insert("default".to_string(), language::generator::WordGenerator {
-        patterns: vec!["CVC".parse().unwrap()],
-        generator: GeneratorConfig::Equiprobable,
-    });
-    generators.insert("noun".to_string(), language::generator::WordGenerator {
-        patterns: vec!["(C)V[default]".parse().unwrap()],
-        generator: GeneratorConfig::Equiprobable,
-    });
+    generators.insert(
+        "default".to_string(),
+        language::generator::WordGenerator {
+            patterns: vec!["CVC".parse().expect("valid pattern")],
+            generator: GeneratorConfig::Equiprobable,
+        },
+    );
+    generators.insert(
+        "noun".to_string(),
+        language::generator::WordGenerator {
+            patterns: vec!["(C)V[default]".parse().expect("valid pattern")],
+            generator: GeneratorConfig::Equiprobable,
+        },
+    );
 
     let config = LanguageConfig {
         id: Uuid::now_v7(),
         name: NameConfig {
-            endonym: "test".parse().unwrap(),
+            endonym: "test".parse().expect("valid word"),
             exonym: None,
         },
         metadata: MetadataConfig {
@@ -97,12 +109,13 @@ fn test_word_generation() {
     };
 
     // Verify config is valid
-    assert!(config.validate().is_ok());
+    config.validate().expect("config should be valid");
 
     let mut rng = StdRng::seed_from_u64(12345);
     let mut warning_logged = false;
-    let word = generate_word("noun", &config, &mut rng, 1, &mut warning_logged).unwrap();
-    
+    let word = generate_word("noun", &config, &mut rng, 1, &mut warning_logged)
+        .expect("should generate word");
+
     // We assert that the generated word is not empty
     assert!(!word.is_empty());
 }

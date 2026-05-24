@@ -3,7 +3,8 @@ use language::config::LanguageConfig;
 use std::str::FromStr;
 
 fn get_test_config(illegal_patterns: &[&str]) -> LanguageConfig {
-    let patterns_json = serde_json::to_string(&illegal_patterns).expect("valid illegal patterns json");
+    let patterns_json =
+        serde_json::to_string(&illegal_patterns).expect("valid illegal patterns json");
     let json_str = format!(
         r#"{{
         "id": "018f4a3e-6b9f-7a1a-9b1a-2b3c4d5e6f7a",
@@ -88,13 +89,19 @@ fn test_invalid_boundary_errors() {
 
     // Double syllable breaks
     let ipa_str = IpaString::from_str("ab..cd").expect("valid ipa");
-    config.syllabify(&ipa_str).expect_err("should fail with double breaks");
+    config
+        .syllabify(&ipa_str)
+        .expect_err("should fail with double breaks");
 
     // Stress + Syllable break
     let ipa_str = IpaString::from_str("abˈ.cd").expect("valid ipa");
-    config.syllabify(&ipa_str).expect_err("should fail with stress + break");
+    config
+        .syllabify(&ipa_str)
+        .expect_err("should fail with stress + break");
 
     // Adjacent prosody
     let ipa_str = IpaString::from_str("abˈˌcd").expect("valid ipa");
-    config.syllabify(&ipa_str).expect_err("should fail with adjacent prosody");
+    config
+        .syllabify(&ipa_str)
+        .expect_err("should fail with adjacent prosody");
 }

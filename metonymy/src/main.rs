@@ -133,21 +133,28 @@ fn handle_lookup(phoneme: &str, phone_config: Option<&PathBuf>) -> anyhow::Resul
     Ok(())
 }
 
-fn handle_generate(
-    cmd: &GenerateCmd,
-    language_path: Option<&PathBuf>,
-) -> anyhow::Result<()> {
-    let lang_path = language_path.context("Language configuration file (--language) is required for generation")?;
-    let lang_json = fs::read_to_string(lang_path)
-        .with_context(|| format!("Failed to read language config from {}", lang_path.display()))?;
-    
-    let config: language::config::LanguageConfig = serde_json::from_str(&lang_json)
-        .context("Failed to parse language config JSON")?;
+fn handle_generate(cmd: &GenerateCmd, language_path: Option<&PathBuf>) -> anyhow::Result<()> {
+    let lang_path = language_path
+        .context("Language configuration file (--language) is required for generation")?;
+    let lang_json = fs::read_to_string(lang_path).with_context(|| {
+        format!(
+            "Failed to read language config from {}",
+            lang_path.display()
+        )
+    })?;
 
-    config.validate().context("Language configuration validation failed")?;
+    let config: language::config::LanguageConfig =
+        serde_json::from_str(&lang_json).context("Failed to parse language config JSON")?;
+
+    config
+        .validate()
+        .context("Language configuration validation failed")?;
 
     match &cmd.subcommand {
-        GenerateSubcommand::Word { definition, word_type } => {
+        GenerateSubcommand::Word {
+            definition,
+            word_type,
+        } => {
             let mut rng = language::generator::thread_rng();
             let mut warning_logged = false;
             let word = language::generator::generate_word(

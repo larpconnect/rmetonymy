@@ -7,7 +7,6 @@ pub mod sound_class;
 pub mod syllabifier;
 pub mod syllable;
 
-
 pub use syllable::{IpaWord, SyllabificationError, Syllable, SyllableStress, SyllableStructure};
 
 pub fn load_language() {
