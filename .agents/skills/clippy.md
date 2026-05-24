@@ -5,6 +5,7 @@ context_requirements:
   - "Access to `AGENTS.md` for coding directives."
   - "Any modification or addition of Rust (.rs) files."
 trigger_conditions:
+  - "Requests to design or implement Rust code."
   - "Encountering clippy warnings or errors during build/lint checks."
   - "Refactoring Rust code to satisfy clippy complexity or style lints."
   - "Designing or writing new Rust modules, functions, or test suites."
@@ -20,7 +21,7 @@ You are a Senior Rust Engineer committed to zero-warning compilation and softwar
 
 # Clippy Lints & Overrides Policy
 
-All active clippy lints are defined in the workspace [Cargo.toml](file:///home/clementsd/rmetonymy/Cargo.toml#L22-L61).
+All active clippy lints are defined in the workspace [Cargo.toml](../../Cargo.toml#L22-L61).
 
 * **No Overrides:** Never override clippy checks (especially method complexity, method length, and file length). Do not use `#![allow(...)]` or `#[allow(...)]` to silence warnings.
 * **Resolve Warnings:** All warnings must be resolved by refactoring the code to be cleaner and more idiomatic.
@@ -30,7 +31,7 @@ All active clippy lints are defined in the workspace [Cargo.toml](file:///home/c
 
 # Resolving Complexity: Helper Functions
 
-To satisfy clippy limits on cyclomatic complexity and function length, split large logic blocks and complex closures into small, focused helper functions (typically $\le$ 50 LOC with a cyclomatic complexity $\le$ 8).
+To satisfy clippy limits on cyclomatic complexity and function length, split large logic blocks and complex closures into small, focused helper functions (typically <= 50 LOC with a cyclomatic complexity <= 8).
 
 ### Example: Extracting Complex Closures / Logical Units
 
@@ -81,41 +82,6 @@ fn parse_line(line: &str) -> Result<Item, ParseError> {
 
 ---
 
-# Clippy-Compliant Testing
-
-Test suites often use constructs that clippy flags in library code (e.g., `.unwrap()`, array indexing, or assertions that panic). To write compliant tests:
-
-1. **Use File-Level Expect Attributes:** In integration test files or test modules, use `#![expect(...)]` with a documented reason instead of `allow`.
-2. **Propagate Errors:** Return `Result<(), anyhow::Error>` (or a distinct test error type) in test functions, allowing the use of the `?` operator instead of `.unwrap()`.
-
-### Example: Compliant Test Module
-```rust
-#![expect(
-    clippy::indexing_slicing,
-    clippy::unwrap_used,
-    clippy::panic,
-    reason = "Standard test assertions, indexing, and test unwraps"
-)]
-
-use super::*;
-
-#[test]
-fn test_parsing_success() -> Result<(), anyhow::Error> {
-    let raw_input = "1,active_item,true";
-    let items = parse_data(raw_input)?;
-    
-    // Indexing is allowed due to expect attribute
-    let first = &items[0];
-    assert_eq!(first.id, 1);
-    assert_eq!(first.value, "active_item");
-    assert!(first.active);
-    
-    Ok(())
-}
-```
-
----
-
 # Specific Directives (from AGENTS.md)
 
 * **Ownership & Memory:**
@@ -140,7 +106,7 @@ fn test_parsing_success() -> Result<(), anyhow::Error> {
   * Prefer the `smallvec` or `tinyvec` crates for collections that are usually small (e.g., CLI arguments or tags) to keep data on the stack.
   * Prefer `IndexMap` (from the `indexmap` crate) to `HashMap` to provide deterministic ordering for tests.
   * Prefer `Box<[T]>` over `Vec<T>` if the size is fixed after creation. Avoid nested vectors (`Vec<Vec<T>>`).
-  * Use `#[inline]` for small public helpers ($< 5$ lines).
+  * Use `#[inline]` for small public helpers (<= 5 lines).
 * **State Management:**
   * Prefer a Context or State struct that implements `Send + Sync`. Pass this struct to command executors rather than using global statics.
 * **Architecture & Feature Gating:**
