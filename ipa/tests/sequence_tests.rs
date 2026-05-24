@@ -5,8 +5,8 @@
     reason = "Standard test assertions and indexing"
 )]
 
-use ipa::sequence::{is_modifier, IpaSequence, PhonemeSequence, ProsodyMarker, SequenceElement};
 use ipa::IpaString;
+use ipa::sequence::{IpaSequence, PhonemeSequence, ProsodyMarker, SequenceElement, is_modifier};
 use std::str::FromStr;
 
 #[test]

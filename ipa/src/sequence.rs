@@ -133,7 +133,9 @@ impl PhonemeSequence {
     /// Returns `Err` if parsing fails (e.g. unrecognized base phonemes, modifiers without base phonemes).
     pub fn parse_with_system(s: &str, system: &crate::IpaSystem) -> Result<Self, IpaStringError> {
         if s.is_empty() {
-            return Ok(Self { elements: Vec::new() });
+            return Ok(Self {
+                elements: Vec::new(),
+            });
         }
 
         let chars: Vec<char> = s.chars().collect();
@@ -208,7 +210,13 @@ impl PhonemeSequence {
 
             // Accumulate modifiers
             let mut modifiers = Vec::new();
-            while *idx < chars.len() && is_modifier(chars[*idx]) {
+            while *idx < chars.len()
+                && is_modifier(chars[*idx])
+                && chars[*idx] != '\''
+                && chars[*idx] != 'ˈ'
+                && chars[*idx] != 'ˌ'
+                && chars[*idx] != '.'
+            {
                 modifiers.push(chars[*idx].to_string());
                 *idx += 1;
             }

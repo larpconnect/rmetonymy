@@ -2386,6 +2386,29 @@
     ],
     "sonority": 0
   },
+  "w": {
+    "type": "consonant",
+    "features": [
+      "+approximant",
+      "+back",
+      "+consonantal",
+      "+continuant",
+      "+dorsal",
+      "+high",
+      "+labial",
+      "+round",
+      "+sonorant",
+      "+voiced"
+    ],
+    "place": [
+      "labiovelar"
+    ],
+    "manner": [
+      "approximant"
+    ],
+    "aliases": [],
+    "sonority": 77
+  },
   "ʍ": {
     "type": "consonant",
     "features": [

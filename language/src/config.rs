@@ -14,6 +14,27 @@ pub struct LanguageConfig {
     pub phonology: PhonologyConfig,
 }
 
+impl LanguageConfig {
+    /// Syllabifies an IPA string using this language configuration.
+    ///
+    /// # Errors
+    /// Returns `Err` if parsing or syllabification fails.
+    pub fn syllabify(
+        &self,
+        ipa_str: &ipa::IpaString,
+    ) -> Result<crate::syllable::IpaWord, crate::syllable::SyllabificationError> {
+        let system = ipa::DEFAULT_SYSTEM.as_ref().map_err(|e| {
+            crate::syllable::SyllabificationError::IpaError(
+                ipa::ipa_string::IpaStringError::InvalidSequence(format!(
+                    "Failed to load default IPA system: {e}"
+                )),
+            )
+        })?;
+        let seq = ipa::sequence::PhonemeSequence::parse_with_system(ipa_str.as_str(), system)?;
+        crate::syllable::IpaWord::try_from_sequence(&seq, self)
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct NameConfig {
     pub endonym: IpaString,
