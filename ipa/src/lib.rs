@@ -150,3 +150,6 @@ pub fn combine_with_modifier(base: &str, modifier: &str) -> Option<Vec<SpeFeatur
 }
 pub mod ipa_string;
 pub use ipa_string::IpaString;
+pub mod sequence;
+pub use sequence::{PhonemeSequence, SequenceElement, Phoneme, ProsodyMarker, IpaSequence};
+
