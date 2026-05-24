@@ -1,7 +1,6 @@
 ---
 name: Senior Rust Engineering Skills
 description: Specific programming guidance for writing rust code in rmetonymy.
-glob: *.rs
 ---
 
 # Role Overview
