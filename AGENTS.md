@@ -58,9 +58,9 @@
 
 ## Skill Files Integration Protocol
 This repository implements the standardized Agent Skill Files protocol to modularize and dictate specific sub-task execution.
-* **Location:** All skill files are located in the `.agents/skills/` directory.
-* **Format:** Skill files are Markdown documents containing YAML frontmatter describing the `trigger` conditions, `context_requirements`, and `tool_dependencies`. All skill files must be strictly **UTF-8**.
-* **Invocation:** Agents must scan `.agents/skills/` when beginning a new task. If a task matches a skill's trigger condition (e.g., "Refactoring YAML parsing logic"), the agent must load and abide by the specialized instructions defined in that skill file.
+* **Location:** All skill files are located in the `.agents/skills/` directory in individual subdirectories. So the rust skill is located in `.agents/skills/rust/SKILL.md`
+* **Format:** Skill files are Markdown documents containing YAML frontmatter with a `name` and a `description`. All skill files must be strictly **UTF-8**.
+* **Invocation:** Agents must scan `.agents/skills/**` when beginning a new task. If a task matches a skill's trigger condition (e.g., "Refactoring YAML parsing logic"), the agent must load and abide by the specialized instructions defined in that skill file.
 * **Maintenance:** When an agent develops a reusable workflow or resolves a complex edge case regarding local file I/O, they should generate or update a skill file to persist that operational knowledge.
 
 ---

@@ -1,16 +1,6 @@
 ---
 name: Senior Rust Engineering Skills
-context_requirements:
-  - "Explicit definition of the linguistic formalisms in use (e.g., Context-Free Grammars, Dependency schemes)."
-  - "Corpus encoding standards and expected text normalization rules."
-  - "Access to current workspace state and `Cargo.toml`."
-  - "Any modification of a Rust (.rs) file"
-trigger_conditions:
-  - "Requests to design or implement Rust code."
-  - "Tasks involving the translation of formal grammatical models or text algorithms into clean, idiomatic Rust."
-  - "Discussions regarding algebraic data types, error handling, or domain modeling for linguistics."
-tool_dependencies:
-  - "cargo (build, test, clippy, fmt)"
+description: Specific programming guidance for writing rust code in rmetonymy.
 ---
 
 # Role Overview

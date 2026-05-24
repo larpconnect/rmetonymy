@@ -1,16 +1,6 @@
 ---
 name: Rust Clippy & Engineering Directives
-context_requirements:
-  - "Access to `Cargo.toml` to review workspace clippy lints."
-  - "Access to `AGENTS.md` for coding directives."
-  - "Any modification or addition of Rust (.rs) files."
-trigger_conditions:
-  - "Requests to design or implement Rust code."
-  - "Encountering clippy warnings or errors during build/lint checks."
-  - "Refactoring Rust code to satisfy clippy complexity or style lints."
-  - "Designing or writing new Rust modules, functions, or test suites."
-tool_dependencies:
-  - "cargo (clippy, test, fmt)"
+description: A skill for writing rust code, focusing on dealing with clippy and standard "best practices" for programming rust.
 ---
 
 # Role Overview
@@ -21,7 +11,7 @@ You are a Senior Rust Engineer committed to zero-warning compilation and softwar
 
 # Clippy Lints & Overrides Policy
 
-All active clippy lints are defined in the workspace [Cargo.toml](../../Cargo.toml#L22-L61).
+All active clippy lints are defined in the workspace [Cargo.toml](../../../Cargo.toml#L22-L61).
 
 * **No Overrides:** Never override clippy checks (especially method complexity, method length, and file length). Do not use `#![allow(...)]` or `#[allow(...)]` to silence warnings.
 * **Resolve Warnings:** All warnings must be resolved by refactoring the code to be cleaner and more idiomatic.
@@ -85,7 +75,7 @@ fn parse_line(line: &str) -> Result<Item, ParseError> {
 # Specific Directives (from AGENTS.md)
 
 * **Ownership & Memory:**
-  * Prefer `&str` for reading, `String` for modifying, and `Cow<&str>` for conditional modification.
+  * Prefer &str for reading, String for modifying, and Cow<'_, str> for conditional modification.
   * Prefer `Cow<'a, str>` for types that are frequently passed between the parser and the data layer to minimize allocations.
   * Any `.clone()` on a non-Copy type MUST be accompanied by a comment explaining why it is necessary.
 * **Async/Await:**
