@@ -75,7 +75,7 @@ fn parse_line(line: &str) -> Result<Item, ParseError> {
 # Specific Directives (from AGENTS.md)
 
 * **Ownership & Memory:**
-  * Prefer `&str` for reading, `String` for modifying, and `Cow<&str>` for conditional modification.
+  * Prefer &str for reading, String for modifying, and Cow<'_, str> for conditional modification.
   * Prefer `Cow<'a, str>` for types that are frequently passed between the parser and the data layer to minimize allocations.
   * Any `.clone()` on a non-Copy type MUST be accompanied by a comment explaining why it is necessary.
 * **Async/Await:**
