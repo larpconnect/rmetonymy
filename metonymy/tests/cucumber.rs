@@ -12,37 +12,50 @@ fn i_have_a_basic_setup(_world: &mut MetonymyWorld) {
 }
 
 #[when("I run metonymy")]
-fn i_run_metonymy(_world: &mut MetonymyWorld) {
-    let mut cmd = Command::cargo_bin("metonymy").expect("failed to get cargo bin");
+fn i_run_metonymy(world: &mut MetonymyWorld) -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("metonymy")?;
     let assert = cmd.assert();
-    _world.output = String::from_utf8(assert.get_output().stdout.clone()).unwrap();
+    world.output = String::from_utf8(assert.get_output().stdout.clone())?;
+    Ok(())
 }
 
 #[when(expr = "I run metonymy with {string}")]
-fn i_run_metonymy_with(world: &mut MetonymyWorld, args_str: String) {
-    let mut cmd = Command::cargo_bin("metonymy").expect("failed to get cargo bin");
+fn i_run_metonymy_with(
+    world: &mut MetonymyWorld,
+    args_str: String,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("metonymy")?;
     let args: Vec<String> = match shlex::split(&args_str) {
         Some(a) => a,
-        None => args_str.split_whitespace().map(|s| s.to_string()).collect(),
+        None => args_str
+            .split_whitespace()
+            .map(std::string::ToString::to_string)
+            .collect(),
     };
     cmd.args(&args);
     let assert = cmd.assert();
-    world.output = String::from_utf8(assert.get_output().stdout.clone()).unwrap();
+    world.output = String::from_utf8(assert.get_output().stdout.clone())?;
+    drop(args_str);
+    Ok(())
 }
 
 #[then("it should execute successfully")]
-fn it_should_execute_successfully(_world: &mut MetonymyWorld) {
-    assert!(!_world.output.is_empty());
+fn it_should_execute_successfully(world: &mut MetonymyWorld) {
+    assert!(!world.output.is_empty());
 }
 
 #[then(expr = "the output should contain {string}")]
-fn the_output_should_contain(world: &mut MetonymyWorld, expected: String) {
+fn the_output_should_contain(
+    world: &mut MetonymyWorld,
+    expected: String,
+) {
     assert!(
         world.output.contains(&expected),
         "Expected output to contain '{}', but it was:\n{}",
         expected,
         world.output
     );
+    drop(expected);
 }
 
 #[tokio::main]

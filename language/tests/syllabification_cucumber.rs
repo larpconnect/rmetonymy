@@ -11,7 +11,7 @@ pub struct SyllabificationWorld {
 }
 
 #[given(expr = "the language configuration exists")]
-async fn given_lang_config(world: &mut SyllabificationWorld) {
+fn given_lang_config(c_world: &mut SyllabificationWorld) {
     let json_str = r#"{
         "id": "018f4a3e-6b9f-7a1a-9b1a-2b3c4d5e6f7a",
         "name": { "endonym": "p" },
@@ -21,21 +21,21 @@ async fn given_lang_config(world: &mut SyllabificationWorld) {
             "illegal_patterns": []
         }
     }"#;
-    world.config = Some(serde_json::from_str(json_str).unwrap());
+    c_world.config = Some(serde_json::from_str(json_str).expect("valid config json"));
 }
 
 #[given(expr = "a language configuration with illegal onsets:")]
-async fn given_lang_config_with_illegals(
-    world: &mut SyllabificationWorld,
+fn given_lang_config_with_illegals(
+    c_world: &mut SyllabificationWorld,
     step: &cucumber::gherkin::Step,
 ) {
     let mut patterns = Vec::new();
     if let Some(table) = step.table.as_ref() {
         for row in table.rows.iter().skip(1) {
-            patterns.push(row[0].clone());
+            patterns.push(row.first().expect("missing pattern value").clone());
         }
     }
-    let patterns_json = serde_json::to_string(&patterns).unwrap();
+    let patterns_json = serde_json::to_string(&patterns).expect("valid patterns json");
     let json_str = format!(
         r#"{{
         "id": "018f4a3e-6b9f-7a1a-9b1a-2b3c4d5e6f7a",
@@ -47,24 +47,32 @@ async fn given_lang_config_with_illegals(
         }}
     }}"#
     );
-    world.config = Some(serde_json::from_str(&json_str).unwrap());
+    c_world.config = Some(serde_json::from_str(&json_str).expect("valid config json"));
 }
 
 #[when(expr = "I syllabify the IPA string {string}")]
-async fn syllabify_string(world: &mut SyllabificationWorld, s: String) {
-    let config = world.config.as_ref().expect("LanguageConfig should exist");
-    let ipa_str = IpaString::from_str(&s).unwrap();
-    let word = config.syllabify(&ipa_str).unwrap();
-    world.word = Some(word);
+fn syllabify_string(
+    c_world: &mut SyllabificationWorld,
+    s: String,
+) {
+    let config = c_world.config.as_ref().expect("LanguageConfig should exist");
+    let ipa_str = IpaString::from_str(&s).expect("valid ipa string");
+    let parsed_word = config.syllabify(&ipa_str).expect("valid syllabify");
+    c_world.word = Some(parsed_word);
+    drop(s);
 }
 
 #[then(expr = "the syllables should format to {string}")]
-async fn syllables_should_format(world: &mut SyllabificationWorld, expected: String) {
-    let word = world
+fn syllables_should_format(
+    c_world: &mut SyllabificationWorld,
+    expected: String,
+) {
+    let parsed_word = c_world
         .word
         .as_ref()
         .expect("Syllables should have been computed");
-    assert_eq!(word.to_string(), expected);
+    assert_eq!(parsed_word.to_string(), expected);
+    drop(expected);
 }
 
 #[tokio::main]

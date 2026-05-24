@@ -6,10 +6,7 @@ use ipa::sequence::Phoneme;
 /// Check if a phoneme is a vowel.
 #[must_use]
 pub fn is_vowel(p: &Phoneme) -> bool {
-    matches!(
-        get_entry(&p.base),
-        Some(IpaEntry::Vowel(_) | IpaEntry::Consonant(_) | IpaEntry::Phoneme(_))
-    ) && matches!(get_entry(&p.base), Some(IpaEntry::Vowel(_)))
+    matches!(get_entry(&p.base), Some(IpaEntry::Vowel(_)))
 }
 
 fn is_breve_or_tie(s: &str) -> bool {

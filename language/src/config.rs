@@ -149,12 +149,10 @@ mod tests {
             }
         }"#;
 
-        let config: LanguageConfig = serde_json::from_str(json_str).expect("Should deserialize");
+        let config: LanguageConfig = serde_json::from_str(json_str).expect("deserialize config");
 
-        assert_eq!(
-            config.id,
-            Uuid::parse_str("018f4a3e-6b9f-7a1a-9b1a-2b3c4d5e6f7a").unwrap()
-        );
+        let expected_uuid = Uuid::parse_str("018f4a3e-6b9f-7a1a-9b1a-2b3c4d5e6f7a").expect("parse uuid");
+        assert_eq!(config.id, expected_uuid);
         assert_eq!(config.name.endonym.as_str(), "p");
         assert!(config.name.exonym.is_none());
         assert_eq!(
@@ -165,9 +163,10 @@ mod tests {
         let phonology = config.phonology.sound_classes;
 
         // Ensure explicit class is parsed
+        let class_key_a = "A".parse::<SoundClassKey>().expect("parse A");
         let class_a = phonology
-            .get(&"A".parse::<SoundClassKey>().unwrap())
-            .unwrap();
+            .get(&class_key_a)
+            .expect("A should exist");
         assert_eq!(class_a.values, vec!["p", "t", "k"]);
         assert_eq!(
             class_a.generator,
@@ -175,21 +174,32 @@ mod tests {
         );
 
         // Ensure default classes are inserted automatically
-        assert!(phonology.contains_key(&"C".parse::<SoundClassKey>().unwrap()));
-        assert!(phonology.contains_key(&"D".parse::<SoundClassKey>().unwrap()));
-        assert!(phonology.contains_key(&"L".parse::<SoundClassKey>().unwrap()));
-        assert!(phonology.contains_key(&"V".parse::<SoundClassKey>().unwrap()));
+        let class_key_c = "C".parse::<SoundClassKey>().expect("parse C");
+        let class_key_d = "D".parse::<SoundClassKey>().expect("parse D");
+        let class_key_l = "L".parse::<SoundClassKey>().expect("parse L");
+        let class_key_v = "V".parse::<SoundClassKey>().expect("parse V");
+        assert!(phonology.contains_key(&class_key_c));
+        assert!(phonology.contains_key(&class_key_d));
+        assert!(phonology.contains_key(&class_key_l));
+        assert!(phonology.contains_key(&class_key_v));
 
         let class_c = phonology
-            .get(&"C".parse::<SoundClassKey>().unwrap())
-            .unwrap();
+            .get(&class_key_c)
+            .expect("C should exist");
         assert!(class_c.values.is_empty());
         assert!(class_c.generator.is_none());
 
-        let noun_masculine = config.phonology.phonotactics.get("noun.masculine").unwrap();
+        let noun_masculine = config
+            .phonology
+            .phonotactics
+            .get("noun.masculine")
+            .expect("noun.masculine should exist");
+        
+        let pat1 = "CV(C)".parse().expect("parse pat1");
+        let pat2 = "CV(CV)".parse().expect("parse pat2");
         assert_eq!(
             noun_masculine.patterns,
-            vec!["CV(C)".parse().unwrap(), "CV(CV)".parse().unwrap()]
+            vec![pat1, pat2]
         );
         assert_eq!(
             noun_masculine.generator,
@@ -206,7 +216,7 @@ mod tests {
             }
         }"#;
 
-        let sound_class: SoundClass = serde_json::from_str(json_str).expect("Should deserialize");
+        let sound_class: SoundClass = serde_json::from_str(json_str).expect("deserialize sound class");
         assert_eq!(sound_class.generator, Some(GeneratorConfig::Equiprobable));
     }
 }
