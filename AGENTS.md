@@ -10,8 +10,8 @@
 
 ## Core Principles
 - **Safety First**: Prioritize borrow checker rules, strict lifetime management, and avoiding `unsafe` unless strictly necessary.
-- **Idiomatic Rust**: Use modern Rust idioms (Edition 2021+, 1.9+), `Option`/`Result` for error handling, and prefer iterators over loops.
-- **Maintainability**: Keep methods small and focused.
+- **Idiomatic Rust**: Use modern Rust idioms (Edition 2024+, 1.9+), `Option`/`Result` for error handling, and prefer iterators over loops.
+- **Maintainability**: Keep methods small and focused. 
 - **Performance**: Focus on zero-cost abstractions.
 
 ---
@@ -36,7 +36,7 @@
 ## Testing Discipline
 - **TDD**: Write tests before implementing logic. Strive to have no more than one integration test and one unit test failing at one time.
   - If given more than one example or test case in order to complete a task then approach the set of cases systematically, solving one at a time rather than implementing them all as tests at once. 
-- **Unit Tests**: Place in the same file within a `mod tests` block. Write tests before implementing logic.
+- **Unit Tests**: Place in the `tests` directory for the respective crate. Write tests before implementing logic.
 - **Integration Tests**: Place in the `tests/` directory. Write tests before implementing logic. Use BDD-style Given-When-Then for integration tests and use cucumber.
 - **Snapshot Tests**: Use `cargo insta` and prefer `cargo insta accept`. Use `insta` for testing all CLI output and parser results.
 
