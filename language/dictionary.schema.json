@@ -36,13 +36,9 @@
           "type": "string",
           "description": "The conlang word definition represented as an IPA string"
         },
-        "word_type": {
+        "type": {
           "type": "string",
-          "description": "The type of the word"
-        },
-        "word_subtype": {
-          "type": "string",
-          "description": "The subtype of the word"
+          "description": "The type of the word (optionally with a subtype separated by a period, e.g. noun.masculine)"
         },
         "era": {
           "type": "integer",
@@ -68,10 +64,8 @@
         "id",
         "meaning",
         "definition",
-        "word_type",
-        "word_subtype",
+        "type",
         "era",
-        "etymology",
         "usage_notes"
       ],
       "additionalProperties": false

@@ -1,7 +1,5 @@
 use ipa::IpaString;
-use language::dictionary::{
-    generate_base62_uuid, parse_base62_uuid, Dictionary, NewEntry,
-};
+use language::dictionary::{Dictionary, NewEntry, generate_base62_uuid, parse_base62_uuid};
 use std::collections::BTreeMap;
 use std::str::FromStr;
 use uuid::Uuid;
@@ -31,9 +29,8 @@ fn test_dictionary_blank_and_add_remove() {
 
     let meaning = IpaString::from_str("rɛd").expect("parse meaning");
     let definition = IpaString::from_str("pat").expect("parse definition");
-    let word_type = "noun".to_string();
-    let word_subtype = "masculine".to_string();
-    let era = 1;
+    let r#type = "noun.masculine".to_string();
+    let era = Some(1);
     let mut etymology = BTreeMap::new();
     etymology.insert(0, vec!["pa".to_string(), "ta".to_string()]);
     let usage_notes = "Used primarily in formal contexts.".to_string();
@@ -41,10 +38,9 @@ fn test_dictionary_blank_and_add_remove() {
     let entry_id = dict.add_entry(NewEntry {
         meaning: meaning.clone(),
         definition: definition.clone(),
-        word_type: word_type.clone(),
-        word_subtype: word_subtype.clone(),
+        r#type: r#type.clone(),
         era,
-        etymology: etymology.clone(),
+        etymology: Some(etymology.clone()),
         usage_notes: usage_notes.clone(),
     });
 
@@ -53,10 +49,9 @@ fn test_dictionary_blank_and_add_remove() {
     assert_eq!(entry.id, entry_id);
     assert_eq!(entry.meaning, meaning);
     assert_eq!(entry.definition, definition);
-    assert_eq!(entry.word_type, word_type);
-    assert_eq!(entry.word_subtype, word_subtype);
-    assert_eq!(entry.era, era);
-    assert_eq!(entry.etymology, etymology);
+    assert_eq!(entry.r#type, r#type);
+    assert_eq!(entry.era, 1);
+    assert_eq!(entry.etymology, Some(etymology));
     assert_eq!(entry.usage_notes, usage_notes);
 
     // Test removing entry
@@ -81,16 +76,76 @@ fn test_dictionary_serialization_validation() {
     dict.add_entry(NewEntry {
         meaning,
         definition,
-        word_type: "noun".to_string(),
-        word_subtype: "neuter".to_string(),
-        era: 2,
-        etymology,
+        r#type: "noun.neuter".to_string(),
+        era: Some(2),
+        etymology: Some(etymology),
         usage_notes: "Common word.".to_string(),
     });
 
     let json_str = dict.to_string().expect("serialize dict");
     let parsed_dict = Dictionary::from_str(&json_str).expect("parse and validate dict");
     assert_eq!(dict, parsed_dict);
+}
+
+#[test]
+fn test_dictionary_optional_etymology() {
+    let lang_id = Uuid::now_v7();
+    let mut dict = Dictionary::new(lang_id);
+
+    dict.add_entry(NewEntry {
+        meaning: IpaString::from_str("a").unwrap(),
+        definition: IpaString::from_str("b").unwrap(),
+        r#type: "noun".to_string(),
+        era: Some(1),
+        etymology: None,
+        usage_notes: "Notes".to_string(),
+    });
+
+    let json_str = dict.to_string().expect("serialize dict");
+    // Assert that "etymology" key is not present in the serialized JSON string
+    assert!(!json_str.contains("etymology"));
+
+    let parsed_dict = Dictionary::from_str(&json_str).expect("parse dict without etymology");
+    assert_eq!(parsed_dict.entries[0].etymology, None);
+}
+
+#[test]
+fn test_dictionary_default_era() {
+    let lang_id = Uuid::now_v7();
+    let mut dict = Dictionary::new(lang_id);
+
+    // 1. Era defaults to 0 when dictionary is empty
+    dict.add_entry(NewEntry {
+        meaning: IpaString::from_str("a").unwrap(),
+        definition: IpaString::from_str("b").unwrap(),
+        r#type: "noun".to_string(),
+        era: None,
+        etymology: None,
+        usage_notes: "".to_string(),
+    });
+    assert_eq!(dict.entries[0].era, 0);
+
+    // 2. Add entry with explicit era 3
+    dict.add_entry(NewEntry {
+        meaning: IpaString::from_str("c").unwrap(),
+        definition: IpaString::from_str("d").unwrap(),
+        r#type: "verb".to_string(),
+        era: Some(3),
+        etymology: None,
+        usage_notes: "".to_string(),
+    });
+    assert_eq!(dict.entries[1].era, 3);
+
+    // 3. Era defaults to 3 (most recent era present in the dictionary)
+    dict.add_entry(NewEntry {
+        meaning: IpaString::from_str("e").unwrap(),
+        definition: IpaString::from_str("f").unwrap(),
+        r#type: "adjective".to_string(),
+        era: None,
+        etymology: None,
+        usage_notes: "".to_string(),
+    });
+    assert_eq!(dict.entries[2].era, 3);
 }
 
 #[test]
@@ -111,10 +166,8 @@ fn test_dictionary_validation_fails_on_invalid_json() {
                 "id": "3gS5H3f",
                 "meaning": "a",
                 "definition": "b",
-                "word_type": "noun",
-                "word_subtype": "masc",
+                "type": "noun.masc",
                 "era": "one",
-                "etymology": {},
                 "usage_notes": ""
             }
         ]
