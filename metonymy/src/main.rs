@@ -361,12 +361,7 @@ fn handle_dict_print(dict_path: &std::path::Path) -> anyhow::Result<()> {
         println!("{idx}. [{id}]");
         println!("   Definition : /{}/", entry.definition);
         println!("   Meaning    : /{}/", entry.meaning);
-        let parts: Vec<&str> = entry.r#type.splitn(2, '.').collect();
-        let (word_type, word_subtype) = match parts.as_slice() {
-            [t, st] => (*t, *st),
-            [t] => (*t, ""),
-            _ => ("", ""),
-        };
+        let (word_type, word_subtype) = entry.r#type.split_once('.').unwrap_or((&entry.r#type, ""));
         if word_subtype.is_empty() {
             println!("   Type       : {word_type}");
         } else {
