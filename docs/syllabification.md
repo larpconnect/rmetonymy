@@ -1,7 +1,7 @@
 ---
 name: Phonological Syllabification Rules
 description: Linguistic guide explaining the phonetic processes governing syllable division.
-target_audience: Linguists and phonetic researchers working on sound patterns and phonotactics.
+target_audience: Conlang builders and developers trying to understand how the syllabification algorithm works. 
 ---
 
 # Phonological Syllabification Rules
