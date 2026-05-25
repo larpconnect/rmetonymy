@@ -57,8 +57,7 @@ fn test_rng_zipf_selection() {
     assert!(count_1 > 270 && count_1 < 400);
 }
 
-#[test]
-fn test_word_generation() {
+fn make_test_config() -> LanguageConfig {
     let mut sound_classes = BTreeMap::new();
     sound_classes.insert(
         "C".parse().expect("valid sound class key"),
@@ -91,7 +90,7 @@ fn test_word_generation() {
         },
     );
 
-    let config = LanguageConfig {
+    LanguageConfig {
         id: Uuid::now_v7(),
         name: NameConfig {
             endonym: "test".parse().expect("valid word"),
@@ -107,7 +106,12 @@ fn test_word_generation() {
             illegal_patterns: vec![],
             prosody: None,
         },
-    };
+    }
+}
+
+#[test]
+fn test_word_generation() {
+    let config = make_test_config();
 
     // Verify config is valid
     config.validate().expect("config should be valid");

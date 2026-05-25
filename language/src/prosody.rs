@@ -38,6 +38,16 @@ pub enum StressLocation {
     Third,
 }
 
+impl StressLocation {
+    const fn to_index(self) -> usize {
+        match self {
+            Self::First => 0,
+            Self::Second => 1,
+            Self::Third => 2,
+        }
+    }
+}
+
 /// Primary stress anchor (first or last foot).
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "kebab-case")]
@@ -381,32 +391,16 @@ fn apply_patterned_main_stress_last_anchored(
     }
 }
 
-fn apply_patterned(
-    word: &IpaWord,
-    pat: PatternedConfig,
+fn apply_patterned_long_word(
     syllables: &mut [Syllable],
     num_syllables: usize,
+    foot_size: usize,
+    stress_loc: usize,
+    main_stress: MainStress,
+    anchor_opt: Option<usize>,
 ) {
-    let foot_size = pat.foot as usize;
-    let stress_loc = match pat.stress_location {
-        StressLocation::First => 0,
-        StressLocation::Second => 1,
-        StressLocation::Third => 2,
-    };
-
-    for syl in syllables.iter_mut() {
-        syl.stress = SyllableStress::Unstressed;
-    }
-
-    let anchor_opt = find_stress_anchor(word);
-
-    if num_syllables < foot_size {
-        apply_patterned_short_word(syllables, num_syllables, stress_loc, anchor_opt);
-        return;
-    }
-
     let num_complete_feet = num_syllables / foot_size;
-    match pat.main_stress {
+    match main_stress {
         MainStress::First => {
             if let Some(p_idx) = anchor_opt {
                 apply_patterned_main_stress_first_anchored(
@@ -441,6 +435,35 @@ fn apply_patterned(
                 );
             }
         }
+    }
+}
+
+fn apply_patterned(
+    word: &IpaWord,
+    pat: PatternedConfig,
+    syllables: &mut [Syllable],
+    num_syllables: usize,
+) {
+    let foot_size = pat.foot as usize;
+    let stress_loc = pat.stress_location.to_index();
+
+    for syl in syllables.iter_mut() {
+        syl.stress = SyllableStress::Unstressed;
+    }
+
+    let anchor_opt = find_stress_anchor(word);
+
+    if num_syllables < foot_size {
+        apply_patterned_short_word(syllables, num_syllables, stress_loc, anchor_opt);
+    } else {
+        apply_patterned_long_word(
+            syllables,
+            num_syllables,
+            foot_size,
+            stress_loc,
+            pat.main_stress,
+            anchor_opt,
+        );
     }
 }
 

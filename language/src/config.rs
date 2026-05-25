@@ -214,9 +214,8 @@ mod tests {
     use time::macros::datetime;
     use uuid::Uuid;
 
-    #[test]
-    fn test_language_config_deserialization() {
-        let json_str = r#"{
+    fn get_test_config_json() -> &'static str {
+        r#"{
             "id": "018f4a3e-6b9f-7a1a-9b1a-2b3c4d5e6f7a",
             "name": {
                 "endonym": "p"
@@ -250,23 +249,10 @@ mod tests {
                     }
                 }
             }
-        }"#;
+        }"#
+    }
 
-        let config: LanguageConfig = serde_json::from_str(json_str).expect("deserialize config");
-
-        let expected_uuid =
-            Uuid::parse_str("018f4a3e-6b9f-7a1a-9b1a-2b3c4d5e6f7a").expect("parse uuid");
-        assert_eq!(config.id, expected_uuid);
-        assert_eq!(config.name.endonym.as_str(), "p");
-        assert!(config.name.exonym.is_none());
-        assert_eq!(
-            config.metadata.created_at,
-            datetime!(2024-05-04 00:12:00 +00:00)
-        );
-
-        let phonology = config.phonology.sound_classes;
-
-        // Ensure explicit class is parsed
+    fn assert_deserialized_phonology(phonology: &BTreeMap<SoundClassKey, SoundClass>) {
         let class_key_a = "A".parse::<SoundClassKey>().expect("parse A");
         let class_a = phonology.get(&class_key_a).expect("A should exist");
         assert_eq!(class_a.values, vec!["p", "t", "k"]);
@@ -277,7 +263,6 @@ mod tests {
             })
         );
 
-        // Ensure default classes are inserted automatically
         let class_key_c = "C".parse::<SoundClassKey>().expect("parse C");
         let class_key_d = "D".parse::<SoundClassKey>().expect("parse D");
         let class_key_l = "L".parse::<SoundClassKey>().expect("parse L");
@@ -290,11 +275,12 @@ mod tests {
         let class_c = phonology.get(&class_key_c).expect("C should exist");
         assert!(class_c.values.is_empty());
         assert!(class_c.generator.is_none());
+    }
 
-        let noun_masculine = config
-            .phonology
-            .phonotactics
-            .generators
+    fn assert_deserialized_generators(
+        generators: &BTreeMap<String, crate::generator::WordGenerator>,
+    ) {
+        let noun_masculine = generators
             .get("noun.masculine")
             .expect("noun.masculine should exist");
 
@@ -307,6 +293,25 @@ mod tests {
                 config: ZipfConfig { a: 1.5, b: 1.0 }
             }
         );
+    }
+
+    #[test]
+    fn test_language_config_deserialization() {
+        let json_str = get_test_config_json();
+        let config: LanguageConfig = serde_json::from_str(json_str).expect("deserialize config");
+
+        let expected_uuid =
+            Uuid::parse_str("018f4a3e-6b9f-7a1a-9b1a-2b3c4d5e6f7a").expect("parse uuid");
+        assert_eq!(config.id, expected_uuid);
+        assert_eq!(config.name.endonym.as_str(), "p");
+        assert!(config.name.exonym.is_none());
+        assert_eq!(
+            config.metadata.created_at,
+            datetime!(2024-05-04 00:12:00 +00:00)
+        );
+
+        assert_deserialized_phonology(&config.phonology.sound_classes);
+        assert_deserialized_generators(&config.phonology.phonotactics.generators);
     }
 
     #[test]

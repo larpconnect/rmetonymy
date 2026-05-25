@@ -458,10 +458,8 @@ fn handle_dict_add_cmd(
     handle_dict_add(dict_path, entry)
 }
 
-fn main() -> anyhow::Result<()> {
-    let cli = Cli::parse();
-
-    let level = if cli.verbose {
+fn init_logging(verbose: bool) {
+    let level = if verbose {
         tracing::Level::DEBUG
     } else {
         tracing::Level::INFO
@@ -472,59 +470,86 @@ fn main() -> anyhow::Result<()> {
         .with_writer(std::io::stderr)
         .init();
 
-    if cli.verbose {
+    if verbose {
         println!("Metonymy is running in verbose mode...");
     } else {
         println!("Metonymy is running...");
     }
+}
+
+fn handle_dictionary_cmd(
+    dict_cmd: DictionaryCmd,
+    language: Option<&PathBuf>,
+    dict: Option<&PathBuf>,
+) -> anyhow::Result<()> {
+    let dict_path =
+        dict.context("Dictionary file path (--dict) is required for dictionary command")?;
+    match dict_cmd.subcommand {
+        DictionarySubcommand::Init => {
+            handle_dict_init(dict_path, language.map(PathBuf::as_path))?;
+        }
+        DictionarySubcommand::Add {
+            meaning,
+            definition,
+            generate,
+            r#type,
+            era,
+            etymology,
+            usage_notes,
+        } => {
+            handle_dict_add_cmd(
+                dict_path,
+                language.map(PathBuf::as_path),
+                &meaning,
+                definition.as_deref(),
+                generate,
+                r#type,
+                era,
+                &etymology,
+                usage_notes,
+            )?;
+        }
+        DictionarySubcommand::Remove { id } => {
+            handle_dict_remove(dict_path, &id)?;
+        }
+        DictionarySubcommand::Print => {
+            handle_dict_print(dict_path)?;
+        }
+    }
+    Ok(())
+}
+
+fn run_command(
+    cmd: Commands,
+    phone_config: Option<&PathBuf>,
+    language: Option<&PathBuf>,
+    dict: Option<&PathBuf>,
+) -> anyhow::Result<()> {
+    match cmd {
+        Commands::Lookup { phoneme } => {
+            handle_lookup(&phoneme, phone_config)?;
+        }
+        Commands::Generate(gen_cmd) => {
+            handle_generate(&gen_cmd, language)?;
+        }
+        Commands::Dictionary(dict_cmd) => {
+            handle_dictionary_cmd(dict_cmd, language, dict)?;
+        }
+    }
+    Ok(())
+}
+
+fn main() -> anyhow::Result<()> {
+    let cli = Cli::parse();
+
+    init_logging(cli.verbose);
+
+    let phone_config = cli.phone_config.as_ref();
+    let language = cli.language.as_ref();
+    let dict = cli.dict.as_ref();
 
     if let Some(cmd) = cli.command {
-        match cmd {
-            Commands::Lookup { phoneme } => {
-                handle_lookup(&phoneme, cli.phone_config.as_ref())?;
-            }
-            Commands::Generate(gen_cmd) => {
-                handle_generate(&gen_cmd, cli.language.as_ref())?;
-            }
-            Commands::Dictionary(dict_cmd) => {
-                let dict_path = cli
-                    .dict
-                    .as_ref()
-                    .context("Dictionary file path (--dict) is required for dictionary command")?;
-                match dict_cmd.subcommand {
-                    DictionarySubcommand::Init => {
-                        handle_dict_init(dict_path, cli.language.as_deref())?;
-                    }
-                    DictionarySubcommand::Add {
-                        meaning,
-                        definition,
-                        generate,
-                        r#type,
-                        era,
-                        etymology,
-                        usage_notes,
-                    } => {
-                        handle_dict_add_cmd(
-                            dict_path,
-                            cli.language.as_deref(),
-                            &meaning,
-                            definition.as_deref(),
-                            generate,
-                            r#type,
-                            era,
-                            &etymology,
-                            usage_notes,
-                        )?;
-                    }
-                    DictionarySubcommand::Remove { id } => {
-                        handle_dict_remove(dict_path, &id)?;
-                    }
-                    DictionarySubcommand::Print => {
-                        handle_dict_print(dict_path)?;
-                    }
-                }
-            }
-        }
+        run_command(cmd, phone_config, language, dict)?;
     } else {
         soundchange::parse_soundchange();
     }
