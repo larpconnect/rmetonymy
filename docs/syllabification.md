@@ -44,7 +44,7 @@ $$\text{Plosives} < \text{Fricatives} < \text{Nasals}
   < \text{Liquids} < \text{Glides} < \text{Vowels}$$
 
 Within the sound system (defined in the database file
-[ipa.json](file:///home/clementsd/rmetonymy/ipa/ipa.json)), this hierarchy is represented by
+[ipa.json](../ipa/ipa.json)), this hierarchy is represented by
 numerical sonority scores (0 to 100). For example:
 *   **Plosives** (stops like `/p/`, `/t/`, `/k/`) have low sonority (~25–27).
 *   **Fricatives** (like `/f/`, `/s/`, `/z/`) have slightly higher sonority (~45–47).
