@@ -70,6 +70,8 @@ pub enum ProsodicConfig {
     Unstressed,
     Alternating {
         option: AlternatingConfig,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        stress_open_monosyllables: Option<bool>,
     },
     Patterned(PatternedConfig),
 }
@@ -136,19 +138,26 @@ impl ProsodicConfig {
                 word.clone()
             }
             Self::NoFixedStress { config: zipf } => {
-                if let Some(p_idx) = leftmost_primary_stress_index(word) {
+                if let Some(p_idx) = find_stress_anchor(word) {
                     apply_alternating_secondary_stresses(&mut syllables, p_idx);
                     IpaWord::new(syllables)
-                } else if has_any_stress(word) {
-                    word.clone()
                 } else {
                     let p_idx = sample_zipf_index(num_syllables, zipf.a, zipf.b, rng);
                     apply_alternating_secondary_stresses(&mut syllables, p_idx);
                     IpaWord::new(syllables)
                 }
             }
-            Self::Alternating { option } => {
-                apply_alternating(word, *option, &mut syllables, num_syllables);
+            Self::Alternating {
+                option,
+                stress_open_monosyllables,
+            } => {
+                apply_alternating(
+                    word,
+                    *option,
+                    *stress_open_monosyllables,
+                    &mut syllables,
+                    num_syllables,
+                );
                 IpaWord::new(syllables)
             }
             Self::Patterned(pat) => {
@@ -159,29 +168,43 @@ impl ProsodicConfig {
     }
 }
 
+fn apply_alternating_monosyllable(
+    syllables: &mut [Syllable],
+    stress_open_monosyllables: Option<bool>,
+) {
+    let stress_open = stress_open_monosyllables.unwrap_or(true);
+    if let Some(first) = syllables
+        .first_mut()
+        .filter(|s| is_closed_syllable(s) || stress_open)
+    {
+        first.stress = SyllableStress::PrimaryStress;
+    }
+}
+
+fn get_alternating_target_index(option: AlternatingConfig, num_syllables: usize) -> usize {
+    let idx = match option {
+        AlternatingConfig::FirstSyllable => 0,
+        AlternatingConfig::SecondSyllable => 1,
+        AlternatingConfig::Antepenultimate => num_syllables.saturating_sub(3),
+        AlternatingConfig::Penultimate => num_syllables.saturating_sub(2),
+        AlternatingConfig::Ultimate => num_syllables.saturating_sub(1),
+    };
+    idx.clamp(0, num_syllables - 1)
+}
+
 fn apply_alternating(
     word: &IpaWord,
     option: AlternatingConfig,
+    stress_open_monosyllables: Option<bool>,
     syllables: &mut [Syllable],
     num_syllables: usize,
 ) {
-    if let Some(p_idx) = leftmost_primary_stress_index(word) {
+    if let Some(p_idx) = find_stress_anchor(word) {
         apply_alternating_secondary_stresses(syllables, p_idx);
-    } else if has_any_stress(word) {
-        // Leave it alone.
     } else if num_syllables == 1 {
-        if let Some(first) = syllables.get_mut(0).filter(|s| is_closed_syllable(s)) {
-            first.stress = SyllableStress::PrimaryStress;
-        }
+        apply_alternating_monosyllable(syllables, stress_open_monosyllables);
     } else {
-        let target_idx = match option {
-            AlternatingConfig::FirstSyllable => 0,
-            AlternatingConfig::SecondSyllable => 1,
-            AlternatingConfig::Antepenultimate => num_syllables.saturating_sub(3),
-            AlternatingConfig::Penultimate => num_syllables.saturating_sub(2),
-            AlternatingConfig::Ultimate => num_syllables.saturating_sub(1),
-        };
-        let target_idx = target_idx.clamp(0, num_syllables - 1);
+        let target_idx = get_alternating_target_index(option, num_syllables);
         apply_alternating_secondary_stresses(syllables, target_idx);
     }
 }
@@ -235,16 +258,135 @@ fn apply_patterned_last(
     }
 }
 
+fn apply_patterned_short_word(
+    syllables: &mut [Syllable],
+    num_syllables: usize,
+    stress_loc: usize,
+    anchor_opt: Option<usize>,
+) {
+    if let Some(syl) = anchor_opt.and_then(|idx| syllables.get_mut(idx)) {
+        syl.stress = SyllableStress::PrimaryStress;
+        return;
+    }
+    if num_syllables == 1 {
+        if let Some(first) = syllables.first_mut().filter(|s| is_closed_syllable(s)) {
+            first.stress = SyllableStress::PrimaryStress;
+        }
+        return;
+    }
+    let stress_idx = stress_loc.clamp(0, num_syllables - 1);
+    if let Some(syl) = syllables.get_mut(stress_idx) {
+        syl.stress = SyllableStress::PrimaryStress;
+    }
+}
+
+fn apply_patterned_main_stress_first_anchored(
+    syllables: &mut [Syllable],
+    num_complete_feet: usize,
+    foot_size: usize,
+    stress_loc: usize,
+    p_idx: usize,
+) {
+    let primary_foot_idx = p_idx / foot_size;
+    for i in 0..num_complete_feet {
+        if i == primary_foot_idx {
+            if let Some(syl) = syllables.get_mut(p_idx) {
+                syl.stress = SyllableStress::PrimaryStress;
+            }
+        } else {
+            let stress_idx = i * foot_size + stress_loc;
+            if let Some(syl) = syllables.get_mut(stress_idx) {
+                syl.stress = SyllableStress::SecondaryStress;
+            }
+        }
+    }
+    let syl_opt = if primary_foot_idx >= num_complete_feet {
+        syllables.get_mut(p_idx)
+    } else {
+        None
+    };
+    if let Some(syl) = syl_opt {
+        syl.stress = SyllableStress::PrimaryStress;
+    }
+}
+
+fn apply_patterned_main_stress_last_remainder_anchored(
+    syllables: &mut [Syllable],
+    num_complete_feet: usize,
+    foot_size: usize,
+    stress_loc: usize,
+    remainder: usize,
+    p_idx: usize,
+) {
+    if let Some(syl) = syllables.get_mut(p_idx) {
+        syl.stress = SyllableStress::PrimaryStress;
+    }
+    for i in 0..num_complete_feet {
+        let stress_idx = remainder + i * foot_size + stress_loc;
+        if let Some(syl) = syllables.get_mut(stress_idx) {
+            syl.stress = SyllableStress::SecondaryStress;
+        }
+    }
+}
+
+fn apply_patterned_main_stress_last_foot_anchored(
+    syllables: &mut [Syllable],
+    num_complete_feet: usize,
+    foot_size: usize,
+    stress_loc: usize,
+    remainder: usize,
+    p_idx: usize,
+) {
+    let primary_foot_idx = (p_idx - remainder) / foot_size;
+    for i in 0..num_complete_feet {
+        if i == primary_foot_idx {
+            if let Some(syl) = syllables.get_mut(p_idx) {
+                syl.stress = SyllableStress::PrimaryStress;
+            }
+        } else {
+            let stress_idx = remainder + i * foot_size + stress_loc;
+            if let Some(syl) = syllables.get_mut(stress_idx) {
+                syl.stress = SyllableStress::SecondaryStress;
+            }
+        }
+    }
+}
+
+fn apply_patterned_main_stress_last_anchored(
+    syllables: &mut [Syllable],
+    num_complete_feet: usize,
+    foot_size: usize,
+    stress_loc: usize,
+    remainder: usize,
+    p_idx: usize,
+) {
+    if p_idx < remainder {
+        apply_patterned_main_stress_last_remainder_anchored(
+            syllables,
+            num_complete_feet,
+            foot_size,
+            stress_loc,
+            remainder,
+            p_idx,
+        );
+    } else {
+        apply_patterned_main_stress_last_foot_anchored(
+            syllables,
+            num_complete_feet,
+            foot_size,
+            stress_loc,
+            remainder,
+            p_idx,
+        );
+    }
+}
+
 fn apply_patterned(
     word: &IpaWord,
     pat: PatternedConfig,
     syllables: &mut [Syllable],
     num_syllables: usize,
 ) {
-    if has_any_stress(word) {
-        return;
-    }
-
     let foot_size = pat.foot as usize;
     let stress_loc = match pat.stress_location {
         StressLocation::First => 0,
@@ -252,45 +394,70 @@ fn apply_patterned(
         StressLocation::Third => 2,
     };
 
-    if num_syllables < foot_size {
-        return;
-    }
-
     for syl in syllables.iter_mut() {
         syl.stress = SyllableStress::Unstressed;
+    }
+
+    let anchor_opt = find_stress_anchor(word);
+
+    if num_syllables < foot_size {
+        apply_patterned_short_word(syllables, num_syllables, stress_loc, anchor_opt);
+        return;
     }
 
     let num_complete_feet = num_syllables / foot_size;
     match pat.main_stress {
         MainStress::First => {
-            apply_patterned_first(syllables, num_complete_feet, foot_size, stress_loc);
+            if let Some(p_idx) = anchor_opt {
+                apply_patterned_main_stress_first_anchored(
+                    syllables,
+                    num_complete_feet,
+                    foot_size,
+                    stress_loc,
+                    p_idx,
+                );
+            } else {
+                apply_patterned_first(syllables, num_complete_feet, foot_size, stress_loc);
+            }
         }
         MainStress::Last => {
             let remainder = num_syllables % foot_size;
-            apply_patterned_last(
-                syllables,
-                num_complete_feet,
-                foot_size,
-                stress_loc,
-                remainder,
-            );
+            if let Some(p_idx) = anchor_opt {
+                apply_patterned_main_stress_last_anchored(
+                    syllables,
+                    num_complete_feet,
+                    foot_size,
+                    stress_loc,
+                    remainder,
+                    p_idx,
+                );
+            } else {
+                apply_patterned_last(
+                    syllables,
+                    num_complete_feet,
+                    foot_size,
+                    stress_loc,
+                    remainder,
+                );
+            }
         }
     }
-}
-
-fn has_any_stress(word: &IpaWord) -> bool {
-    word.syllables.iter().any(|syl| {
-        matches!(
-            syl.stress,
-            SyllableStress::PrimaryStress | SyllableStress::SecondaryStress
-        )
-    })
 }
 
 fn leftmost_primary_stress_index(word: &IpaWord) -> Option<usize> {
     word.syllables
         .iter()
         .position(|syl| matches!(syl.stress, SyllableStress::PrimaryStress))
+}
+
+fn leftmost_secondary_stress_index(word: &IpaWord) -> Option<usize> {
+    word.syllables
+        .iter()
+        .position(|syl| matches!(syl.stress, SyllableStress::SecondaryStress))
+}
+
+fn find_stress_anchor(word: &IpaWord) -> Option<usize> {
+    leftmost_primary_stress_index(word).or_else(|| leftmost_secondary_stress_index(word))
 }
 
 fn apply_alternating_secondary_stresses(syllables: &mut [Syllable], primary_idx: usize) {
@@ -316,7 +483,14 @@ fn is_closed_syllable(syl: &Syllable) -> bool {
                 false
             }
         }
-        SyllableStructure::Root(_) | SyllableStructure::Arbitrary(_) => false,
+        SyllableStructure::Root(_) => false,
+        SyllableStructure::Arbitrary(seq) => {
+            if let Some(ipa::sequence::SequenceElement::Phoneme(p)) = seq.elements.last() {
+                !crate::phonology::is_vowel(p)
+            } else {
+                false
+            }
+        }
     }
 }
 
