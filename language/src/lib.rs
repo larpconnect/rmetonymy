@@ -1,4 +1,5 @@
 pub mod config;
+pub mod dictionary;
 pub mod generator;
 pub mod matcher;
 pub mod phonology;
@@ -8,6 +9,7 @@ pub mod sound_class;
 pub mod syllabifier;
 pub mod syllable;
 
+pub use dictionary::{Dictionary, DictionaryEntry, NewEntry};
 pub use prosody::{
     AlternatingConfig, FootSize, MainStress, PatternedConfig, ProsodicConfig, StressLocation,
 };

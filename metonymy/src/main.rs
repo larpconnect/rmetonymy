@@ -19,6 +19,10 @@ struct Cli {
     #[arg(long)]
     language: Option<PathBuf>,
 
+    /// The dictionary file to load/save
+    #[arg(long)]
+    dict: Option<PathBuf>,
+
     #[command(subcommand)]
     command: Option<Commands>,
 }
@@ -33,6 +37,60 @@ enum Commands {
     },
     /// Generate words or other linguistic constructs
     Generate(GenerateCmd),
+    /// Manage the conlang dictionary
+    Dictionary(DictionaryCmd),
+}
+
+#[derive(Parser)]
+pub struct DictionaryCmd {
+    #[command(subcommand)]
+    pub subcommand: DictionarySubcommand,
+}
+
+#[derive(Subcommand)]
+pub enum DictionarySubcommand {
+    /// Create a blank dictionary for a language
+    Init,
+
+    /// Add a word to the dictionary
+    Add {
+        /// The meaning of the word (`IpaString`)
+        #[arg(long)]
+        meaning: String,
+
+        /// The conlang definition of the word (`IpaString`)
+        #[arg(long)]
+        definition: String,
+
+        /// The type of the word
+        #[arg(long)]
+        word_type: String,
+
+        /// The subtype of the word
+        #[arg(long)]
+        word_subtype: String,
+
+        /// The era of the word
+        #[arg(long, default_value_t = 0)]
+        era: u32,
+
+        /// Etymology entry: `era:source_word1,source_word2`... (can be specified multiple times)
+        #[arg(long)]
+        etymology: Vec<String>,
+
+        /// Usage notes
+        #[arg(long, default_value = "")]
+        usage_notes: String,
+    },
+
+    /// Remove a word from the dictionary
+    Remove {
+        /// The Base62 ID of the word to remove
+        id: String,
+    },
+
+    /// Pretty print the dictionary to stdout
+    Print,
 }
 
 #[derive(Parser)]
@@ -171,6 +229,152 @@ fn handle_generate(cmd: &GenerateCmd, language_path: Option<&PathBuf>) -> anyhow
     Ok(())
 }
 
+fn parse_etymology(raw: &[String]) -> anyhow::Result<std::collections::BTreeMap<u32, Vec<String>>> {
+    let mut map = std::collections::BTreeMap::new();
+    for item in raw {
+        let parts: Vec<&str> = item.splitn(2, ':').collect();
+        if parts.len() != 2 {
+            anyhow::bail!("Invalid etymology format: '{item}'. Expected 'era:word1,word2,...'");
+        }
+        let era_str = parts.first().context("Missing era in etymology")?;
+        let words_str = parts.get(1).context("Missing words list in etymology")?;
+        let era: u32 = era_str
+            .trim()
+            .parse()
+            .with_context(|| format!("Invalid era number '{era_str}' in etymology"))?;
+        let words: Vec<String> = words_str
+            .split(',')
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .collect();
+        map.insert(era, words);
+    }
+    Ok(map)
+}
+
+fn handle_dict_init(
+    dict_path: &std::path::Path,
+    lang_path: Option<&std::path::Path>,
+) -> anyhow::Result<()> {
+    let lang_path = lang_path.context(
+        "Language configuration file (--language) is required to initialize a dictionary",
+    )?;
+    let lang_json = fs::read_to_string(lang_path).with_context(|| {
+        format!(
+            "Failed to read language config from {}",
+            lang_path.display()
+        )
+    })?;
+    let lang_config: language::config::LanguageConfig =
+        serde_json::from_str(&lang_json).context("Failed to parse language config JSON")?;
+
+    let new_dict = language::Dictionary::new(lang_config.id);
+    new_dict
+        .save_to_file(dict_path)
+        .map_err(|e| anyhow::anyhow!(e))
+        .context("Failed to initialize dictionary file")?;
+
+    println!(
+        "Initialized blank dictionary for language ID {} at {}",
+        lang_config.id,
+        dict_path.display()
+    );
+    Ok(())
+}
+
+fn handle_dict_add(
+    dict_path: &std::path::Path,
+    entry: language::NewEntry,
+) -> anyhow::Result<()> {
+    let dict_json = fs::read_to_string(dict_path).with_context(|| {
+        format!(
+            "Failed to read dictionary file from {}",
+            dict_path.display()
+        )
+    })?;
+    let mut dict = dict_json
+        .parse::<language::Dictionary>()
+        .map_err(|e| anyhow::anyhow!(e))
+        .context("Failed to parse dictionary")?;
+
+    let definition = entry.definition.to_string();
+    let meaning = entry.meaning.to_string();
+
+    let entry_id = dict.add_entry(entry);
+
+    dict.save_to_file(dict_path)
+        .map_err(|e| anyhow::anyhow!(e))
+        .context("Failed to save dictionary")?;
+
+    println!("Added word '{definition}' (meaning: '{meaning}') with ID {entry_id}");
+    Ok(())
+}
+
+fn handle_dict_remove(dict_path: &std::path::Path, id: &str) -> anyhow::Result<()> {
+    let dict_json = fs::read_to_string(dict_path).with_context(|| {
+        format!(
+            "Failed to read dictionary file from {}",
+            dict_path.display()
+        )
+    })?;
+    let mut dict = dict_json
+        .parse::<language::Dictionary>()
+        .map_err(|e| anyhow::anyhow!(e))
+        .context("Failed to parse dictionary")?;
+
+    if dict.remove_entry(id) {
+        dict.save_to_file(dict_path)
+            .map_err(|e| anyhow::anyhow!(e))
+            .context("Failed to save dictionary")?;
+        println!("Removed word with ID {id}");
+    } else {
+        println!("Word with ID {id} not found in dictionary");
+    }
+    Ok(())
+}
+
+fn handle_dict_print(dict_path: &std::path::Path) -> anyhow::Result<()> {
+    let dict_json = fs::read_to_string(dict_path).with_context(|| {
+        format!(
+            "Failed to read dictionary file from {}",
+            dict_path.display()
+        )
+    })?;
+    let dict = dict_json
+        .parse::<language::Dictionary>()
+        .map_err(|e| anyhow::anyhow!(e))
+        .context("Failed to parse dictionary")?;
+
+    println!("================================================================================");
+    println!("Dictionary ID: {}", dict.id);
+    println!("Total Entries: {}", dict.entries.len());
+    println!("================================================================================");
+
+    for (i, entry) in dict.entries.iter().enumerate() {
+        println!("{}. [{}]", i + 1, entry.id);
+        println!("   Definition : /{}/", entry.definition);
+        println!("   Meaning    : /{}/", entry.meaning);
+        println!(
+            "   Type       : {} ({})",
+            entry.word_type, entry.word_subtype
+        );
+        println!("   Era        : {}", entry.era);
+        if !entry.etymology.is_empty() {
+            println!("   Etymology  :");
+            for (era, sources) in &entry.etymology {
+                println!("     Era {}: {}", era, sources.join(", "));
+            }
+        }
+        if !entry.usage_notes.is_empty() {
+            println!("   Usage Notes: {}", entry.usage_notes);
+        }
+        println!(
+            "--------------------------------------------------------------------------------"
+        );
+    }
+    Ok(())
+}
+
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
@@ -198,6 +402,50 @@ fn main() -> anyhow::Result<()> {
             }
             Commands::Generate(gen_cmd) => {
                 handle_generate(&gen_cmd, cli.language.as_ref())?;
+            }
+            Commands::Dictionary(dict_cmd) => {
+                let dict_path = cli
+                    .dict
+                    .as_ref()
+                    .context("Dictionary file path (--dict) is required for dictionary command")?;
+                match dict_cmd.subcommand {
+                    DictionarySubcommand::Init => {
+                        handle_dict_init(dict_path, cli.language.as_deref())?;
+                    }
+                    DictionarySubcommand::Add {
+                        meaning,
+                        definition,
+                        word_type,
+                        word_subtype,
+                        era,
+                        etymology,
+                        usage_notes,
+                    } => {
+                        let ipa_meaning = meaning
+                            .parse::<ipa::IpaString>()
+                            .context("Failed to parse meaning as a valid IPA string")?;
+                        let ipa_definition = definition
+                            .parse::<ipa::IpaString>()
+                            .context("Failed to parse definition as a valid IPA string")?;
+                        let ety_map = parse_etymology(&etymology)?;
+                        let entry = language::NewEntry {
+                            meaning: ipa_meaning,
+                            definition: ipa_definition,
+                            word_type,
+                            word_subtype,
+                            era,
+                            etymology: ety_map,
+                            usage_notes,
+                        };
+                        handle_dict_add(dict_path, entry)?;
+                    }
+                    DictionarySubcommand::Remove { id } => {
+                        handle_dict_remove(dict_path, &id)?;
+                    }
+                    DictionarySubcommand::Print => {
+                        handle_dict_print(dict_path)?;
+                    }
+                }
             }
         }
     } else {
