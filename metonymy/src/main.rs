@@ -387,6 +387,38 @@ fn handle_dict_print(dict_path: &std::path::Path) -> anyhow::Result<()> {
     Ok(())
 }
 
+fn generate_conlang_word(
+    language_path: Option<&std::path::Path>,
+    r#type: &str,
+) -> anyhow::Result<ipa::IpaString> {
+    let lang_path = language_path
+        .context("Language configuration file (--language) is required to generate the word")?;
+    let lang_json = fs::read_to_string(lang_path).with_context(|| {
+        format!(
+            "Failed to read language config from {}",
+            lang_path.display()
+        )
+    })?;
+    let config: language::config::LanguageConfig =
+        serde_json::from_str(&lang_json).context("Failed to parse language config JSON")?;
+    config
+        .validate()
+        .context("Language configuration validation failed")?;
+
+    let mut rng = language::generator::thread_rng();
+    let mut warning_logged = false;
+
+    let word = language::generator::generate_word(
+        r#type,
+        &config,
+        &mut rng,
+        8, // max attempts
+        &mut warning_logged,
+    )?;
+    word.parse::<ipa::IpaString>()
+        .context("Failed to parse generated word as a valid IPA string")
+}
+
 #[expect(clippy::too_many_arguments, reason = "Command line parameter wrapper")]
 fn handle_dict_add_cmd(
     dict_path: &std::path::Path,
@@ -403,32 +435,7 @@ fn handle_dict_add_cmd(
         .parse::<ipa::IpaString>()
         .context("Failed to parse meaning as a valid IPA string")?;
     let ipa_definition = if generate {
-        let lang_path = language_path
-            .context("Language configuration file (--language) is required to generate the word")?;
-        let lang_json = fs::read_to_string(lang_path).with_context(|| {
-            format!(
-                "Failed to read language config from {}",
-                lang_path.display()
-            )
-        })?;
-        let config: language::config::LanguageConfig =
-            serde_json::from_str(&lang_json).context("Failed to parse language config JSON")?;
-        config
-            .validate()
-            .context("Language configuration validation failed")?;
-
-        let mut rng = language::generator::thread_rng();
-        let mut warning_logged = false;
-
-        let word = language::generator::generate_word(
-            &r#type,
-            &config,
-            &mut rng,
-            8, // max attempts
-            &mut warning_logged,
-        )?;
-        word.parse::<ipa::IpaString>()
-            .context("Failed to parse generated word as a valid IPA string")?
+        generate_conlang_word(language_path, &r#type)?
     } else {
         let def_str = definition.context("Definition must be provided when not generating")?;
         def_str
