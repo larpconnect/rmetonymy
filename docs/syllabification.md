@@ -102,7 +102,7 @@ following syllable.
 Languages restrict specific sequences of phonemes from being pronounced together in a single
 onset. These illegal patterns (e.g., a rule preventing `/cz/` from starting a syllable,
 configured in the schema at
-[language.schema.json](file:///home/clementsd/rmetonymy/language/language.schema.json))
+[language.schema.json](../language/language.schema.json))
 override the Maximal Onset Principle, forcing a syllable boundary between the illegal sequence
 (yielding `...c.z...`).
 
