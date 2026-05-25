@@ -230,7 +230,7 @@ fn handle_generate(cmd: &GenerateCmd, language_path: Option<&PathBuf>) -> anyhow
 }
 
 fn parse_etymology(raw: &[String]) -> anyhow::Result<std::collections::BTreeMap<u32, Vec<String>>> {
-    let mut map = std::collections::BTreeMap::new();
+    let mut map: std::collections::BTreeMap<u32, Vec<String>> = std::collections::BTreeMap::new();
     for item in raw {
         let parts: Vec<&str> = item.splitn(2, ':').collect();
         if parts.len() != 2 {
@@ -247,7 +247,7 @@ fn parse_etymology(raw: &[String]) -> anyhow::Result<std::collections::BTreeMap<
             .map(|s| s.trim().to_string())
             .filter(|s| !s.is_empty())
             .collect();
-        map.insert(era, words);
+        map.entry(era).or_default().extend(words);
     }
     Ok(map)
 }

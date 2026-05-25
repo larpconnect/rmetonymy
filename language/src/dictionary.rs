@@ -71,10 +71,16 @@ pub fn atomic_write<P: AsRef<Path>>(path: P, content: &[u8]) -> std::io::Result<
     };
 
     // Write contents to temporary file
-    {
+    let write_result = (|| -> std::io::Result<()> {
         let mut file = File::create(&temp_path)?;
         file.write_all(content)?;
         file.sync_all()?;
+        Ok(())
+    })();
+
+    if let Err(e) = write_result {
+        let _ignored = std::fs::remove_file(&temp_path);
+        return Err(e);
     }
 
     // Rename temporary file to target path (atomic rename)
