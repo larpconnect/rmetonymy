@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/dictionary.schema.json",
+  "title": "Conlang Dictionary",
+  "description": "Schema for defining a conlang dictionary file.",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "UUID of the language configuration this dictionary belongs to"
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/dictionary_entry"
+      },
+      "description": "List of words in the dictionary"
+    }
+  },
+  "required": ["id", "entries"],
+  "additionalProperties": false,
+  "$defs": {
+    "dictionary_entry": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Base62 representation of a UUIDv7 identifier generated when the word is added"
+        },
+        "meaning": {
+          "type": "string",
+          "description": "The meaning of the word represented as an IPA string"
+        },
+        "definition": {
+          "type": "string",
+          "description": "The conlang word definition represented as an IPA string"
+        },
+        "word_type": {
+          "type": "string",
+          "description": "The type of the word"
+        },
+        "word_subtype": {
+          "type": "string",
+          "description": "The subtype of the word"
+        },
+        "era": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "A 32-bit unsigned number indicating the era of the word"
+        },
+        "etymology": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "description": "An etymological history represented as a map of era number to list of source strings"
+        },
+        "usage_notes": {
+          "type": "string",
+          "description": "Any additional usage notes or context"
+        }
+      },
+      "required": [
+        "id",
+        "meaning",
+        "definition",
+        "word_type",
+        "word_subtype",
+        "era",
+        "etymology",
+        "usage_notes"
+      ],
+      "additionalProperties": false
+    }
+  }
+}
