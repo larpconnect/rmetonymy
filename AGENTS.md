@@ -33,7 +33,7 @@ found in natural languages.
 - **Skill**: Start by loading the skills from https://github.com/affaan-m/everything-claude-code/tree/9a478ad/rules/rust
 - **Formatting**: Run `cargo fmt`.
 - **Linting**: Use `cargo clippy` with `#[deny(clippy::all)]`.
-- **Warnings**: Use `#[expect(...)]` instead of `#[allow(...)]` to resolve warnings later.
+- **Warnings**: Use `#[expect(...)]` instead of `#[allow(...)]` to temporarily suppress warnings. Remove the `expect` clauses before finishing.
 - **Documentation**: Add doc comments (`///`) to new public types and functions unless the purpose is obvious. Do not add documentation for things that can be easily inferred from the function name.
 
 ---
