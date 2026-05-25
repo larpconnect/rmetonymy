@@ -1,5 +1,10 @@
 # Metonymy Agent Directives
 
+Metonymy (`rmetonymy`) is a conlang construction toolkit aimed toward conlang developers. It aims to capture features of
+real world languages and allow conlang creators to use them when building their own conlangs. It is _not_ designed to take
+the "work" out of conlang creation, but it is designed to make it easier and to do so through the ideas and concepts
+found in natural languages.
+
 ## System Context & Architecture
 * **Project Type:** Rust Command-Line Interface (CLI) application.
 * **Execution Environment:** Strictly local.
