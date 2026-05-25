@@ -40,6 +40,10 @@ pub enum ValidationError {
     /// Directed cycle detected in word generator pattern references.
     #[error("Circular pattern references detected involving generator: {0}")]
     CircularPatternReferences(String),
+
+    /// Invalid prosody configuration.
+    #[error("Invalid prosody configuration: {0}")]
+    InvalidProsodyConfig(String),
 }
 
 /// Validates that all generator map keys conform to the expected syntax and types.
