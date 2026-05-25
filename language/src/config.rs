@@ -47,6 +47,9 @@ impl LanguageConfig {
             &defined,
         )?;
         crate::generator::validate_generator_cycles(&self.phonology.phonotactics.generators)?;
+        if let Some(prosody) = &self.phonology.prosody {
+            prosody.validate()?;
+        }
         Ok(())
     }
 }
@@ -101,6 +104,8 @@ pub struct PhonologyConfig {
     pub phonotactics: PhonotacticsConfig,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub illegal_patterns: Vec<crate::matcher::SoundMatcherPattern>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub prosody: Option<crate::prosody::ProsodicConfig>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

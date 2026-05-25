@@ -18,7 +18,8 @@ fn given_lang_config(c_world: &mut SyllabificationWorld) {
         "metadata": { "created_at": "2024-05-04T00:12:00Z" },
         "phonology": {
             "sound_classes": {},
-            "illegal_patterns": []
+            "illegal_patterns": [],
+            "prosody": { "type": "unstressed" }
         }
     }"#;
     c_world.config = Some(serde_json::from_str(json_str).expect("valid config json"));
@@ -43,7 +44,8 @@ fn given_lang_config_with_illegals(
         "metadata": {{ "created_at": "2024-05-04T00:12:00Z" }},
         "phonology": {{
             "sound_classes": {{}},
-            "illegal_patterns": {patterns_json}
+            "illegal_patterns": {patterns_json},
+            "prosody": {{ "type": "unstressed" }}
         }}
     }}"#
     );

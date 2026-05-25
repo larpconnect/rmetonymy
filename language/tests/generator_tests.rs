@@ -105,6 +105,7 @@ fn test_word_generation() {
             sound_classes,
             phonotactics: PhonotacticsConfig { generators },
             illegal_patterns: vec![],
+            prosody: None,
         },
     };
 

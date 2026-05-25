@@ -295,7 +295,7 @@ pub fn generate_word<R: Rng + ?Sized>(
         last_generated = word;
         let syllabified = ipa::sequence::PhonemeSequence::from_str(&last_generated)
             .ok()
-            .and_then(|seq| crate::syllabifier::syllabify_sequence(&seq, config).ok());
+            .and_then(|seq| crate::syllable::IpaWord::try_from_sequence(&seq, config).ok());
         if let Some(syllabified_word) = syllabified {
             let syllabified_str = syllabified_word.to_string();
             last_generated = syllabified_str;

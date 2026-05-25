@@ -193,7 +193,26 @@ impl From<IpaWord> for IpaString {
 }
 
 impl IpaWord {
-    /// Syllabifies a `PhonemeSequence` given the language configuration.
+    /// Generates a flat `PhonemeSequence` from the word, retaining stress markers but omitting syllable breaks.
+    #[must_use]
+    pub fn to_flat_sequence(&self) -> PhonemeSequence {
+        let mut elements = Vec::new();
+        for syl in &self.syllables {
+            match syl.stress {
+                SyllableStress::PrimaryStress => {
+                    elements.push(SequenceElement::Prosody(ProsodyMarker::PrimaryStress));
+                }
+                SyllableStress::SecondaryStress => {
+                    elements.push(SequenceElement::Prosody(ProsodyMarker::SecondaryStress));
+                }
+                _ => {}
+            }
+            elements.extend(syl.structure.elements());
+        }
+        PhonemeSequence { elements }
+    }
+
+    /// Syllabifies a `PhonemeSequence` given the language configuration and applies prosody.
     ///
     /// # Errors
     /// Returns `Err` if the sequence has invalid syllable boundaries or adjacent prosody markers.
@@ -201,6 +220,26 @@ impl IpaWord {
         seq: &PhonemeSequence,
         config: &LanguageConfig,
     ) -> Result<Self, SyllabificationError> {
-        crate::syllabifier::syllabify_sequence(seq, config)
+        let initial_word = crate::syllabifier::syllabify_sequence(seq, config)?;
+        let prosody = config.phonology.prosody.as_ref().unwrap_or(
+            &crate::prosody::ProsodicConfig::NoFixedStress {
+                config: crate::config::ZipfConfig { a: 1.0, b: 1.0 },
+            },
+        );
+        let updated_word = prosody.apply_prosody(&initial_word, config);
+
+        let propagated = initial_word.syllables.len() != updated_word.syllables.len()
+            || initial_word
+                .syllables
+                .iter()
+                .zip(&updated_word.syllables)
+                .any(|(s1, s2)| s1.stress != s2.stress);
+
+        if propagated {
+            let flat_seq = updated_word.to_flat_sequence();
+            crate::syllabifier::syllabify_sequence(&flat_seq, config)
+        } else {
+            Ok(updated_word)
+        }
     }
 }

@@ -12,7 +12,8 @@ fn get_test_config(illegal_patterns: &[&str]) -> LanguageConfig {
         "metadata": {{ "created_at": "2024-05-04T00:12:00Z" }},
         "phonology": {{
             "sound_classes": {{}},
-            "illegal_patterns": {patterns_json}
+            "illegal_patterns": {patterns_json},
+            "prosody": {{ "type": "unstressed" }}
         }}
     }}"#
     );
