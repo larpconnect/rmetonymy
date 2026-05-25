@@ -59,20 +59,28 @@ pub enum DictionarySubcommand {
         meaning: String,
 
         /// The conlang definition of the word (`IpaString`)
-        #[arg(long)]
-        definition: String,
+        #[arg(
+            long,
+            required_unless_present = "generate",
+            conflicts_with = "generate"
+        )]
+        definition: Option<String>,
 
-        /// The type of the word
-        #[arg(long)]
-        word_type: String,
+        /// Generate the word automatically based on the language configuration
+        #[arg(
+            long,
+            required_unless_present = "definition",
+            conflicts_with = "definition"
+        )]
+        generate: bool,
 
-        /// The subtype of the word
+        /// The type of the word (optionally with a subtype separated by a period, e.g. noun.masculine)
         #[arg(long)]
-        word_subtype: String,
+        r#type: String,
 
         /// The era of the word
-        #[arg(long, default_value_t = 0)]
-        era: u32,
+        #[arg(long)]
+        era: Option<u32>,
 
         /// Etymology entry: `era:source_word1,source_word2`... (can be specified multiple times)
         #[arg(long)]
@@ -111,7 +119,7 @@ pub enum GenerateSubcommand {
         definition: String,
 
         /// The grammatical type (e.g. adjective or adjective.masculine)
-        word_type: String,
+        r#type: String,
     },
 }
 
@@ -211,18 +219,18 @@ fn handle_generate(cmd: &GenerateCmd, language_path: Option<&PathBuf>) -> anyhow
     match &cmd.subcommand {
         GenerateSubcommand::Word {
             definition,
-            word_type,
+            r#type: type_name,
         } => {
             let mut rng = language::generator::thread_rng();
             let mut warning_logged = false;
             let word = language::generator::generate_word(
-                word_type,
+                type_name,
                 &config,
                 &mut rng,
                 cmd.max_attempts,
                 &mut warning_logged,
             )?;
-            println!("{definition} : {word_type} = {word}");
+            println!("{definition} : {type_name} = {word}");
         }
     }
 
@@ -282,10 +290,7 @@ fn handle_dict_init(
     Ok(())
 }
 
-fn handle_dict_add(
-    dict_path: &std::path::Path,
-    entry: language::NewEntry,
-) -> anyhow::Result<()> {
+fn handle_dict_add(dict_path: &std::path::Path, entry: language::NewEntry) -> anyhow::Result<()> {
     let dict_json = fs::read_to_string(dict_path).with_context(|| {
         format!(
             "Failed to read dictionary file from {}",
@@ -351,28 +356,104 @@ fn handle_dict_print(dict_path: &std::path::Path) -> anyhow::Result<()> {
     println!("================================================================================");
 
     for (i, entry) in dict.entries.iter().enumerate() {
-        println!("{}. [{}]", i + 1, entry.id);
+        let idx = i + 1;
+        let id = &entry.id;
+        println!("{idx}. [{id}]");
         println!("   Definition : /{}/", entry.definition);
         println!("   Meaning    : /{}/", entry.meaning);
-        println!(
-            "   Type       : {} ({})",
-            entry.word_type, entry.word_subtype
-        );
-        println!("   Era        : {}", entry.era);
-        if !entry.etymology.is_empty() {
+        let parts: Vec<&str> = entry.r#type.splitn(2, '.').collect();
+        let (word_type, word_subtype) = match parts.as_slice() {
+            [t, st] => (*t, *st),
+            [t] => (*t, ""),
+            _ => ("", ""),
+        };
+        if word_subtype.is_empty() {
+            println!("   Type       : {word_type}");
+        } else {
+            println!("   Type       : {word_type} ({word_subtype})");
+        }
+        let era = entry.era;
+        println!("   Era        : {era}");
+        if let Some(etymology) = entry.etymology.as_ref().filter(|e| !e.is_empty()) {
             println!("   Etymology  :");
-            for (era, sources) in &entry.etymology {
-                println!("     Era {}: {}", era, sources.join(", "));
+            for (era, sources) in etymology {
+                let joined_sources = sources.join(", ");
+                println!("     Era {era}: {joined_sources}");
             }
         }
         if !entry.usage_notes.is_empty() {
-            println!("   Usage Notes: {}", entry.usage_notes);
+            let notes = &entry.usage_notes;
+            println!("   Usage Notes: {notes}");
         }
         println!(
             "--------------------------------------------------------------------------------"
         );
     }
     Ok(())
+}
+
+#[expect(clippy::too_many_arguments, reason = "Command line parameter wrapper")]
+fn handle_dict_add_cmd(
+    dict_path: &std::path::Path,
+    language_path: Option<&std::path::Path>,
+    meaning: &str,
+    definition: Option<&str>,
+    generate: bool,
+    r#type: String,
+    era: Option<u32>,
+    etymology: &[String],
+    usage_notes: String,
+) -> anyhow::Result<()> {
+    let ipa_meaning = meaning
+        .parse::<ipa::IpaString>()
+        .context("Failed to parse meaning as a valid IPA string")?;
+    let ipa_definition = if generate {
+        let lang_path = language_path
+            .context("Language configuration file (--language) is required to generate the word")?;
+        let lang_json = fs::read_to_string(lang_path).with_context(|| {
+            format!(
+                "Failed to read language config from {}",
+                lang_path.display()
+            )
+        })?;
+        let config: language::config::LanguageConfig =
+            serde_json::from_str(&lang_json).context("Failed to parse language config JSON")?;
+        config
+            .validate()
+            .context("Language configuration validation failed")?;
+
+        let mut rng = language::generator::thread_rng();
+        let mut warning_logged = false;
+
+        let word = language::generator::generate_word(
+            &r#type,
+            &config,
+            &mut rng,
+            8, // max attempts
+            &mut warning_logged,
+        )?;
+        word.parse::<ipa::IpaString>()
+            .context("Failed to parse generated word as a valid IPA string")?
+    } else {
+        let def_str = definition.context("Definition must be provided when not generating")?;
+        def_str
+            .parse::<ipa::IpaString>()
+            .context("Failed to parse definition as a valid IPA string")?
+    };
+    let ety_map = if etymology.is_empty() {
+        None
+    } else {
+        Some(parse_etymology(etymology)?)
+    };
+    let entry = language::NewEntry {
+        meaning: ipa_meaning,
+        definition: ipa_definition,
+        r#type,
+        era,
+        etymology: ety_map,
+        usage_notes,
+    };
+    handle_dict_add(dict_path, entry)
 }
 
 fn main() -> anyhow::Result<()> {
@@ -415,29 +496,23 @@ fn main() -> anyhow::Result<()> {
                     DictionarySubcommand::Add {
                         meaning,
                         definition,
-                        word_type,
-                        word_subtype,
+                        generate,
+                        r#type,
                         era,
                         etymology,
                         usage_notes,
                     } => {
-                        let ipa_meaning = meaning
-                            .parse::<ipa::IpaString>()
-                            .context("Failed to parse meaning as a valid IPA string")?;
-                        let ipa_definition = definition
-                            .parse::<ipa::IpaString>()
-                            .context("Failed to parse definition as a valid IPA string")?;
-                        let ety_map = parse_etymology(&etymology)?;
-                        let entry = language::NewEntry {
-                            meaning: ipa_meaning,
-                            definition: ipa_definition,
-                            word_type,
-                            word_subtype,
+                        handle_dict_add_cmd(
+                            dict_path,
+                            cli.language.as_deref(),
+                            &meaning,
+                            definition.as_deref(),
+                            generate,
+                            r#type,
                             era,
-                            etymology: ety_map,
+                            &etymology,
                             usage_notes,
-                        };
-                        handle_dict_add(dict_path, entry)?;
+                        )?;
                     }
                     DictionarySubcommand::Remove { id } => {
                         handle_dict_remove(dict_path, &id)?;

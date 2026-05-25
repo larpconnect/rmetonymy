@@ -97,10 +97,11 @@ pub struct DictionaryEntry {
     pub id: String,
     pub meaning: IpaString,
     pub definition: IpaString,
-    pub word_type: String,
-    pub word_subtype: String,
+    #[serde(rename = "type")]
+    pub r#type: String,
     pub era: u32,
-    pub etymology: BTreeMap<u32, Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub etymology: Option<BTreeMap<u32, Vec<String>>>,
     pub usage_notes: String,
 }
 
@@ -109,10 +110,9 @@ pub struct DictionaryEntry {
 pub struct NewEntry {
     pub meaning: IpaString,
     pub definition: IpaString,
-    pub word_type: String,
-    pub word_subtype: String,
-    pub era: u32,
-    pub etymology: BTreeMap<u32, Vec<String>>,
+    pub r#type: String,
+    pub era: Option<u32>,
+    pub etymology: Option<BTreeMap<u32, Vec<String>>>,
     pub usage_notes: String,
 }
 
@@ -171,13 +171,15 @@ impl Dictionary {
     /// Add a new word entry to the dictionary, returning the generated Base62 ID.
     pub fn add_entry(&mut self, entry: NewEntry) -> String {
         let id = generate_base62_uuid();
+        let era = entry
+            .era
+            .unwrap_or_else(|| self.entries.iter().map(|e| e.era).max().unwrap_or(0));
         let entry = DictionaryEntry {
             id: id.clone(),
             meaning: entry.meaning,
             definition: entry.definition,
-            word_type: entry.word_type,
-            word_subtype: entry.word_subtype,
-            era: entry.era,
+            r#type: entry.r#type,
+            era,
             etymology: entry.etymology,
             usage_notes: entry.usage_notes,
         };
