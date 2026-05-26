@@ -190,7 +190,14 @@ impl Dictionary {
         name: Option<IpaString>,
         description: Option<String>,
     ) -> Result<(u32, String), String> {
-        let num = era_num.unwrap_or_else(|| self.eras.keys().next_back().map_or(0, |&k| k + 1));
+        let num = era_num.unwrap_or_else(|| {
+            self.eras
+                .keys()
+                .next_back()
+                .copied()
+                .or_else(|| self.entries.iter().map(|e| e.era).max())
+                .map_or(0, |k| k + 1)
+        });
 
         if self.eras.contains_key(&num) {
             return Err(format!("Era number {num} already exists in the dictionary"));

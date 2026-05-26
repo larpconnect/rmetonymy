@@ -354,7 +354,11 @@ fn handle_dict_remove(dict_path: &std::path::Path, id: &str) -> anyhow::Result<(
     Ok(())
 }
 
-fn print_entry(idx: usize, entry: &language::DictionaryEntry) {
+fn print_entry(
+    idx: usize,
+    entry: &language::DictionaryEntry,
+    eras: &std::collections::BTreeMap<u32, language::Era>,
+) {
     let id = &entry.id;
     println!("{idx}. [{id}]");
     println!("   Definition : /{}/", entry.definition);
@@ -366,7 +370,19 @@ fn print_entry(idx: usize, entry: &language::DictionaryEntry) {
         println!("   Type       : {word_type} ({word_subtype})");
     }
     let era = entry.era;
-    println!("   Era        : {era}");
+    if let Some(era_meta) = eras.get(&era) {
+        let name_str = era_meta
+            .name
+            .as_ref()
+            .map_or(String::new(), |n| format!(" /{n}/"));
+        let desc_str = era_meta
+            .description
+            .as_ref()
+            .map_or(String::new(), |d| format!(" - {d}"));
+        println!("   Era        : {era}{name_str}{desc_str}");
+    } else {
+        println!("   Era        : {era}");
+    }
     if let Some(etymology) = entry.etymology.as_ref().filter(|e| !e.is_empty()) {
         println!("   Etymology  :");
         for (era, sources) in etymology {
@@ -378,9 +394,7 @@ fn print_entry(idx: usize, entry: &language::DictionaryEntry) {
         let notes = &entry.usage_notes;
         println!("   Usage Notes: {notes}");
     }
-    println!(
-        "--------------------------------------------------------------------------------"
-    );
+    println!("--------------------------------------------------------------------------------");
 }
 
 fn handle_dict_print(dict_path: &std::path::Path) -> anyhow::Result<()> {
@@ -406,8 +420,14 @@ fn handle_dict_print(dict_path: &std::path::Path) -> anyhow::Result<()> {
     if !dict.eras.is_empty() {
         println!("Eras:");
         for (num, era) in &dict.eras {
-            let name_str = era.name.as_ref().map_or(String::new(), |n| format!(" /{n}/"));
-            let desc_str = era.description.as_ref().map_or(String::new(), |d| format!(" - {d}"));
+            let name_str = era
+                .name
+                .as_ref()
+                .map_or(String::new(), |n| format!(" /{n}/"));
+            let desc_str = era
+                .description
+                .as_ref()
+                .map_or(String::new(), |d| format!(" - {d}"));
             println!("  * Era {num} (ID: {}){}{}", era.id, name_str, desc_str);
         }
         println!(
@@ -416,7 +436,7 @@ fn handle_dict_print(dict_path: &std::path::Path) -> anyhow::Result<()> {
     }
 
     for (i, entry) in dict.entries.iter().enumerate() {
-        print_entry(i + 1, entry);
+        print_entry(i + 1, entry, &dict.eras);
     }
     Ok(())
 }

@@ -107,7 +107,8 @@ fn add_test_word(dict_path_str: &str) -> String {
     });
     let assert_add = assert_add.success();
 
-    let stdout = String::from_utf8(assert_add.get_output().stdout.clone()).expect("valid UTF-8 stdout");
+    let stdout =
+        String::from_utf8(assert_add.get_output().stdout.clone()).expect("valid UTF-8 stdout");
     assert!(stdout.contains("Added word 'pat'"));
 
     let id_prefix = "with ID ";

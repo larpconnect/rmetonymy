@@ -106,7 +106,14 @@ fn test_dictionary_optional_etymology() {
     assert!(!json_str.contains("etymology"));
 
     let parsed_dict = Dictionary::from_str(&json_str).expect("parse dict without etymology");
-    assert_eq!(parsed_dict.entries.first().expect("entry 0 exists").etymology, None);
+    assert_eq!(
+        parsed_dict
+            .entries
+            .first()
+            .expect("entry 0 exists")
+            .etymology,
+        None
+    );
 }
 
 #[test]
@@ -156,7 +163,10 @@ fn test_dictionary_validation_fails_on_invalid_json() {
     }"#;
     let res1 = Dictionary::from_str(invalid_json1);
     assert!(res1.is_err());
-    assert!(res1.expect_err("error exists").contains("Schema validation failed"));
+    assert!(
+        res1.expect_err("error exists")
+            .contains("Schema validation failed")
+    );
 
     // Incorrect type for era (should be integer, not string)
     let invalid_json2 = r#"{
@@ -174,7 +184,10 @@ fn test_dictionary_validation_fails_on_invalid_json() {
     }"#;
     let res2 = Dictionary::from_str(invalid_json2);
     assert!(res2.is_err());
-    assert!(res2.expect_err("error exists").contains("Schema validation failed"));
+    assert!(
+        res2.expect_err("error exists")
+            .contains("Schema validation failed")
+    );
 }
 
 #[test]
@@ -202,26 +215,34 @@ fn test_dictionary_add_era() {
 
     // 2. Add era with explicit era number
     let (era_num2, era_id2) = dict
-        .add_era(Some(3), Some(IpaString::from_str("a").expect("valid IPA string")), None)
+        .add_era(
+            Some(3),
+            Some(IpaString::from_str("a").expect("valid IPA string")),
+            None,
+        )
         .expect("add era 2");
     assert_eq!(era_num2, 3);
     assert!(!era_id2.is_empty());
 
     // 3. Add era with implicit era number (should be max + 1 = 4)
-    let (era_num3, era_id3) = dict
-        .add_era(None, None, None)
-        .expect("add era 3");
+    let (era_num3, era_id3) = dict.add_era(None, None, None).expect("add era 3");
     assert_eq!(era_num3, 4);
     assert!(!era_id3.is_empty());
 
     // 4. Try adding an era that already exists
     let err = dict.add_era(Some(3), None, None);
     assert!(err.is_err());
-    assert!(err.expect_err("should fail to add duplicate era").contains("already exists"));
+    assert!(
+        err.expect_err("should fail to add duplicate era")
+            .contains("already exists")
+    );
 
     // Verify eras map structure
     assert_eq!(dict.eras.len(), 3);
-    assert_eq!(dict.eras.get(&0).expect("era 0 exists").description, Some("First era".to_string()));
+    assert_eq!(
+        dict.eras.get(&0).expect("era 0 exists").description,
+        Some("First era".to_string())
+    );
     assert_eq!(
         dict.eras.get(&3).expect("era 3 exists").name,
         Some(IpaString::from_str("a").expect("valid IPA string"))
@@ -268,8 +289,12 @@ fn test_dictionary_era_serialization() {
     let lang_id = Uuid::now_v7();
     let mut dict = Dictionary::new(lang_id);
 
-    dict.add_era(Some(1), Some(IpaString::from_str("e").expect("valid IPA string")), Some("desc".to_string()))
-        .expect("add era");
+    dict.add_era(
+        Some(1),
+        Some(IpaString::from_str("e").expect("valid IPA string")),
+        Some("desc".to_string()),
+    )
+    .expect("add era");
 
     let json_str = dict.to_string().expect("serialize dict");
     assert!(json_str.contains(r#""eras""#));
@@ -278,5 +303,8 @@ fn test_dictionary_era_serialization() {
 
     let parsed = Dictionary::from_str(&json_str).expect("parse back");
     assert_eq!(parsed.eras.len(), 1);
-    assert_eq!(parsed.eras.get(&1).expect("era 1 exists").description, Some("desc".to_string()));
+    assert_eq!(
+        parsed.eras.get(&1).expect("era 1 exists").description,
+        Some("desc".to_string())
+    );
 }
