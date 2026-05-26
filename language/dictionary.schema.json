@@ -16,11 +16,37 @@
         "$ref": "#/$defs/dictionary_entry"
       },
       "description": "List of words in the dictionary"
+    },
+    "eras": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/era"
+      },
+      "description": "Map of era numbers to era metadata"
     }
   },
   "required": ["id", "entries"],
   "additionalProperties": false,
   "$defs": {
+    "era": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Base62 representation of a UUIDv7 identifier generated when the era is created"
+        },
+        "name": {
+          "type": "string",
+          "description": "Optional name of the era represented as an IPA string"
+        },
+        "description": {
+          "type": "string",
+          "description": "Optional description of the era"
+        }
+      },
+      "required": ["id"],
+      "additionalProperties": false
+    },
     "dictionary_entry": {
       "type": "object",
       "properties": {

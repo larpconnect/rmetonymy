@@ -117,8 +117,19 @@ pub struct NewEntry {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct Era {
+    pub id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<IpaString>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Dictionary {
     pub id: Uuid,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub eras: BTreeMap<u32, Era>,
     pub entries: Vec<DictionaryEntry>,
 }
 
@@ -145,6 +156,7 @@ impl Dictionary {
     pub fn new(id: Uuid) -> Self {
         Self {
             id,
+            eras: BTreeMap::new(),
             entries: Vec::new(),
         }
     }
@@ -168,12 +180,51 @@ impl Dictionary {
             .map_err(|e| format!("Failed to save dictionary atomically: {e}"))
     }
 
+    /// Add a new era to the dictionary.
+    ///
+    /// # Errors
+    /// Returns an error if the specified era number already exists.
+    pub fn add_era(
+        &mut self,
+        era_num: Option<u32>,
+        name: Option<IpaString>,
+        description: Option<String>,
+    ) -> Result<(u32, String), String> {
+        let num = era_num.unwrap_or_else(|| self.eras.keys().next_back().map_or(0, |&k| k + 1));
+
+        if self.eras.contains_key(&num) {
+            return Err(format!("Era number {num} already exists in the dictionary"));
+        }
+
+        let id = generate_base62_uuid();
+        let era = Era {
+            id: id.clone(),
+            name,
+            description,
+        };
+
+        self.eras.insert(num, era);
+        Ok((num, id))
+    }
+
     /// Add a new word entry to the dictionary, returning the generated Base62 ID.
     pub fn add_entry(&mut self, entry: NewEntry) -> String {
         let id = generate_base62_uuid();
-        let era = entry
-            .era
-            .unwrap_or_else(|| self.entries.iter().map(|e| e.era).max().unwrap_or(0));
+        let era = entry.era.unwrap_or_else(|| {
+            self.eras
+                .keys()
+                .next_back()
+                .copied()
+                .or_else(|| self.entries.iter().map(|e| e.era).max())
+                .unwrap_or(0)
+        });
+
+        self.eras.entry(era).or_insert_with(|| Era {
+            id: generate_base62_uuid(),
+            name: None,
+            description: None,
+        });
+
         let entry = DictionaryEntry {
             id: id.clone(),
             meaning: entry.meaning,
