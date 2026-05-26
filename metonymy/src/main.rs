@@ -99,6 +99,22 @@ pub enum DictionarySubcommand {
 
     /// Pretty print the dictionary to stdout
     Print,
+
+    /// Add an era to the dictionary
+    #[command(name = "add-era")]
+    AddEra {
+        /// The era number. Increments if not specified
+        #[arg(long)]
+        era: Option<u32>,
+
+        /// Optional era name
+        #[arg(long)]
+        name: Option<String>,
+
+        /// Optional description of the era
+        #[arg(long)]
+        description: Option<String>,
+    },
 }
 
 #[derive(Parser)]
@@ -338,6 +354,49 @@ fn handle_dict_remove(dict_path: &std::path::Path, id: &str) -> anyhow::Result<(
     Ok(())
 }
 
+fn print_entry(
+    idx: usize,
+    entry: &language::DictionaryEntry,
+    eras: &std::collections::BTreeMap<u32, language::Era>,
+) {
+    let id = &entry.id;
+    println!("{idx}. [{id}]");
+    println!("   Definition : /{}/", entry.definition);
+    println!("   Meaning    : /{}/", entry.meaning);
+    let (word_type, word_subtype) = entry.r#type.split_once('.').unwrap_or((&entry.r#type, ""));
+    if word_subtype.is_empty() {
+        println!("   Type       : {word_type}");
+    } else {
+        println!("   Type       : {word_type} ({word_subtype})");
+    }
+    let era = entry.era;
+    if let Some(era_meta) = eras.get(&era) {
+        let name_str = era_meta
+            .name
+            .as_ref()
+            .map_or(String::new(), |n| format!(" /{n}/"));
+        let desc_str = era_meta
+            .description
+            .as_ref()
+            .map_or(String::new(), |d| format!(" - {d}"));
+        println!("   Era        : {era}{name_str}{desc_str}");
+    } else {
+        println!("   Era        : {era}");
+    }
+    if let Some(etymology) = entry.etymology.as_ref().filter(|e| !e.is_empty()) {
+        println!("   Etymology  :");
+        for (era, sources) in etymology {
+            let joined_sources = sources.join(", ");
+            println!("     Era {era}: {joined_sources}");
+        }
+    }
+    if !entry.usage_notes.is_empty() {
+        let notes = &entry.usage_notes;
+        println!("   Usage Notes: {notes}");
+    }
+    println!("--------------------------------------------------------------------------------");
+}
+
 fn handle_dict_print(dict_path: &std::path::Path) -> anyhow::Result<()> {
     let dict_json = fs::read_to_string(dict_path).with_context(|| {
         format!(
@@ -352,38 +411,70 @@ fn handle_dict_print(dict_path: &std::path::Path) -> anyhow::Result<()> {
 
     println!("================================================================================");
     println!("Dictionary ID: {}", dict.id);
+    if !dict.eras.is_empty() {
+        println!("Total Eras   : {}", dict.eras.len());
+    }
     println!("Total Entries: {}", dict.entries.len());
     println!("================================================================================");
 
-    for (i, entry) in dict.entries.iter().enumerate() {
-        let idx = i + 1;
-        let id = &entry.id;
-        println!("{idx}. [{id}]");
-        println!("   Definition : /{}/", entry.definition);
-        println!("   Meaning    : /{}/", entry.meaning);
-        let (word_type, word_subtype) = entry.r#type.split_once('.').unwrap_or((&entry.r#type, ""));
-        if word_subtype.is_empty() {
-            println!("   Type       : {word_type}");
-        } else {
-            println!("   Type       : {word_type} ({word_subtype})");
-        }
-        let era = entry.era;
-        println!("   Era        : {era}");
-        if let Some(etymology) = entry.etymology.as_ref().filter(|e| !e.is_empty()) {
-            println!("   Etymology  :");
-            for (era, sources) in etymology {
-                let joined_sources = sources.join(", ");
-                println!("     Era {era}: {joined_sources}");
-            }
-        }
-        if !entry.usage_notes.is_empty() {
-            let notes = &entry.usage_notes;
-            println!("   Usage Notes: {notes}");
+    if !dict.eras.is_empty() {
+        println!("Eras:");
+        for (num, era) in &dict.eras {
+            let name_str = era
+                .name
+                .as_ref()
+                .map_or(String::new(), |n| format!(" /{n}/"));
+            let desc_str = era
+                .description
+                .as_ref()
+                .map_or(String::new(), |d| format!(" - {d}"));
+            println!("  * Era {num} (ID: {}){}{}", era.id, name_str, desc_str);
         }
         println!(
-            "--------------------------------------------------------------------------------"
+            "================================================================================"
         );
     }
+
+    for (i, entry) in dict.entries.iter().enumerate() {
+        print_entry(i + 1, entry, &dict.eras);
+    }
+    Ok(())
+}
+
+fn handle_dict_add_era_cmd(
+    dict_path: &std::path::Path,
+    era: Option<u32>,
+    name: Option<String>,
+    description: Option<String>,
+) -> anyhow::Result<()> {
+    let dict_json = fs::read_to_string(dict_path).with_context(|| {
+        format!(
+            "Failed to read dictionary file from {}",
+            dict_path.display()
+        )
+    })?;
+    let mut dict = dict_json
+        .parse::<language::Dictionary>()
+        .map_err(|e| anyhow::anyhow!(e))
+        .context("Failed to parse dictionary")?;
+
+    let ipa_name = match name {
+        Some(n) => Some(
+            n.parse::<ipa::IpaString>()
+                .context("Failed to parse era name as a valid IPA string")?,
+        ),
+        None => None,
+    };
+
+    let (assigned_era, era_id) = dict
+        .add_era(era, ipa_name, description)
+        .map_err(|e| anyhow::anyhow!(e))?;
+
+    dict.save_to_file(dict_path)
+        .map_err(|e| anyhow::anyhow!(e))
+        .context("Failed to save dictionary")?;
+
+    println!("Added era {assigned_era} with ID {era_id}");
     Ok(())
 }
 
@@ -514,6 +605,13 @@ fn handle_dictionary_cmd(
         }
         DictionarySubcommand::Print => {
             handle_dict_print(dict_path)?;
+        }
+        DictionarySubcommand::AddEra {
+            era,
+            name,
+            description,
+        } => {
+            handle_dict_add_era_cmd(dict_path, era, name, description)?;
         }
     }
     Ok(())

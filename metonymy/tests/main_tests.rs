@@ -32,6 +32,7 @@ fn run_dictionary_init(lang_path: &str, dict_path: &str) -> assert_cmd::assert::
     .assert()
 }
 
+#[derive(Copy, Clone)]
 struct DictionaryAddArgs<'a> {
     lang_path: Option<&'a str>,
     dict_path: &'a str,
@@ -106,7 +107,8 @@ fn add_test_word(dict_path_str: &str) -> String {
     });
     let assert_add = assert_add.success();
 
-    let stdout = String::from_utf8(assert_add.get_output().stdout.clone()).unwrap();
+    let stdout =
+        String::from_utf8(assert_add.get_output().stdout.clone()).expect("valid UTF-8 stdout");
     assert!(stdout.contains("Added word 'pat'"));
 
     let id_prefix = "with ID ";
@@ -122,7 +124,7 @@ fn add_test_word(dict_path_str: &str) -> String {
 fn test_dictionary_cli_workflow() {
     let temp_dir = tempfile::tempdir().expect("create temp dir");
     let dict_path = temp_dir.path().join("dict.json");
-    let dict_path_str = dict_path.to_str().unwrap();
+    let dict_path_str = dict_path.to_str().expect("valid dict path string");
     let lang_path = "tests/features/test_language.json";
 
     run_dictionary_init(lang_path, dict_path_str)
@@ -130,7 +132,7 @@ fn test_dictionary_cli_workflow() {
         .stdout(predicates::str::contains("Initialized blank dictionary"));
 
     assert!(dict_path.exists());
-    let content = std::fs::read_to_string(&dict_path).unwrap();
+    let content = std::fs::read_to_string(&dict_path).expect("read dict file successfully");
     assert!(content.contains(r#""entries": []"#));
 
     let word_id = add_test_word(dict_path_str);
@@ -174,7 +176,7 @@ fn add_generated_word(dict_path_str: &str, lang_path: &str, meaning: &str) {
 fn test_dictionary_cli_generate_and_default_era() {
     let temp_dir = tempfile::tempdir().expect("create temp dir");
     let dict_path = temp_dir.path().join("dict.json");
-    let dict_path_str = dict_path.to_str().unwrap();
+    let dict_path_str = dict_path.to_str().expect("valid dict path string");
     let lang_path = "tests/features/test_language.json";
 
     run_dictionary_init(lang_path, dict_path_str).success();

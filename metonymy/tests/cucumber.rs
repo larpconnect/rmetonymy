@@ -1,9 +1,11 @@
 use assert_cmd::Command;
 use cucumber::{World, given, then, when};
 
-#[derive(Debug, Default, World)]
+#[derive(Debug, World, Default)]
 pub struct MetonymyWorld {
     output: String,
+    temp_dir: Option<tempfile::TempDir>,
+    dict_path: Option<std::path::PathBuf>,
 }
 
 #[given("I have a basic setup")]
@@ -81,6 +83,61 @@ fn the_output_should_contain_generated_word(
     );
     drop(definition);
     drop(word_type);
+}
+
+#[given("I have initialized a dictionary")]
+fn i_have_initialized_a_dictionary(
+    world: &mut MetonymyWorld,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let dir = tempfile::tempdir()?;
+    let path = dir.path().join("dict.json");
+
+    let mut cmd = Command::cargo_bin("metonymy")?;
+    cmd.args([
+        "--language",
+        "tests/features/test_language.json",
+        "--dict",
+        path.to_str().expect("valid dict path string"),
+        "dictionary",
+        "init",
+    ]);
+    cmd.assert().success();
+
+    world.temp_dir = Some(dir);
+    world.dict_path = Some(path);
+    Ok(())
+}
+
+#[when(expr = "I run dictionary command {string}")]
+fn i_run_dictionary_command(
+    world: &mut MetonymyWorld,
+    args_str: String,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let dict_path_str = world
+        .dict_path
+        .as_ref()
+        .and_then(|p| p.to_str())
+        .ok_or("Dictionary not initialized")?;
+
+    let mut cmd = Command::cargo_bin("metonymy")?;
+
+    // Add --dict parameter
+    cmd.args(["--dict", dict_path_str]);
+
+    let args: Vec<String> = match shlex::split(&args_str) {
+        Some(a) => a,
+        None => args_str
+            .split_whitespace()
+            .map(std::string::ToString::to_string)
+            .collect(),
+    };
+    cmd.args(&args);
+    let assert = cmd.assert();
+    let stdout = String::from_utf8(assert.get_output().stdout.clone())?;
+    let stderr = String::from_utf8(assert.get_output().stderr.clone())?;
+    world.output = format!("STDOUT:\n{stdout}\nSTDERR:\n{stderr}");
+    drop(args_str);
+    Ok(())
 }
 
 #[tokio::main]
