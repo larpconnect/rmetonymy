@@ -47,9 +47,11 @@ impl FromStr for IpaString {
     type Err = IpaStringError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let seq = PhonemeSequence::from_str(s)?;
+        use unicode_normalization::UnicodeNormalization;
+        let nfc_str = s.nfc().collect::<String>();
+        let seq = PhonemeSequence::from_str(&nfc_str)?;
         Ok(IpaString {
-            raw: s.to_string(),
+            raw: nfc_str,
             elements: seq.elements,
         })
     }

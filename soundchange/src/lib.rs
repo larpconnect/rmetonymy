@@ -1,13 +1,9 @@
-pub fn parse_soundchange() {
-    // Basic module for parsing the sound change language
-}
+pub mod ast;
+pub mod compiler;
+pub mod evaluator;
+pub mod parser;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_parse_soundchange() {
-        parse_soundchange();
-    }
-}
+pub use ast::SoundChanges;
+pub use compiler::{CompiledSoundChangeRule, compile_sound_changes};
+pub use evaluator::apply_sound_changes;
+pub use parser::{SoundChangeParseError, parse_rule_string};

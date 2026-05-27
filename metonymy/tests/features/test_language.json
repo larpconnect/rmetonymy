@@ -32,5 +32,44 @@
       }
     },
     "illegal_patterns": []
+  },
+  "sound_changes": {
+    "preamble": [
+      {
+        "name": "lenition",
+        "type": "full",
+        "changes": [
+          "p => b / V_V",
+          "t => d / V_V",
+          "k => g / V_V"
+        ]
+      }
+    ],
+    "eras": [
+      {
+        "era": 1,
+        "rules": [
+          {
+            "name": "vowel-lowering",
+            "changes": [
+              "i => e / _$",
+              "e => a / _$"
+            ]
+          },
+          {
+            "name": "apply-lenition",
+            "changes": [
+              "@lenition"
+            ]
+          },
+          {
+            "name": "stress-first-vowel",
+            "changes": [
+              "[V1] => [V1 +stress] / #C*_"
+            ]
+          }
+        ]
+      }
+    ]
   }
 }

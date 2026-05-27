@@ -26,6 +26,7 @@ fn get_test_config(prosody: Option<ProsodicConfig>) -> LanguageConfig {
             illegal_patterns: vec![],
             prosody,
         },
+        sound_changes: None,
     }
 }
 

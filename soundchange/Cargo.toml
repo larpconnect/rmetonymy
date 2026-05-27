@@ -5,7 +5,18 @@ edition = "2024"
 
 [dependencies]
 language = { path = "../language" }
+ipa = { path = "../ipa" }
+data = { path = "../data" }
 thiserror.workspace = true
+serde = { workspace = true }
+pest = "2.8.6"
+pest_derive = "2.8.6"
+unicode-normalization = { workspace = true }
 
 [lints]
 workspace = true
+
+[dev-dependencies]
+serde_json = { workspace = true }
+
+

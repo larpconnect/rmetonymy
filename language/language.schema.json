@@ -73,6 +73,9 @@
         }
       },
       "required": ["sound_classes"]
+    },
+    "sound_changes": {
+      "$ref": "#/$defs/sound_changes"
     }
   },
   "required": ["id", "name", "metadata", "phonology"],
@@ -139,6 +142,60 @@
       "allOf": [
         { "$ref": "#/$defs/generator_config" }
       ]
+    },
+    "sound_changes": {
+      "type": "object",
+      "properties": {
+        "preamble": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/preamble_item"
+          }
+        },
+        "eras": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/era_rules"
+          }
+        }
+      }
+    },
+    "preamble_item": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "type": { "enum": ["full", "match", "transform", "condition"] },
+        "changes": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "value": { "type": "string" }
+      },
+      "required": ["name", "type"]
+    },
+    "era_rules": {
+      "type": "object",
+      "properties": {
+        "era": { "type": "integer", "minimum": 0 },
+        "rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/sound_change_rule"
+          }
+        }
+      },
+      "required": ["era", "rules"]
+    },
+    "sound_change_rule": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "changes": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "required": ["changes"]
     }
   }
 }

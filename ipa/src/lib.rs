@@ -61,6 +61,12 @@ impl IpaSystem {
         Ok(Self { dataset, alias_map })
     }
 
+    /// Returns a reference to the internal dataset.
+    #[must_use]
+    pub fn dataset(&self) -> &IpaDataset {
+        &self.dataset
+    }
+
     /// Resolves a symbol or alias to its canonical symbol representation.
     #[must_use]
     pub fn resolve_alias(&self, symbol: &str) -> Option<&str> {

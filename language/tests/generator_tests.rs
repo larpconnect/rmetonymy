@@ -106,6 +106,7 @@ fn make_test_config() -> LanguageConfig {
             illegal_patterns: vec![],
             prosody: None,
         },
+        sound_changes: None,
     }
 }
 

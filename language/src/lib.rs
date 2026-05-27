@@ -9,6 +9,7 @@ pub mod sound_class;
 pub mod syllabifier;
 pub mod syllable;
 
+pub use config::{EraRules, PreambleItem, PreambleType, SoundChangeRule, SoundChanges};
 pub use dictionary::{Dictionary, DictionaryEntry, Era, NewEntry};
 pub use prosody::{
     AlternatingConfig, FootSize, MainStress, PatternedConfig, ProsodicConfig, StressLocation,

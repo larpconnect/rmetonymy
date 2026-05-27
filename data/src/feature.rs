@@ -48,5 +48,8 @@ pub enum Feature {
     Palatalized,
     Pharyngealized,
     Velarized,
+    Place,
+    Manner,
+    Stress,
     // Add any others found in tests
 }
