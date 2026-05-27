@@ -7,6 +7,9 @@
     "created_at": "2026-05-24T00:00:00Z"
   },
   "phonology": {
+    "prosody": {
+      "type": "unstressed"
+    },
     "sound_classes": {
       "C": {
         "values": ["p", "t", "k"]
