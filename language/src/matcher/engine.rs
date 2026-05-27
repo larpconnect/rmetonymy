@@ -9,12 +9,9 @@ use std::collections::BTreeMap;
 
 struct RepeatContext<'a> {
     base: &'a BaseElement,
+    marker: Option<u8>,
     tokens: &'a [Token],
     classes: &'a BTreeMap<SoundClassKey, SoundClass>,
-    min: usize,
-    max: usize,
-    current_len: usize,
-    results: &'a mut Vec<usize>,
 }
 
 impl SoundMatcherPattern {
@@ -62,13 +59,15 @@ impl SoundMatcherPattern {
     #[must_use]
     pub fn matches(&self, word: &str, classes: &BTreeMap<SoundClassKey, SoundClass>) -> bool {
         let tokens = Self::tokenize(word);
+        let mut bindings = BTreeMap::new();
 
         for i in 0..tokens.len() {
             if let Some(tokens_slice) = tokens.get(i..)
-                && self.match_at(tokens_slice, &self.elements, classes)
+                && self.match_at(tokens_slice, &self.elements, classes, &mut bindings)
             {
                 return true;
             }
+            bindings.clear();
         }
 
         false
@@ -79,6 +78,7 @@ impl SoundMatcherPattern {
         tokens: &[Token],
         pattern: &[PatternElement],
         classes: &BTreeMap<SoundClassKey, SoundClass>,
+        bindings: &mut BTreeMap<u8, Vec<Token>>,
     ) -> bool {
         if pattern.is_empty() {
             return true;
@@ -91,14 +91,16 @@ impl SoundMatcherPattern {
             return false;
         };
 
-        let mut match_lengths = self.get_match_lengths(el, tokens, classes);
-        match_lengths.sort_unstable_by(|a, b| b.cmp(a));
-        match_lengths.dedup();
+        let mut match_lengths = self.get_match_lengths(el, tokens, classes, bindings);
+        match_lengths.sort_unstable_by_key(|b| std::cmp::Reverse(b.0));
+        match_lengths.dedup_by(|a, b| a.0 == b.0 && a.1 == b.1);
 
-        for len in match_lengths {
+        for (len, next_bindings) in match_lengths {
+            let mut temp_bindings = next_bindings;
             if let Some(tokens_slice) = tokens.get(len..)
-                && self.match_at(tokens_slice, rest_pattern, classes)
+                && self.match_at(tokens_slice, rest_pattern, classes, &mut temp_bindings)
             {
+                *bindings = temp_bindings;
                 return true;
             }
         }
@@ -111,64 +113,125 @@ impl SoundMatcherPattern {
         el: &PatternElement,
         tokens: &[Token],
         classes: &BTreeMap<SoundClassKey, SoundClass>,
-    ) -> Vec<usize> {
+        bindings: &BTreeMap<u8, Vec<Token>>,
+    ) -> Vec<(usize, BTreeMap<u8, Vec<Token>>)> {
         let mut match_lengths = Vec::new();
+        let ctx = RepeatContext {
+            base: &el.base,
+            marker: el.marker,
+            tokens,
+            classes,
+        };
         match el.quantifier {
             Quantifier::None => {
-                if let Some(len) = self.match_base(&el.base, tokens, classes) {
-                    match_lengths.push(len);
+                if let Some((len, next_bindings)) = self.match_base_with_bindings(
+                    &el.base,
+                    el.marker,
+                    tokens,
+                    classes,
+                    bindings,
+                ) {
+                    match_lengths.push((len, next_bindings));
                 }
             }
             Quantifier::ZeroOrMore => {
-                match_lengths.push(0);
-                let mut ctx = RepeatContext {
-                    base: &el.base,
-                    tokens,
-                    classes,
-                    min: 1,
-                    max: usize::MAX,
-                    current_len: 0,
-                    results: &mut match_lengths,
-                };
-                self.find_repeated_matches(&mut ctx);
+                self.find_repeated_matches(
+                    &ctx,
+                    0,
+                    usize::MAX,
+                    0,
+                    bindings,
+                    &mut match_lengths,
+                );
             }
             Quantifier::OneOrMore => {
-                let mut ctx = RepeatContext {
-                    base: &el.base,
-                    tokens,
-                    classes,
-                    min: 1,
-                    max: usize::MAX,
-                    current_len: 0,
-                    results: &mut match_lengths,
-                };
-                self.find_repeated_matches(&mut ctx);
+                self.find_repeated_matches(
+                    &ctx,
+                    1,
+                    usize::MAX,
+                    0,
+                    bindings,
+                    &mut match_lengths,
+                );
             }
         }
         match_lengths
     }
 
-    fn find_repeated_matches(&self, ctx: &mut RepeatContext<'_>) {
-        if ctx.min == 0 {
-            ctx.results.push(ctx.current_len);
+    fn find_repeated_matches(
+        &self,
+        ctx: &RepeatContext<'_>,
+        min: usize,
+        max: usize,
+        current_len: usize,
+        bindings: &BTreeMap<u8, Vec<Token>>,
+        results: &mut Vec<(usize, BTreeMap<u8, Vec<Token>>)>,
+    ) {
+        if min == 0 {
+            results.push((current_len, bindings.clone()));
         }
 
-        if ctx.max > 0
-            && let Some(tokens_slice) = ctx.tokens.get(ctx.current_len..)
-            && let Some(len) = self.match_base(ctx.base, tokens_slice, ctx.classes)
+        if max > 0
+            && let Some(tokens_slice) = ctx.tokens.get(current_len..)
+            && let Some((len, next_bindings)) = self.match_base_with_bindings(
+                ctx.base,
+                ctx.marker,
+                tokens_slice,
+                ctx.classes,
+                bindings,
+            )
             && len > 0
         {
-            let next_min = ctx.min.saturating_sub(1);
-            let mut next_ctx = RepeatContext {
-                base: ctx.base,
-                tokens: ctx.tokens,
-                classes: ctx.classes,
-                min: next_min,
-                max: ctx.max - 1,
-                current_len: ctx.current_len + len,
-                results: ctx.results,
-            };
-            self.find_repeated_matches(&mut next_ctx);
+            let next_min = min.saturating_sub(1);
+            self.find_repeated_matches(
+                ctx,
+                next_min,
+                max - 1,
+                current_len + len,
+                &next_bindings,
+                results,
+            );
+        }
+    }
+
+    fn match_base_with_bindings(
+        &self,
+        base: &BaseElement,
+        marker: Option<u8>,
+        tokens: &[Token],
+        classes: &BTreeMap<SoundClassKey, SoundClass>,
+        bindings: &BTreeMap<u8, Vec<Token>>,
+    ) -> Option<(usize, BTreeMap<u8, Vec<Token>>)> {
+        let mut skip = 0;
+        while let Some(Token::Boundary(b)) = tokens.get(skip) {
+            if b == "$" && !matches!(base, BaseElement::SyllableBoundary) {
+                skip += 1;
+            } else {
+                break;
+            }
+        }
+
+        let mut temp_bindings = bindings.clone();
+
+        if let Some(m) = marker {
+            if let Some(bound_tokens) = temp_bindings.get(&m).cloned() {
+                let tokens_to_check = tokens.get(skip..)?;
+                if tokens_to_check.get(..bound_tokens.len()) == Some(bound_tokens.as_slice())
+                    && self.match_base(base, &bound_tokens, classes, &mut temp_bindings)
+                        == Some(bound_tokens.len())
+                {
+                    return Some((skip + bound_tokens.len(), temp_bindings));
+                }
+                None
+            } else {
+                let len = self.match_base(base, tokens, classes, &mut temp_bindings)?;
+                let matched_tokens = tokens.get(skip..len)?.to_vec();
+                temp_bindings.insert(m, matched_tokens);
+                Some((len, temp_bindings))
+            }
+        } else {
+            let len = self.match_base(base, tokens, classes, &mut temp_bindings)?;
+            Some((len, temp_bindings))
         }
     }
 
@@ -177,6 +240,7 @@ impl SoundMatcherPattern {
         base: &BaseElement,
         tokens: &[Token],
         classes: &BTreeMap<SoundClassKey, SoundClass>,
+        bindings: &mut BTreeMap<u8, Vec<Token>>,
     ) -> Option<usize> {
         let mut skip = 0;
         while let Some(Token::Boundary(b)) = tokens.get(skip) {
@@ -198,9 +262,9 @@ impl SoundMatcherPattern {
             BaseElement::FeatureClass(sc_opt, features) => {
                 Self::match_feature_class(first_token, sc_opt.as_ref(), features, classes)
             }
-            BaseElement::Set(els) => self.match_set(els, tokens_to_check, classes),
+            BaseElement::Set(els) => self.match_set(els, tokens_to_check, classes, bindings),
             BaseElement::OptionalGroup(pat) => {
-                self.match_optional_group(pat, tokens_to_check, classes)
+                self.match_optional_group(pat, tokens_to_check, classes, bindings)
             }
         };
         len.map(|l| skip + l)
@@ -313,9 +377,10 @@ impl SoundMatcherPattern {
         els: &[BaseElement],
         tokens: &[Token],
         classes: &BTreeMap<SoundClassKey, SoundClass>,
+        bindings: &mut BTreeMap<u8, Vec<Token>>,
     ) -> Option<usize> {
         for el in els {
-            if let Some(len) = self.match_base(el, tokens, classes) {
+            if let Some(len) = self.match_base(el, tokens, classes, bindings) {
                 return Some(len);
             }
         }
@@ -327,12 +392,14 @@ impl SoundMatcherPattern {
         pat: &SoundMatcherPattern,
         tokens: &[Token],
         classes: &BTreeMap<SoundClassKey, SoundClass>,
+        bindings: &mut BTreeMap<u8, Vec<Token>>,
     ) -> Option<usize> {
         let mut lengths = vec![];
-        self.find_group_match_lengths(tokens, &pat.elements, classes, 0, &mut lengths);
-        lengths.sort_unstable_by(|a, b| b.cmp(a));
-        if let Some(&l) = lengths.first() {
-            return Some(l);
+        self.find_group_match_lengths(tokens, &pat.elements, classes, 0, bindings, &mut lengths);
+        lengths.sort_unstable_by_key(|b| std::cmp::Reverse(b.0));
+        if let Some((l, next_bindings)) = lengths.first() {
+            *bindings = next_bindings.clone();
+            return Some(*l);
         }
         None
     }
@@ -343,10 +410,11 @@ impl SoundMatcherPattern {
         pattern: &[PatternElement],
         classes: &BTreeMap<SoundClassKey, SoundClass>,
         current_len: usize,
-        results: &mut Vec<usize>,
+        bindings: &BTreeMap<u8, Vec<Token>>,
+        results: &mut Vec<(usize, BTreeMap<u8, Vec<Token>>)>,
     ) {
         if pattern.is_empty() {
-            results.push(current_len);
+            results.push((current_len, bindings.clone()));
             return;
         }
 
@@ -357,67 +425,22 @@ impl SoundMatcherPattern {
             return;
         };
 
-        let match_lengths = self.get_group_match_lengths(el, tokens, classes, current_len);
+        let match_lengths = self.get_match_lengths(el, tokens, classes, bindings);
 
-        for len in match_lengths {
-            self.find_group_match_lengths(
-                tokens,
-                rest_pattern,
-                classes,
-                current_len + len,
-                results,
-            );
+        for (len, next_bindings) in match_lengths {
+            if let Some(tokens_slice) = tokens.get(len..) {
+                self.find_group_match_lengths(
+                    tokens_slice,
+                    rest_pattern,
+                    classes,
+                    current_len + len,
+                    &next_bindings,
+                    results,
+                );
+            }
         }
     }
 
-    fn get_group_match_lengths(
-        &self,
-        el: &PatternElement,
-        tokens: &[Token],
-        classes: &BTreeMap<SoundClassKey, SoundClass>,
-        current_len: usize,
-    ) -> Vec<usize> {
-        let mut match_lengths = Vec::new();
-        match el.quantifier {
-            Quantifier::None => {
-                if let Some(tokens_slice) = tokens.get(current_len..)
-                    && let Some(len) = self.match_base(&el.base, tokens_slice, classes)
-                {
-                    match_lengths.push(len);
-                }
-            }
-            Quantifier::ZeroOrMore => {
-                match_lengths.push(0);
-                if let Some(tokens_slice) = tokens.get(current_len..) {
-                    let mut ctx = RepeatContext {
-                        base: &el.base,
-                        tokens: tokens_slice,
-                        classes,
-                        min: 1,
-                        max: usize::MAX,
-                        current_len: 0,
-                        results: &mut match_lengths,
-                    };
-                    self.find_repeated_matches(&mut ctx);
-                }
-            }
-            Quantifier::OneOrMore => {
-                if let Some(tokens_slice) = tokens.get(current_len..) {
-                    let mut ctx = RepeatContext {
-                        base: &el.base,
-                        tokens: tokens_slice,
-                        classes,
-                        min: 1,
-                        max: usize::MAX,
-                        current_len: 0,
-                        results: &mut match_lengths,
-                    };
-                    self.find_repeated_matches(&mut ctx);
-                }
-            }
-        }
-        match_lengths
-    }
 
     fn phoneme_in_class(
         p: &str,
@@ -459,3 +482,61 @@ impl SoundMatcherPattern {
         false
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::str::FromStr;
+
+    #[test]
+    fn test_backreferences_basic() {
+        let pattern = SoundMatcherPattern::from_str("C1VC1").unwrap();
+        let mut classes = BTreeMap::new();
+        classes.insert(
+            "C".parse::<SoundClassKey>().unwrap(),
+            SoundClass {
+                values: vec!["k".to_string(), "l".to_string(), "t".to_string()],
+                generator: None,
+            },
+        );
+
+        assert!(pattern.matches("kak", &classes));
+        assert!(!pattern.matches("kal", &classes));
+        assert!(pattern.matches("tat", &classes));
+        assert!(!pattern.matches("tal", &classes));
+    }
+
+    #[test]
+    fn test_backreferences_multiple() {
+        let pattern = SoundMatcherPattern::from_str("C1C2VC2C1").unwrap();
+        let mut classes = BTreeMap::new();
+        classes.insert(
+            "C".parse::<SoundClassKey>().unwrap(),
+            SoundClass {
+                values: vec!["k".to_string(), "l".to_string(), "t".to_string(), "p".to_string()],
+                generator: None,
+            },
+        );
+
+        assert!(pattern.matches("ktatk", &classes));
+        assert!(!pattern.matches("ktatp", &classes));
+        assert!(pattern.matches("klalk", &classes));
+    }
+
+    #[test]
+    fn test_backreferences_feature_class() {
+        let pattern = SoundMatcherPattern::from_str("[C1 -voiced]V[C1 -voiced]").unwrap();
+        let mut classes = BTreeMap::new();
+        classes.insert(
+            "C".parse::<SoundClassKey>().unwrap(),
+            SoundClass {
+                values: vec!["k".to_string(), "l".to_string(), "t".to_string()],
+                generator: None,
+            },
+        );
+
+        assert!(pattern.matches("kak", &classes));
+        assert!(!pattern.matches("kal", &classes));
+    }
+}
+

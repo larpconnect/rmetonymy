@@ -59,6 +59,7 @@ fn parse_pattern_element(
 ) -> Result<PatternElement, SoundMatcherError> {
     let mut quantifier = Quantifier::None;
     let mut base_element = None;
+    let mut marker = None;
 
     for inner in pair.into_inner() {
         match inner.as_rule() {
@@ -66,9 +67,17 @@ fn parse_pattern_element(
             Rule::one_or_more => quantifier = Quantifier::OneOrMore,
             Rule::word_boundary => base_element = Some(BaseElement::WordBoundary),
             Rule::syllable_boundary => base_element = Some(BaseElement::SyllableBoundary),
-            Rule::sound_class => base_element = Some(parse_sound_class(&inner)?),
+            Rule::marked_sound_class => {
+                let (sc, m) = parse_marked_sound_class(inner)?;
+                base_element = Some(sc);
+                marker = m;
+            }
+            Rule::feature_class => {
+                let (fc, m) = parse_feature_class(inner)?;
+                base_element = Some(fc);
+                marker = m;
+            }
             Rule::ipa_sequence => base_element = Some(parse_ipa_sequence(&inner)?),
-            Rule::feature_class => base_element = Some(parse_feature_class(inner)?),
             Rule::set => base_element = Some(parse_set(inner)?),
             Rule::optional_group => base_element = Some(parse_optional_group(inner)?),
             _ => {}
@@ -77,7 +86,11 @@ fn parse_pattern_element(
 
     let base = base_element
         .ok_or_else(|| SoundMatcherError::ParseError("Missing base element".to_string()))?;
-    Ok(PatternElement { base, quantifier })
+    Ok(PatternElement {
+        base,
+        quantifier,
+        marker,
+    })
 }
 
 fn parse_sound_class(
@@ -88,6 +101,32 @@ fn parse_sound_class(
         .parse::<SoundClassKey>()
         .map_err(|e| SoundMatcherError::ParseError(e.to_string()))?;
     Ok(BaseElement::SoundClass(key))
+}
+
+fn parse_marked_sound_class(
+    pair: pest::iterators::Pair<Rule>,
+) -> Result<(BaseElement, Option<u8>), SoundMatcherError> {
+    let mut sound_class_opt = None;
+    let mut marker = None;
+
+    for inner in pair.into_inner() {
+        match inner.as_rule() {
+            Rule::sound_class => {
+                sound_class_opt = Some(parse_sound_class(&inner)?);
+            }
+            Rule::marker => {
+                let m = inner.as_str().parse::<u8>().map_err(|e| {
+                    SoundMatcherError::ParseError(format!("Failed to parse marker: {e}"))
+                })?;
+                marker = Some(m);
+            }
+            _ => {}
+        }
+    }
+
+    let base = sound_class_opt
+        .ok_or_else(|| SoundMatcherError::ParseError("Missing sound class".to_string()))?;
+    Ok((base, marker))
 }
 
 fn parse_ipa_sequence(
@@ -116,18 +155,18 @@ fn parse_optional_group(
 
 fn parse_feature_class(
     pair: pest::iterators::Pair<Rule>,
-) -> Result<BaseElement, SoundMatcherError> {
+) -> Result<(BaseElement, Option<u8>), SoundMatcherError> {
     let mut class_key = None;
+    let mut marker = None;
     let mut features = Vec::new();
     for fc_inner in pair.into_inner() {
         match fc_inner.as_rule() {
-            Rule::sound_class => {
-                class_key = Some(
-                    fc_inner
-                        .as_str()
-                        .parse::<SoundClassKey>()
-                        .map_err(|e| SoundMatcherError::ParseError(e.to_string()))?,
-                );
+            Rule::marked_sound_class => {
+                let (sc, m) = parse_marked_sound_class(fc_inner)?;
+                if let BaseElement::SoundClass(key) = sc {
+                    class_key = Some(key);
+                }
+                marker = m;
             }
             Rule::feature_descriptor => {
                 let mut sign = true;
@@ -147,7 +186,7 @@ fn parse_feature_class(
             _ => {}
         }
     }
-    Ok(BaseElement::FeatureClass(class_key, features))
+    Ok((BaseElement::FeatureClass(class_key, features), marker))
 }
 
 fn parse_set(pair: pest::iterators::Pair<Rule>) -> Result<BaseElement, SoundMatcherError> {

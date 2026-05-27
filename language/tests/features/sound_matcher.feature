@@ -68,3 +68,20 @@ Feature: Sound Matcher
   Scenario: Another syllable check
     When I check the pattern "aba" against the word "a.ba"
     Then the pattern should match
+
+  Scenario: Match using marked items (backreferences)
+    When I check the pattern "C1VC1" against the word "kak"
+    Then the pattern should match
+
+    When I check the pattern "C1VC1" against the word "kal"
+    Then the pattern should not match
+
+    When I check the pattern "C1C2VC2C1" against the word "ktatk"
+    Then the pattern should match
+
+    When I check the pattern "C1C2VC2C1" against the word "ktatp"
+    Then the pattern should not match
+
+    When I check the pattern "[C1 -voiced]V[C1 -voiced]" against the word "kak"
+    Then the pattern should match
+

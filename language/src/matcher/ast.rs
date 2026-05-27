@@ -40,6 +40,7 @@ pub enum BaseElement {
 pub struct PatternElement {
     pub base: BaseElement,
     pub quantifier: Quantifier,
+    pub marker: Option<u8>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -47,43 +48,60 @@ pub struct SoundMatcherPattern {
     pub elements: Vec<PatternElement>,
 }
 
+impl BaseElement {
+    fn write_display(&self, f: &mut Formatter<'_>, marker: Option<u8>) -> std::fmt::Result {
+        match self {
+            BaseElement::WordBoundary => write!(f, "#"),
+            BaseElement::SyllableBoundary => write!(f, "$"),
+            BaseElement::SoundClass(key) => write!(f, "{key}"),
+            BaseElement::IpaSequence(ipa) => write!(f, "{ipa}"),
+            BaseElement::FeatureClass(sc, features) => {
+                write!(f, "[")?;
+                if let Some(sc) = sc {
+                    write!(f, "{sc}")?;
+                    if let Some(m) = marker {
+                        write!(f, "{m}")?;
+                    }
+                    if !features.is_empty() {
+                        write!(f, " ")?;
+                    }
+                }
+                for (i, feat) in features.iter().enumerate() {
+                    if i > 0 {
+                        write!(f, " ")?;
+                    }
+                    let sign = if feat.sign { "+" } else { "-" };
+                    write!(f, "{sign}{}", feat.feature)?;
+                }
+                write!(f, "]")
+            }
+            BaseElement::Set(els) => {
+                write!(f, "{{")?;
+                for (i, set_el) in els.iter().enumerate() {
+                    if i > 0 {
+                        write!(f, ", ")?;
+                    }
+                    match set_el {
+                        BaseElement::SoundClass(key) => write!(f, "{key}")?,
+                        BaseElement::IpaSequence(ipa) => write!(f, "{ipa}")?,
+                        _ => {}
+                    }
+                }
+                write!(f, "}}")
+            }
+            BaseElement::OptionalGroup(pat) => write!(f, "({pat})"),
+        }
+    }
+}
+
 impl Display for SoundMatcherPattern {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         for el in &self.elements {
-            match &el.base {
-                BaseElement::WordBoundary => write!(f, "#")?,
-                BaseElement::SyllableBoundary => write!(f, "$")?,
-                BaseElement::SoundClass(key) => write!(f, "{key}")?,
-                BaseElement::IpaSequence(ipa) => write!(f, "{ipa}")?,
-                BaseElement::FeatureClass(sc, features) => {
-                    write!(f, "[")?;
-                    if let Some(sc) = sc {
-                        write!(f, "{sc} ")?;
-                    }
-                    for (i, feat) in features.iter().enumerate() {
-                        if i > 0 {
-                            write!(f, " ")?;
-                        }
-                        let sign = if feat.sign { "+" } else { "-" };
-                        write!(f, "{sign}{}", feat.feature)?;
-                    }
-                    write!(f, "]")?;
-                }
-                BaseElement::Set(els) => {
-                    write!(f, "{{")?;
-                    for (i, set_el) in els.iter().enumerate() {
-                        if i > 0 {
-                            write!(f, ", ")?;
-                        }
-                        match set_el {
-                            BaseElement::SoundClass(key) => write!(f, "{key}")?,
-                            BaseElement::IpaSequence(ipa) => write!(f, "{ipa}")?,
-                            _ => {}
-                        }
-                    }
-                    write!(f, "}}")?;
-                }
-                BaseElement::OptionalGroup(pat) => write!(f, "({pat})")?,
+            el.base.write_display(f, el.marker)?;
+            if let Some(m) = el.marker
+                && !matches!(el.base, BaseElement::FeatureClass(Some(_), _))
+            {
+                write!(f, "{m}")?;
             }
             match el.quantifier {
                 Quantifier::ZeroOrMore => write!(f, "*")?,
