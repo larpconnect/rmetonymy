@@ -194,14 +194,7 @@ impl SoundMatcherPattern {
         }
     }
 
-    fn match_base_with_bindings(
-        &self,
-        base: &BaseElement,
-        marker: Option<u8>,
-        tokens: &[Token],
-        classes: &BTreeMap<SoundClassKey, SoundClass>,
-        bindings: &BTreeMap<u8, Vec<Token>>,
-    ) -> Option<(usize, BTreeMap<u8, Vec<Token>>)> {
+    fn calculate_skip(base: &BaseElement, tokens: &[Token]) -> usize {
         let mut skip = 0;
         while let Some(Token::Boundary(b)) = tokens.get(skip) {
             if b == "$" && !matches!(base, BaseElement::SyllableBoundary) {
@@ -210,25 +203,61 @@ impl SoundMatcherPattern {
                 break;
             }
         }
+        skip
+    }
 
+    fn match_unbound_base(
+        &self,
+        base: &BaseElement,
+        m: u8,
+        tokens: &[Token],
+        skip: usize,
+        classes: &BTreeMap<SoundClassKey, SoundClass>,
+        temp_bindings: &mut BTreeMap<u8, Vec<Token>>,
+    ) -> Option<(usize, BTreeMap<u8, Vec<Token>>)> {
+        let len = self.match_base(base, tokens, classes, temp_bindings)?;
+        let matched_tokens = tokens.get(skip..len)?.to_vec();
+        temp_bindings.insert(m, matched_tokens);
+        Some((len, temp_bindings.clone()))
+    }
+
+    fn match_marked_base(
+        &self,
+        base: &BaseElement,
+        m: u8,
+        tokens: &[Token],
+        skip: usize,
+        classes: &BTreeMap<SoundClassKey, SoundClass>,
+        temp_bindings: &mut BTreeMap<u8, Vec<Token>>,
+    ) -> Option<(usize, BTreeMap<u8, Vec<Token>>)> {
+        if let Some(bound_tokens) = temp_bindings.get(&m).cloned() {
+            let tokens_to_check = tokens.get(skip..)?;
+            if tokens_to_check.get(..bound_tokens.len()) == Some(bound_tokens.as_slice())
+                && self.match_base(base, &bound_tokens, classes, temp_bindings)
+                    == Some(bound_tokens.len())
+            {
+                Some((skip + bound_tokens.len(), temp_bindings.clone()))
+            } else {
+                None
+            }
+        } else {
+            self.match_unbound_base(base, m, tokens, skip, classes, temp_bindings)
+        }
+    }
+
+    fn match_base_with_bindings(
+        &self,
+        base: &BaseElement,
+        marker: Option<u8>,
+        tokens: &[Token],
+        classes: &BTreeMap<SoundClassKey, SoundClass>,
+        bindings: &BTreeMap<u8, Vec<Token>>,
+    ) -> Option<(usize, BTreeMap<u8, Vec<Token>>)> {
+        let skip = Self::calculate_skip(base, tokens);
         let mut temp_bindings = bindings.clone();
 
         if let Some(m) = marker {
-            if let Some(bound_tokens) = temp_bindings.get(&m).cloned() {
-                let tokens_to_check = tokens.get(skip..)?;
-                if tokens_to_check.get(..bound_tokens.len()) == Some(bound_tokens.as_slice())
-                    && self.match_base(base, &bound_tokens, classes, &mut temp_bindings)
-                        == Some(bound_tokens.len())
-                {
-                    return Some((skip + bound_tokens.len(), temp_bindings));
-                }
-                None
-            } else {
-                let len = self.match_base(base, tokens, classes, &mut temp_bindings)?;
-                let matched_tokens = tokens.get(skip..len)?.to_vec();
-                temp_bindings.insert(m, matched_tokens);
-                Some((len, temp_bindings))
-            }
+            self.match_marked_base(base, m, tokens, skip, classes, &mut temp_bindings)
         } else {
             let len = self.match_base(base, tokens, classes, &mut temp_bindings)?;
             Some((len, temp_bindings))
