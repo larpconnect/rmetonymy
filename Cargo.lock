@@ -2205,6 +2205,7 @@ dependencies = [
 name = "soundchange"
 version = "0.1.0"
 dependencies = [
+ "cucumber",
  "data",
  "ipa",
  "language",
@@ -2213,6 +2214,7 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
+ "tokio",
  "unicode-normalization",
 ]
 

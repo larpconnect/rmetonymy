@@ -18,5 +18,12 @@ workspace = true
 
 [dev-dependencies]
 serde_json = { workspace = true }
+cucumber.workspace = true
+tokio.workspace = true
+
+[[test]]
+name = "soundchange_cucumber"
+harness = false
+
 
 
