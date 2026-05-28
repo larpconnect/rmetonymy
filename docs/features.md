@@ -31,8 +31,8 @@ based on the Sound Pattern of English (SPE) distinctive feature system.
     The final feature set is computed dynamically by applying modifier feature transformations
     to the base phoneme.
 *   **System Definitions**: The default phonology mappings are defined in
-    [ipa.json](file:///home/clementsd/rmetonymy/ipa/ipa.json) and validated against the schema
-    [ipa_schema.json](file:///home/clementsd/rmetonymy/data/ipa_schema.json).
+    [ipa.json](../ipa/ipa.json) and validated against the schema
+    [ipa_schema.json](../data/ipa_schema.json).
 
 ### CLI Command
 
