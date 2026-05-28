@@ -245,7 +245,7 @@ across eras.
 ### Sound Change Rules Syntax
 
 Sound change rules are parsed using a custom PEGs grammar defined in
-[soundchange.pest](file:///home/clementsd/rmetonymy/soundchange/src/parser/soundchange.pest).
+[soundchange.pest](../soundchange/src/parser/soundchange.pest).
 The general shape of a rule is:
 
 $$\text{Match} \quad \text{Operator} \quad \text{Transform} \quad / \quad \text{Condition}$$
