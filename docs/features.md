@@ -59,7 +59,7 @@ features vector. If `--phone-config` is omitted, the system falls back to the de
 
 A language's phonetic rules, generators, and historical changes are centralized in a language
 configuration JSON file. It conforms to the schema defined in
-[language.schema.json](file:///home/clementsd/rmetonymy/language/language.schema.json).
+[language.schema.json](../language/language.schema.json).
 
 ### Structure
 
