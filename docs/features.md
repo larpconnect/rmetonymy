@@ -259,6 +259,37 @@ $$\text{Match} \quad \text{Operator} \quad \text{Transform} \quad / \quad \text{
 *   `<-` : Leftward single transparent replacement.
 *   `<:=` : Leftward multiple opaque replacement.
 
+#### Transparent vs. Opaque Rule Application
+
+Metonymy differentiates between *transparent* and *opaque* operators, changing how rules feed or
+bleed their own context during simulation.
+
+*   **Transparent (`=>`, `->`, `<=`, `<-`)**: Process matches sequentially (left-to-right or
+    right-to-left). When a match is found, it is replaced immediately. The engine then scans
+    the remaining portion of the *newly modified* word. This allows for feeding (a change
+    creates a context for a subsequent change) and bleeding (a change destroys a context).
+*   **Opaque (`=:>`, `<:=`)**: Process matches simultaneously. The engine scans the word,
+    identifying all matching locations based *strictly* on the original, unmodified state
+    of the word. Once all match locations are mapped, it applies all replacements in a
+    single parallel step. Thus, changes in one syllable cannot trigger or prevent changes
+    in adjacent syllables during the same rule pass.
+
+##### Trace Comparison: `colorado`
+
+Consider `/colorado/` (`c o l o r a d o`) and a rule replacing Consonant-Vowel (`CV`) sequences
+with `k` when preceded by a vowel (`/ V_`):
+
+*   **Transparent (`CV => k / V_`)**:
+    1.  `lo` matches (preceded by vowel `o`). First change applied: `c o k r a d o`.
+    2.  `ra` is now preceded by `k` (a consonant, not a vowel), so it no longer matches.
+    3.  `do` matches (preceded by vowel `a`). Second change applied: `c o k r a k`.
+    4.  **Result**: `cokrak`
+*   **Opaque (`CV =:> k / V_`)**:
+    1.  Matches identified on the original word: `lo` (preceded by `o`), `ra` (preceded by `o`),
+        and `do` (preceded by `a`).
+    2.  All matched segments replaced simultaneously: `c o [lo][ra][do]` &rarr; `c o [k][k][k]`.
+    3.  **Result**: `cokkk`
+
 #### Pattern Features
 
 *   **Distinctive Features**: Rules can target and modify specific phonetic features (e.g.,
