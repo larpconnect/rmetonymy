@@ -105,7 +105,9 @@ impl BaseElement {
             BaseElement::SyllableBoundary => write!(f, "$"),
             BaseElement::SoundClass(key) => write!(f, "{key}"),
             BaseElement::IpaSequence(ipa) => write!(f, "{ipa}"),
-            BaseElement::FeatureClass(sc, features) => Self::write_feature_class(f, sc.as_ref(), features, marker),
+            BaseElement::FeatureClass(sc, features) => {
+                Self::write_feature_class(f, sc.as_ref(), features, marker)
+            }
             BaseElement::Set(els) => Self::write_set(f, els),
             BaseElement::OptionalGroup(pat) => write!(f, "({pat})"),
         }

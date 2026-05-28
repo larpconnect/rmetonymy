@@ -124,35 +124,17 @@ impl SoundMatcherPattern {
         };
         match el.quantifier {
             Quantifier::None => {
-                if let Some((len, next_bindings)) = self.match_base_with_bindings(
-                    &el.base,
-                    el.marker,
-                    tokens,
-                    classes,
-                    bindings,
-                ) {
+                if let Some((len, next_bindings)) =
+                    self.match_base_with_bindings(&el.base, el.marker, tokens, classes, bindings)
+                {
                     match_lengths.push((len, next_bindings));
                 }
             }
             Quantifier::ZeroOrMore => {
-                self.find_repeated_matches(
-                    &ctx,
-                    0,
-                    usize::MAX,
-                    0,
-                    bindings,
-                    &mut match_lengths,
-                );
+                self.find_repeated_matches(&ctx, 0, usize::MAX, 0, bindings, &mut match_lengths);
             }
             Quantifier::OneOrMore => {
-                self.find_repeated_matches(
-                    &ctx,
-                    1,
-                    usize::MAX,
-                    0,
-                    bindings,
-                    &mut match_lengths,
-                );
+                self.find_repeated_matches(&ctx, 1, usize::MAX, 0, bindings, &mut match_lengths);
             }
         }
         match_lengths
@@ -470,7 +452,6 @@ impl SoundMatcherPattern {
         }
     }
 
-
     fn phoneme_in_class(
         p: &str,
         key: &SoundClassKey,
@@ -519,10 +500,10 @@ mod tests {
 
     #[test]
     fn test_backreferences_basic() {
-        let pattern = SoundMatcherPattern::from_str("C1VC1").unwrap();
+        let pattern = SoundMatcherPattern::from_str("C1VC1").expect("valid pattern");
         let mut classes = BTreeMap::new();
         classes.insert(
-            "C".parse::<SoundClassKey>().unwrap(),
+            "C".parse::<SoundClassKey>().expect("valid key"),
             SoundClass {
                 values: vec!["k".to_string(), "l".to_string(), "t".to_string()],
                 generator: None,
@@ -537,12 +518,17 @@ mod tests {
 
     #[test]
     fn test_backreferences_multiple() {
-        let pattern = SoundMatcherPattern::from_str("C1C2VC2C1").unwrap();
+        let pattern = SoundMatcherPattern::from_str("C1C2VC2C1").expect("valid pattern");
         let mut classes = BTreeMap::new();
         classes.insert(
-            "C".parse::<SoundClassKey>().unwrap(),
+            "C".parse::<SoundClassKey>().expect("valid key"),
             SoundClass {
-                values: vec!["k".to_string(), "l".to_string(), "t".to_string(), "p".to_string()],
+                values: vec![
+                    "k".to_string(),
+                    "l".to_string(),
+                    "t".to_string(),
+                    "p".to_string(),
+                ],
                 generator: None,
             },
         );
@@ -554,10 +540,11 @@ mod tests {
 
     #[test]
     fn test_backreferences_feature_class() {
-        let pattern = SoundMatcherPattern::from_str("[C1 -voiced]V[C1 -voiced]").unwrap();
+        let pattern =
+            SoundMatcherPattern::from_str("[C1 -voiced]V[C1 -voiced]").expect("valid pattern");
         let mut classes = BTreeMap::new();
         classes.insert(
-            "C".parse::<SoundClassKey>().unwrap(),
+            "C".parse::<SoundClassKey>().expect("valid key"),
             SoundClass {
                 values: vec!["k".to_string(), "l".to_string(), "t".to_string()],
                 generator: None,
@@ -568,4 +555,3 @@ mod tests {
         assert!(!pattern.matches("kal", &classes));
     }
 }
-

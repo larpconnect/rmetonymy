@@ -7,6 +7,7 @@ edition = "2024"
 data = { path = "../data" }
 thiserror.workspace = true
 serde.workspace = true
+unicode-normalization = { workspace = true }
 
 [lints]
 workspace = true

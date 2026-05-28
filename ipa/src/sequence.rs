@@ -102,10 +102,13 @@ pub struct PhonemeSequence {
 
 impl Display for PhonemeSequence {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        use unicode_normalization::UnicodeNormalization;
+        let mut temp = String::new();
         for element in &self.elements {
-            write!(f, "{element}")?;
+            temp.push_str(&element.to_string());
         }
-        Ok(())
+        let normalized = temp.nfc().collect::<String>();
+        write!(f, "{normalized}")
     }
 }
 
@@ -132,13 +135,15 @@ impl PhonemeSequence {
     /// # Errors
     /// Returns `Err` if parsing fails (e.g. unrecognized base phonemes, modifiers without base phonemes).
     pub fn parse_with_system(s: &str, system: &crate::IpaSystem) -> Result<Self, IpaStringError> {
+        use unicode_normalization::UnicodeNormalization;
         if s.is_empty() {
             return Ok(Self {
                 elements: Vec::new(),
             });
         }
 
-        let chars: Vec<char> = s.chars().collect();
+        let normalized = s.nfd().collect::<String>();
+        let chars: Vec<char> = normalized.chars().collect();
         let mut elements = Vec::new();
         let mut idx = 0;
 

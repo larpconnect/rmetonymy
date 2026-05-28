@@ -11,6 +11,8 @@ pub struct LanguageConfig {
     pub name: NameConfig,
     pub metadata: MetadataConfig,
     pub phonology: PhonologyConfig,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sound_changes: Option<SoundChanges>,
 }
 
 impl LanguageConfig {
@@ -205,6 +207,47 @@ pub enum GeneratorConfig {
     },
     #[serde(alias = "Equiprobable", alias = "equiprobable")]
     Equiprobable,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct SoundChanges {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub preamble: Vec<PreambleItem>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub eras: Vec<EraRules>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct PreambleItem {
+    pub name: String,
+    #[serde(rename = "type")]
+    pub r#type: PreambleType,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub changes: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum PreambleType {
+    Full,
+    Match,
+    Transform,
+    Condition,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct EraRules {
+    pub era: u32,
+    pub rules: Vec<SoundChangeRule>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct SoundChangeRule {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    pub changes: Vec<String>,
 }
 
 #[cfg(test)]

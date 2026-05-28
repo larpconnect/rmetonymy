@@ -1,0 +1,89 @@
+// soundchange.pest
+
+// Whitespace rules
+WHITESPACE = _{ " " | "\t" }
+
+// Sound change rule can be a full change or just a reference
+sound_change = { SOI ~ ( reference_rule | standard_rule ) ~ EOI }
+
+reference_rule = { "@" ~ name }
+name = @{ (ASCII_ALPHANUMERIC | "-")+ }
+
+standard_rule = { match_part? ~ arrow ~ transform_part? ~ ( "/" ~ condition_expr )? }
+
+arrow = { "=>" | "->" | "=:>" | "<=" | "<-" | "<:=" | ">" | "<" }
+
+// Match part
+match_part = { reference_rule | pattern | empty_symbol }
+
+// Transform part
+transform_part = { reference_rule | transform_pattern | empty_symbol }
+empty_symbol = { "∅" }
+
+// Condition expression
+condition_op = { "&" | "|" }
+condition_expr = { reference_rule | condition_term ~ ( condition_op ~ condition_term )* }
+condition_term = { negated_condition? ~ condition_pattern }
+negated_condition = { "~" }
+
+// Match pattern
+pattern = { pattern_element+ }
+pattern_element = { base_element ~ modifier_wildcard? ~ quantifier? }
+base_element = _{ word_boundary | syllable_boundary | feature_class | set | optional_group | marked_sound_class | ipa_sequence }
+
+word_boundary = { "#" }
+// Note: $ represents a syllable boundary for the match and conditions
+syllable_boundary = { "$" | "." | "ˌ" | "ˈ" | "'" }
+
+modifier_wildcard = { "ᴴ" }
+
+// Quantifiers
+zero_or_more = { "*" ~ digit* }
+one_or_more = { "+" ~ digit* }
+quantifier = { zero_or_more | one_or_more }
+digit = _{ '0'..'9' }
+
+// Sound class base
+sound_class_base = _{ ASCII_ALPHA_UPPER | '\u{0391}'..'\u{03A9}' | '\u{05D0}'..'\u{05EA}' }
+subscript = _{ '\u{2080}'..'\u{2089}' }
+sound_class = @{ sound_class_base ~ subscript? }
+
+marked_sound_class = { sound_class ~ marker? }
+marker = { '1'..'9' }
+
+set_exclusion = { "^" ~ sound_class ~ marker? }
+
+// Feature descriptors (extended for alpha notation)
+feature_sign = { "+" | "-" }
+greek_letter = { 'α'..'ω' }
+alpha_variable = { feature_sign? ~ greek_letter ~ "@" }
+feature_name = @{ ASCII_ALPHA_LOWER+ }
+feature_descriptor = { alpha_variable ~ feature_name | feature_sign ~ feature_name }
+
+feature_class = { "[" ~ (set_exclusion | reference_symbol)? ~ (" "*) ~ (feature_descriptor ~ (" "+ ~ feature_descriptor)*)? ~ "]" }
+
+// Sets {a, e, i}
+set_element = _{ sound_class | ipa_sequence }
+set = { "{" ~ set_element ~ ("," ~ (" "*) ~ set_element)* ~ "}" }
+
+// IPA sequences (excludes boundaries, separators, and operator symbols)
+ipa_char = _{ !( "#" | "$" | "." | "ˌ" | "ˈ" | "'" | "(" | ")" | "{" | "}" | "[" | "]" | "*" | "+" | "," | "/" | "&" | "|" | "~" | "=" | "<" | ">" | "-" | ":" | "ᴴ" | "∅" | "_" | "@" | sound_class_base | " " | "\t" | "\r" | "\n" ) ~ ANY }
+ipa_sequence = @{ ipa_char+ }
+
+// Optional group: ( ... )
+optional_group = { "(" ~ pattern ~ ")" }
+
+// Transform pattern
+transform_pattern = { transform_element+ }
+reference_symbol = { "_"+ | marked_sound_class }
+append_modifier = { ipa_char }
+transform_element = {
+    feature_class ~ modifier_wildcard? ~ append_modifier*
+    | reference_symbol ~ modifier_wildcard? ~ append_modifier*
+    | ipa_sequence ~ modifier_wildcard? ~ append_modifier*
+}
+
+// Condition pattern containing _
+match_placeholder = { "_" }
+condition_base_element = _{ match_placeholder | base_element }
+condition_pattern = { (condition_base_element ~ quantifier?)+ }
