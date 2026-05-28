@@ -102,3 +102,42 @@ Feature: Sound Change Library Evaluation
     Given a default language configuration
     When I compile a sound change rule named "nasal" with rule "a => o"
     Then it should fail validation with message containing "Rule name 'nasal' is a distinctive feature name"
+
+  Scenario Outline: Evaluating orthography transforms
+    Given a default language configuration
+    When I apply orthography rule "<rule>" to the word "<input>"
+    Then the orthography result should be "<output>"
+
+    Examples:
+      | input   | rule                                     | output |
+      | ʐ       | ʐ => ẓ                                   | ẓ      |
+      | j       | j => y                                   | y      |
+      | gb      | g͡b => gb                                 | gb     |
+      | kp      | k͡p => kp                                 | kp     |
+      | ph      | pʰ => ph                                 | ph     |
+      | aː      | V1ː => V1V1                              | aa     |
+      | ki      | k => c / _i                              | ci     |
+      | ka      | k => c / _i                              | ka     |
+
+  Scenario Outline: Validating orthography syntax errors
+    When I compile orthography rule "<rule>"
+    Then it should fail orthography validation with message containing "<error>"
+
+    Examples:
+      | rule               | error                                                               |
+      | C => C / C_        | Unbound sound class                                                 |
+      | C => t / tk        | No use of the match                                                 |
+      | ʐ => Ẓ             | Capital letters are banned                                          |
+      | C => [+voiced]     | Distinctive feature transforms are not allowed                      |
+
+  Scenario: Evaluating multiple orthography rules sequentially
+    Given a default language configuration
+    When I apply orthography rules "V1ː => V1̈" and "V1ᴴ => V1ᴴo" to the word "aː"
+    Then the orthography result should be "äo"
+
+  Scenario: Evaluating empty orthography configuration
+    Given a default language configuration
+    When I apply empty orthography to the word "pa.ta.ka"
+    Then the orthography result should be "pataka"
+
+

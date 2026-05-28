@@ -50,7 +50,7 @@ pub(crate) fn validate_compiled_rule(
     Ok(())
 }
 
-fn get_match_markers(pattern: &MatchPattern) -> HashSet<u8> {
+pub(crate) fn get_match_markers(pattern: &MatchPattern) -> HashSet<u8> {
     let mut markers = HashSet::new();
     for el in &pattern.elements {
         collect_base_markers(&el.base, &mut markers);
@@ -116,7 +116,7 @@ fn validate_transform_bindings(rule: &CompiledRuleChange) -> Result<(), SoundCha
     Ok(())
 }
 
-fn validate_condition_has_placeholder(
+pub(crate) fn validate_condition_has_placeholder(
     cond: &CompiledConditionExpr,
 ) -> Result<(), SoundChangeParseError> {
     let leftmost = find_leftmost_condition(cond);

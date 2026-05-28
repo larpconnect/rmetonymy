@@ -88,7 +88,7 @@ fn convert_standard_rule(
     })
 }
 
-fn parse_operator(s: &str) -> Result<Operator, SoundChangeParseError> {
+pub(crate) fn parse_operator(s: &str) -> Result<Operator, SoundChangeParseError> {
     match s {
         "=>" | ">" => Ok(Operator::RightMultipleTransparent),
         "->" => Ok(Operator::RightSingleTransparent),

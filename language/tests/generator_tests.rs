@@ -107,6 +107,7 @@ fn make_test_config() -> LanguageConfig {
             prosody: None,
         },
         sound_changes: None,
+        orthography: None,
     }
 }
 
