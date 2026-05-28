@@ -2,6 +2,7 @@ use crate::ast::{
     FeatureClassKey, FeatureDescriptor, MatchBase, MatchElement, MatchPattern, MatchQuantifier,
 };
 use crate::evaluator::engine::evaluate_match;
+use crate::evaluator::features::get_phoneme_features_map;
 use crate::evaluator::{CapturedAlpha, EvalContext, MatchState, WorkingWord};
 use data::feature::Feature;
 use ipa::IpaSequence;
@@ -328,6 +329,22 @@ pub(crate) fn is_consonant(p: &Phoneme) -> bool {
     false
 }
 
+fn match_single_phoneme_in_sequence(wp: &Phoneme, tp: &Phoneme, wildcard: bool) -> bool {
+    if wp.base != tp.base {
+        return false;
+    }
+    if wildcard {
+        for m in &tp.modifiers {
+            if !wp.modifiers.contains(m) {
+                return false;
+            }
+        }
+        true
+    } else {
+        wp.modifiers == tp.modifiers
+    }
+}
+
 pub(crate) fn match_ipa_sequence(
     word: &WorkingWord,
     word_idx: usize,
@@ -340,16 +357,7 @@ pub(crate) fn match_ipa_sequence(
     }
     for (i, tp) in target_phonemes.iter().enumerate() {
         let wp = word.phonemes.get(word_idx + i)?;
-        if wp.base != tp.base {
-            return None;
-        }
-        if wildcard {
-            for m in &tp.modifiers {
-                if !wp.modifiers.contains(m) {
-                    return None;
-                }
-            }
-        } else if wp.modifiers != tp.modifiers {
+        if !match_single_phoneme_in_sequence(wp, tp, wildcard) {
             return None;
         }
     }
@@ -452,46 +460,4 @@ pub(crate) fn evaluate_feature_descriptors(
         }
     }
     true
-}
-
-pub(crate) fn get_phoneme_features_map(p: &Phoneme) -> HashMap<Feature, bool> {
-    let mut map = HashMap::new();
-    let mut features = if let Some(data) = ipa::get_phoneme_data(&p.base) {
-        data.features.clone()
-    } else {
-        Vec::new()
-    };
-
-    for modifier in &p.modifiers {
-        if let Some(combined) = ipa::combine_with_modifier(&p.base, modifier) {
-            features = combined;
-        }
-    }
-
-    for sf in features {
-        match sf {
-            data::SpeFeature::Plus(f) => {
-                map.insert(f, true);
-            }
-            data::SpeFeature::Minus(f) => {
-                map.insert(f, false);
-            }
-        }
-    }
-    map
-}
-
-pub(crate) fn get_phoneme_features_map_from_data(d: &data::PhonemeData) -> HashMap<Feature, bool> {
-    let mut map = HashMap::new();
-    for sf in &d.features {
-        match sf {
-            data::SpeFeature::Plus(f) => {
-                map.insert(*f, true);
-            }
-            data::SpeFeature::Minus(f) => {
-                map.insert(*f, false);
-            }
-        }
-    }
-    map
 }

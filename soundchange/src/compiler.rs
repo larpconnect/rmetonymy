@@ -113,29 +113,44 @@ fn compile_rule(
     })
 }
 
-fn expand_references(
+fn expand_preamble_reference(
+    name: String,
+    preamble: &HashMap<String, PreambleItem>,
+    visited: &mut std::collections::HashSet<String>,
+) -> Result<Vec<CompiledRuleChange>, SoundChangeParseError> {
+    let name_str = name.clone();
+    if !visited.insert(name) {
+        return Err(SoundChangeParseError::ReferenceError(format!(
+            "Circular reference detected in preamble: '{name_str}'"
+        )));
+    }
+    let item = preamble.get(&name_str).ok_or_else(|| {
+        SoundChangeParseError::ReferenceError(format!("Preamble item '{name_str}' not found"))
+    })?;
+    if item.r#type != PreambleType::Full {
+        visited.remove(&name_str);
+        return Err(SoundChangeParseError::ReferenceError(format!(
+            "Preamble item '{name_str}' is not of type 'full'"
+        )));
+    }
+    let mut changes = Vec::new();
+    for sub_str in &item.changes {
+        let sub_parsed = parse_rule_string(sub_str)?;
+        let mut sub_expanded = expand_references_rec(sub_parsed, preamble, sub_str, visited)?;
+        changes.append(&mut sub_expanded);
+    }
+    visited.remove(&name_str);
+    Ok(changes)
+}
+
+fn expand_references_rec(
     parsed: ParsedSoundChange,
     preamble: &HashMap<String, PreambleItem>,
     original: &str,
+    visited: &mut std::collections::HashSet<String>,
 ) -> Result<Vec<CompiledRuleChange>, SoundChangeParseError> {
     match parsed {
-        ParsedSoundChange::Reference(name) => {
-            let item = preamble.get(&name).ok_or_else(|| {
-                SoundChangeParseError::ReferenceError(format!("Preamble item '{name}' not found"))
-            })?;
-            if item.r#type != PreambleType::Full {
-                return Err(SoundChangeParseError::ReferenceError(format!(
-                    "Preamble item '{name}' is not of type 'full'"
-                )));
-            }
-            let mut changes = Vec::new();
-            for sub_str in &item.changes {
-                let sub_parsed = parse_rule_string(sub_str)?;
-                let mut sub_expanded = expand_references(sub_parsed, preamble, sub_str)?;
-                changes.append(&mut sub_expanded);
-            }
-            Ok(changes)
-        }
+        ParsedSoundChange::Reference(name) => expand_preamble_reference(name, preamble, visited),
         ParsedSoundChange::Rule {
             match_part,
             operator,
@@ -157,6 +172,44 @@ fn expand_references(
     }
 }
 
+fn expand_references(
+    parsed: ParsedSoundChange,
+    preamble: &HashMap<String, PreambleItem>,
+    original: &str,
+) -> Result<Vec<CompiledRuleChange>, SoundChangeParseError> {
+    let mut visited = std::collections::HashSet::new();
+    expand_references_rec(parsed, preamble, original, &mut visited)
+}
+
+fn resolve_match_reference(
+    name: &str,
+    preamble: &HashMap<String, PreambleItem>,
+) -> Result<MatchPattern, SoundChangeParseError> {
+    let item = preamble.get(name).ok_or_else(|| {
+        SoundChangeParseError::ReferenceError(format!("Preamble item '{name}' not found"))
+    })?;
+    if item.r#type != PreambleType::Match {
+        return Err(SoundChangeParseError::ReferenceError(format!(
+            "Preamble item '{name}' is not of type 'match'"
+        )));
+    }
+    let val = item.value.as_ref().ok_or_else(|| {
+        SoundChangeParseError::ReferenceError(format!("Preamble match item '{name}' has no value"))
+    })?;
+    let parsed = parse_rule_string(&format!("{val} => ∅"))?;
+    if let ParsedSoundChange::Rule {
+        match_part: Some(ParsedMatchPart::Pattern(p)),
+        ..
+    } = parsed
+    {
+        Ok(p)
+    } else {
+        Err(SoundChangeParseError::ReferenceError(format!(
+            "Failed to parse preamble match pattern for '{name}'"
+        )))
+    }
+}
+
 fn resolve_match_part(
     part_opt: Option<ParsedMatchPart>,
     preamble: &HashMap<String, PreambleItem>,
@@ -168,33 +221,38 @@ fn resolve_match_part(
     };
     match part {
         ParsedMatchPart::Pattern(p) => Ok(p),
-        ParsedMatchPart::Reference(name) => {
-            let item = preamble.get(&name).ok_or_else(|| {
-                SoundChangeParseError::ReferenceError(format!("Preamble item '{name}' not found"))
-            })?;
-            if item.r#type != PreambleType::Match {
-                return Err(SoundChangeParseError::ReferenceError(format!(
-                    "Preamble item '{name}' is not of type 'match'"
-                )));
-            }
-            let val = item.value.as_ref().ok_or_else(|| {
-                SoundChangeParseError::ReferenceError(format!(
-                    "Preamble match item '{name}' has no value"
-                ))
-            })?;
-            let parsed = parse_rule_string(&format!("{val} => ∅"))?;
-            if let ParsedSoundChange::Rule {
-                match_part: Some(ParsedMatchPart::Pattern(p)),
-                ..
-            } = parsed
-            {
-                Ok(p)
-            } else {
-                Err(SoundChangeParseError::ReferenceError(format!(
-                    "Failed to parse preamble match pattern for '{name}'"
-                )))
-            }
-        }
+        ParsedMatchPart::Reference(name) => resolve_match_reference(&name, preamble),
+    }
+}
+
+fn resolve_transform_reference(
+    name: &str,
+    preamble: &HashMap<String, PreambleItem>,
+) -> Result<TransformPattern, SoundChangeParseError> {
+    let item = preamble.get(name).ok_or_else(|| {
+        SoundChangeParseError::ReferenceError(format!("Preamble item '{name}' not found"))
+    })?;
+    if item.r#type != PreambleType::Transform {
+        return Err(SoundChangeParseError::ReferenceError(format!(
+            "Preamble item '{name}' is not of type 'transform'"
+        )));
+    }
+    let val = item.value.as_ref().ok_or_else(|| {
+        SoundChangeParseError::ReferenceError(format!(
+            "Preamble transform item '{name}' has no value"
+        ))
+    })?;
+    let parsed = parse_rule_string(&format!("∅ => {val}"))?;
+    if let ParsedSoundChange::Rule {
+        transform_part: Some(ParsedTransformPart::Pattern(p)),
+        ..
+    } = parsed
+    {
+        Ok(p)
+    } else {
+        Err(SoundChangeParseError::ReferenceError(format!(
+            "Failed to parse preamble transform pattern for '{name}'"
+        )))
     }
 }
 
@@ -212,33 +270,7 @@ fn resolve_transform_part(
         ParsedTransformPart::Empty => Ok(TransformPattern {
             elements: vec![TransformElement::Empty],
         }),
-        ParsedTransformPart::Reference(name) => {
-            let item = preamble.get(&name).ok_or_else(|| {
-                SoundChangeParseError::ReferenceError(format!("Preamble item '{name}' not found"))
-            })?;
-            if item.r#type != PreambleType::Transform {
-                return Err(SoundChangeParseError::ReferenceError(format!(
-                    "Preamble item '{name}' is not of type 'transform'"
-                )));
-            }
-            let val = item.value.as_ref().ok_or_else(|| {
-                SoundChangeParseError::ReferenceError(format!(
-                    "Preamble transform item '{name}' has no value"
-                ))
-            })?;
-            let parsed = parse_rule_string(&format!("∅ => {val}"))?;
-            if let ParsedSoundChange::Rule {
-                transform_part: Some(ParsedTransformPart::Pattern(p)),
-                ..
-            } = parsed
-            {
-                Ok(p)
-            } else {
-                Err(SoundChangeParseError::ReferenceError(format!(
-                    "Failed to parse preamble transform pattern for '{name}'"
-                )))
-            }
-        }
+        ParsedTransformPart::Reference(name) => resolve_transform_reference(&name, preamble),
     }
 }
 

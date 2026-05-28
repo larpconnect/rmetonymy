@@ -64,16 +64,11 @@ pub(crate) fn parse_transform_modifiers(
     (modifier_wildcard, append_modifiers)
 }
 
-pub(crate) fn convert_transform_element(
-    pair: Pair<'_, Rule>,
+fn convert_transform_element_inner(
+    inner: Pair<'_, Rule>,
+    modifier_wildcard: bool,
+    append_modifiers: Vec<String>,
 ) -> Result<TransformElement, SoundChangeParseError> {
-    let mut inner_pairs = pair.into_inner();
-    let inner = inner_pairs.next().ok_or_else(|| {
-        SoundChangeParseError::ConversionError("Empty transform element".to_string())
-    })?;
-
-    let (modifier_wildcard, append_modifiers) = parse_transform_modifiers(inner_pairs);
-
     match inner.as_rule() {
         Rule::feature_class => {
             let (key_opt, feature_changes) = parse_transform_feature_class(inner)?;
@@ -116,6 +111,18 @@ pub(crate) fn convert_transform_element(
             )))
         }
     }
+}
+
+pub(crate) fn convert_transform_element(
+    pair: Pair<'_, Rule>,
+) -> Result<TransformElement, SoundChangeParseError> {
+    let mut inner_pairs = pair.into_inner();
+    let inner = inner_pairs.next().ok_or_else(|| {
+        SoundChangeParseError::ConversionError("Empty transform element".to_string())
+    })?;
+
+    let (modifier_wildcard, append_modifiers) = parse_transform_modifiers(inner_pairs);
+    convert_transform_element_inner(inner, modifier_wildcard, append_modifiers)
 }
 
 pub(crate) fn parse_transform_feature_class(

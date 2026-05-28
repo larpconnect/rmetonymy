@@ -3,6 +3,30 @@ use crate::compiler::{CompiledConditionExpr, CompiledRuleChange};
 use crate::parser::SoundChangeParseError;
 use std::collections::HashSet;
 
+fn validate_null_match(rule: &CompiledRuleChange) -> Result<(), SoundChangeParseError> {
+    if rule.match_part.elements.is_empty() && rule.condition.is_none() {
+        return Err(SoundChangeParseError::ValidationError(format!(
+            "Null match (∅) in '{}' requires at least one condition.",
+            rule.original_string
+        )));
+    }
+    Ok(())
+}
+
+fn validate_opaque_single_use(rule: &CompiledRuleChange) -> Result<(), SoundChangeParseError> {
+    if matches!(
+        rule.operator,
+        Operator::RightSingleTransparent | Operator::LeftSingleTransparent
+    ) && (rule.original_string.contains("-:>") || rule.original_string.contains("<-:"))
+    {
+        return Err(SoundChangeParseError::ValidationError(format!(
+            "Opaque modifier (:) cannot be used with a single-change operator in '{}'.",
+            rule.original_string
+        )));
+    }
+    Ok(())
+}
+
 pub(crate) fn validate_compiled_rule(
     rule: &CompiledRuleChange,
 ) -> Result<(), SoundChangeParseError> {
@@ -18,24 +42,10 @@ pub(crate) fn validate_compiled_rule(
     validate_alpha_variables(rule)?;
 
     // 4. Null match requires a condition
-    if rule.match_part.elements.is_empty() && rule.condition.is_none() {
-        return Err(SoundChangeParseError::ValidationError(format!(
-            "Null match (∅) in '{}' requires at least one condition.",
-            rule.original_string
-        )));
-    }
+    validate_null_match(rule)?;
 
     // 5. Operator single-use cannot be opaque
-    if matches!(
-        rule.operator,
-        Operator::RightSingleTransparent | Operator::LeftSingleTransparent
-    ) && (rule.original_string.contains("-:>") || rule.original_string.contains("<-:"))
-    {
-        return Err(SoundChangeParseError::ValidationError(format!(
-            "Opaque modifier (:) cannot be used with a single-change operator in '{}'.",
-            rule.original_string
-        )));
-    }
+    validate_opaque_single_use(rule)?;
 
     Ok(())
 }

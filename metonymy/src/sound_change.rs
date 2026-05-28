@@ -22,10 +22,9 @@ pub struct SoundChangeCmd {
     pub verbose: bool,
 }
 
-pub(crate) fn handle_sound_change(
-    cmd: &SoundChangeCmd,
+fn load_config(
     language_path: Option<&PathBuf>,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<language::config::LanguageConfig> {
     let lang_path = language_path
         .context("Language configuration file (--language) is required for sound change command")?;
     let lang_json = fs::read_to_string(lang_path).with_context(|| {
@@ -42,11 +41,28 @@ pub(crate) fn handle_sound_change(
         .validate()
         .context("Language configuration validation failed")?;
 
-    let parsed_word =
-        ipa::sequence::PhonemeSequence::from_str(&cmd.word).context("Invalid IPA input word")?;
+    Ok(config)
+}
 
-    let ipa_word = language::syllable::IpaWord::try_from_sequence(&parsed_word, &config)
+fn parse_word(
+    word: &str,
+    config: &language::config::LanguageConfig,
+) -> anyhow::Result<language::syllable::IpaWord> {
+    let parsed_word =
+        ipa::sequence::PhonemeSequence::from_str(word).context("Invalid IPA input word")?;
+
+    let ipa_word = language::syllable::IpaWord::try_from_sequence(&parsed_word, config)
         .context("Failed to syllabify input word")?;
+
+    Ok(ipa_word)
+}
+
+pub(crate) fn handle_sound_change(
+    cmd: &SoundChangeCmd,
+    language_path: Option<&PathBuf>,
+) -> anyhow::Result<()> {
+    let config = load_config(language_path)?;
+    let ipa_word = parse_word(&cmd.word, &config)?;
 
     let sound_changes = config
         .sound_changes

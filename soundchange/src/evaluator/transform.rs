@@ -1,5 +1,5 @@
 use crate::ast::{FeatureDescriptor, TransformElement, TransformPattern};
-use crate::evaluator::match_base::{get_phoneme_features_map, get_phoneme_features_map_from_data};
+use crate::evaluator::features::{get_phoneme_features_map, get_phoneme_features_map_from_data};
 use crate::evaluator::{CapturedAlpha, EvalContext, MatchState, StressUpdate, WorkingWord};
 use data::feature::Feature;
 use ipa::IpaSequence;
@@ -119,6 +119,46 @@ pub(crate) fn get_referenced_phoneme_indices(
     match_range.clone().collect()
 }
 
+fn transform_single_source_phoneme(
+    sp: &Phoneme,
+    orig_idx: Option<usize>,
+    el: &TransformElement,
+    current_pos: usize,
+    word: &WorkingWord,
+    state: &MatchState,
+    ctx: &EvalContext<'_>,
+) -> Result<(Phoneme, StressUpdate), String> {
+    let TransformElement::Ref {
+        copy_modifiers,
+        append_modifiers,
+        feature_changes,
+        ..
+    } = el
+    else {
+        return Err("Expected TransformElement::Ref".to_string());
+    };
+
+    let mut p = sp.clone();
+    if *copy_modifiers {
+        p.modifiers
+            .extend(get_captured_modifiers_for_element(state, 0, word));
+    }
+    p.modifiers.extend(append_modifiers.iter().cloned());
+
+    let mut stress_update = StressUpdate::Keep;
+    if !feature_changes.is_empty() {
+        p = apply_feature_changes(&p, feature_changes, state, ctx)?;
+        stress_update = eval_feature_changes_stress(
+            feature_changes,
+            state,
+            current_pos,
+            orig_idx,
+            word.stress_index,
+        );
+    }
+    Ok((p, stress_update))
+}
+
 pub(crate) fn eval_transform_ref(
     el: &TransformElement,
     current_phonemes_len: usize,
@@ -131,9 +171,7 @@ pub(crate) fn eval_transform_ref(
         marker,
         class_key,
         repeat,
-        copy_modifiers,
-        append_modifiers,
-        feature_changes,
+        ..
     } = el
     else {
         return Err("Expected TransformElement::Ref".to_string());
@@ -148,32 +186,18 @@ pub(crate) fn eval_transform_ref(
 
     for _ in 0..*repeat {
         for (i, sp) in source_phonemes.iter().enumerate() {
-            let mut p = sp.clone();
-            if *copy_modifiers {
-                p.modifiers
-                    .extend(get_captured_modifiers_for_element(state, 0, word));
-            }
-            p.modifiers.extend(append_modifiers.iter().cloned());
-
             let orig_idx = source_phoneme_indices.get(i).copied();
-
-            if !feature_changes.is_empty() {
-                p = apply_feature_changes(&p, feature_changes, state, ctx)?;
-                match eval_feature_changes_stress(
-                    feature_changes,
-                    state,
-                    current_phonemes_len + phonemes.len(),
-                    orig_idx,
-                    word.stress_index,
-                ) {
-                    StressUpdate::Set(stress_idx) => {
-                        stress_update = StressUpdate::Set(stress_idx);
-                    }
-                    StressUpdate::Clear => {
-                        stress_update = StressUpdate::Clear;
-                    }
-                    StressUpdate::Keep => {}
+            let current_pos = current_phonemes_len + phonemes.len();
+            let (p, su) =
+                transform_single_source_phoneme(sp, orig_idx, el, current_pos, word, state, ctx)?;
+            match su {
+                StressUpdate::Set(stress_idx) => {
+                    stress_update = StressUpdate::Set(stress_idx);
                 }
+                StressUpdate::Clear => {
+                    stress_update = StressUpdate::Clear;
+                }
+                StressUpdate::Keep => {}
             }
             phonemes.push(p);
         }
@@ -383,7 +407,7 @@ pub(crate) fn find_best_phoneme_base(
         }
 
         for (&feat, &val) in &phoneme_feats {
-            if val && !target_features.get(&feat).copied().unwrap_or(false) {
+            if val && !target_features.contains_key(&feat) {
                 diff += 1;
             }
         }

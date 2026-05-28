@@ -1,5 +1,6 @@
 pub mod condition;
 pub mod engine;
+pub mod features;
 pub mod match_base;
 pub mod transform;
 
@@ -103,6 +104,33 @@ pub enum StressUpdate {
     Keep,
 }
 
+/// Internal helper to apply rules for a single era.
+fn apply_era_rules(
+    working: &mut WorkingWord,
+    era: u32,
+    rules: &[CompiledSoundChangeRule],
+    ctx: &EvalContext<'_>,
+    verbose: bool,
+    trace_logs: &mut Vec<String>,
+) -> Result<(), String> {
+    if verbose {
+        trace_logs.push(format!("--- Era {era} ---"));
+    }
+    for rule in rules {
+        let before = working.clone();
+        apply_rule(working, rule, ctx)?;
+        if verbose && *working != before {
+            let rule_name = rule.name.as_deref().unwrap_or("<unnamed>");
+            trace_logs.push(format!(
+                "Rule: {rule_name}\n  In : {}\n  Out: {}",
+                before.to_flat_sequence(),
+                working.to_flat_sequence()
+            ));
+        }
+    }
+    Ok(())
+}
+
 /// Applies sound changes to a word.
 ///
 /// # Errors
@@ -133,21 +161,7 @@ pub fn apply_sound_changes(
     sorted_eras.sort_by_key(|(era, _)| *era);
 
     for (era, rules) in sorted_eras {
-        if verbose {
-            trace_logs.push(format!("--- Era {era} ---"));
-        }
-        for rule in rules {
-            let before = working.clone();
-            apply_rule(&mut working, rule, &ctx)?;
-            if verbose && working != before {
-                let rule_name = rule.name.as_deref().unwrap_or("<unnamed>");
-                trace_logs.push(format!(
-                    "Rule: {rule_name}\n  In : {}\n  Out: {}",
-                    before.to_flat_sequence(),
-                    working.to_flat_sequence()
-                ));
-            }
-        }
+        apply_era_rules(&mut working, *era, rules, &ctx, verbose, &mut trace_logs)?;
     }
 
     // Convert back to IpaWord by resyllabifying

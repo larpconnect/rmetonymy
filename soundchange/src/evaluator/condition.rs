@@ -16,6 +16,69 @@ pub(crate) fn evaluate_conditions(
     evaluate_condition_expr(cond, word, match_range, state, ctx)
 }
 
+fn evaluate_term_condition(
+    negated: bool,
+    pattern: &ConditionPattern,
+    word: &WorkingWord,
+    match_range: &std::ops::Range<usize>,
+    state: &MatchState,
+    ctx: &EvalContext<'_>,
+) -> Option<MatchState> {
+    let has_placeholder = pattern
+        .elements
+        .iter()
+        .any(|el| matches!(el.base, ConditionBase::MatchPlaceholder));
+    let opt_state = if has_placeholder {
+        evaluate_condition_with_placeholder(pattern, word, match_range, state, ctx)
+    } else {
+        let mut matched_state = None;
+        for idx in 0..=word.phonemes.len() {
+            if let Some(s) = evaluate_match_pattern_condition(pattern, word, idx, state, ctx) {
+                matched_state = Some(s);
+                break;
+            }
+        }
+        matched_state
+    };
+    if negated {
+        if opt_state.is_some() {
+            None
+        } else {
+            Some(state.clone())
+        }
+    } else {
+        opt_state
+    }
+}
+
+fn evaluate_binary_condition(
+    left: &CompiledConditionExpr,
+    op: crate::ast::ConditionOp,
+    right: &CompiledConditionExpr,
+    word: &WorkingWord,
+    match_range: &std::ops::Range<usize>,
+    state: &MatchState,
+    ctx: &EvalContext<'_>,
+) -> Option<MatchState> {
+    let left_res = evaluate_condition_expr(left, word, match_range, state, ctx);
+    match op {
+        crate::ast::ConditionOp::And => {
+            if let Some(left_state) = left_res {
+                evaluate_condition_expr(right, word, match_range, &left_state, ctx)
+            } else {
+                None
+            }
+        }
+        crate::ast::ConditionOp::Or => {
+            if let Some(left_state) = left_res {
+                Some(left_state)
+            } else {
+                evaluate_condition_expr(right, word, match_range, state, ctx)
+            }
+        }
+    }
+}
+
 pub(crate) fn evaluate_condition_expr(
     cond: &CompiledConditionExpr,
     word: &WorkingWord,
@@ -25,52 +88,10 @@ pub(crate) fn evaluate_condition_expr(
 ) -> Option<MatchState> {
     match cond {
         CompiledConditionExpr::Term { negated, pattern } => {
-            let has_placeholder = pattern
-                .elements
-                .iter()
-                .any(|el| matches!(el.base, ConditionBase::MatchPlaceholder));
-            let opt_state = if has_placeholder {
-                evaluate_condition_with_placeholder(pattern, word, match_range, state, ctx)
-            } else {
-                let mut matched_state = None;
-                for idx in 0..=word.phonemes.len() {
-                    if let Some(s) =
-                        evaluate_match_pattern_condition(pattern, word, idx, state, ctx)
-                    {
-                        matched_state = Some(s);
-                        break;
-                    }
-                }
-                matched_state
-            };
-            if *negated {
-                if opt_state.is_some() {
-                    None
-                } else {
-                    Some(state.clone())
-                }
-            } else {
-                opt_state
-            }
+            evaluate_term_condition(*negated, pattern, word, match_range, state, ctx)
         }
         CompiledConditionExpr::Binary { left, op, right } => {
-            let left_res = evaluate_condition_expr(left, word, match_range, state, ctx);
-            match op {
-                crate::ast::ConditionOp::And => {
-                    if let Some(left_state) = left_res {
-                        evaluate_condition_expr(right, word, match_range, &left_state, ctx)
-                    } else {
-                        None
-                    }
-                }
-                crate::ast::ConditionOp::Or => {
-                    if let Some(left_state) = left_res {
-                        Some(left_state)
-                    } else {
-                        evaluate_condition_expr(right, word, match_range, state, ctx)
-                    }
-                }
-            }
+            evaluate_binary_condition(left, *op, right, word, match_range, state, ctx)
         }
     }
 }

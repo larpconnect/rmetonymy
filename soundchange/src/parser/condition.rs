@@ -6,6 +6,16 @@ use crate::parser::error::SoundChangeParseError;
 use crate::parser::pattern::{convert_base_element, convert_quantifier, convert_reference_rule};
 use pest::iterators::Pair;
 
+fn parse_condition_op(op_str: &str) -> Result<ConditionOp, SoundChangeParseError> {
+    match op_str {
+        "&" => Ok(ConditionOp::And),
+        "|" => Ok(ConditionOp::Or),
+        _ => Err(SoundChangeParseError::ConversionError(format!(
+            "Invalid condition operator: {op_str}"
+        ))),
+    }
+}
+
 pub(crate) fn convert_condition_expr(
     pair: Pair<'_, Rule>,
 ) -> Result<ConditionExpr, SoundChangeParseError> {
@@ -22,16 +32,7 @@ pub(crate) fn convert_condition_expr(
     let mut current = convert_condition_term(first)?;
 
     while let Some(op_pair) = inner_pairs.next() {
-        let op = match op_pair.as_str() {
-            "&" => ConditionOp::And,
-            "|" => ConditionOp::Or,
-            _ => {
-                return Err(SoundChangeParseError::ConversionError(format!(
-                    "Invalid condition operator: {}",
-                    op_pair.as_str()
-                )));
-            }
-        };
+        let op = parse_condition_op(op_pair.as_str())?;
         let next_term_pair = inner_pairs.next().ok_or_else(|| {
             SoundChangeParseError::ConversionError(
                 "Condition expression ended unexpectedly".to_string(),
@@ -73,6 +74,19 @@ pub(crate) fn convert_condition_term(
     Ok(ConditionExpr::Term { negated, pattern })
 }
 
+fn push_pending_element(
+    elements: &mut Vec<ConditionElement>,
+    base_opt: &mut Option<ConditionBase>,
+    quantifier: &mut MatchQuantifier,
+) {
+    if let Some(base) = base_opt.take() {
+        elements.push(ConditionElement {
+            base,
+            quantifier: std::mem::replace(quantifier, MatchQuantifier::None),
+        });
+    }
+}
+
 pub(crate) fn convert_condition_pattern(
     pair: Pair<'_, Rule>,
 ) -> Result<ConditionPattern, SoundChangeParseError> {
@@ -83,22 +97,10 @@ pub(crate) fn convert_condition_pattern(
     for inner in pair.into_inner() {
         if inner.as_rule() == Rule::quantifier {
             current_quantifier = convert_quantifier(inner)?;
-            if let Some(base) = current_base.take() {
-                elements.push(ConditionElement {
-                    base,
-                    quantifier: current_quantifier,
-                });
-                current_quantifier = MatchQuantifier::None;
-            }
+            push_pending_element(&mut elements, &mut current_base, &mut current_quantifier);
         } else {
             // If we have a pending element, push it before starting a new one
-            if let Some(base) = current_base.take() {
-                elements.push(ConditionElement {
-                    base,
-                    quantifier: current_quantifier,
-                });
-                current_quantifier = MatchQuantifier::None;
-            }
+            push_pending_element(&mut elements, &mut current_base, &mut current_quantifier);
 
             if inner.as_rule() == Rule::match_placeholder || inner.as_str() == "_" {
                 current_base = Some(ConditionBase::MatchPlaceholder);
@@ -110,12 +112,7 @@ pub(crate) fn convert_condition_pattern(
         }
     }
 
-    if let Some(base) = current_base {
-        elements.push(ConditionElement {
-            base,
-            quantifier: current_quantifier,
-        });
-    }
+    push_pending_element(&mut elements, &mut current_base, &mut current_quantifier);
 
     Ok(ConditionPattern { elements })
 }
