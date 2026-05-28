@@ -13,6 +13,8 @@ pub struct LanguageConfig {
     pub phonology: PhonologyConfig,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sound_changes: Option<SoundChanges>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub orthography: Option<Vec<String>>,
 }
 
 impl LanguageConfig {

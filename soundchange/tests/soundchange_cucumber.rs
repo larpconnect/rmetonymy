@@ -220,6 +220,134 @@ fn then_it_should_fail_validation_with_message(
     outcome
 }
 
+#[when(expr = "I apply orthography rule {string} to the word {string}")]
+fn when_apply_orthography_rule(world: &mut SoundChangeWorld, rule: String, input: String) {
+    let config = world
+        .config
+        .as_ref()
+        .expect("LanguageConfig should be initialized");
+    let res = (|| {
+        let parsed_word = PhonemeSequence::from_str(&input).map_err(|e| format!("{e:?}"))?;
+        let ipa_word =
+            IpaWord::try_from_sequence(&parsed_word, config).map_err(|e| format!("{e:?}"))?;
+
+        let compiled_ortho =
+            soundchange::compile_ortho_rules(&[rule]).map_err(|e| e.to_string())?;
+        let (ortho_res, _) =
+            soundchange::apply_orthography(&ipa_word, &compiled_ortho, config, false)?;
+        let nfc = ortho_res.nfc().collect::<String>();
+        Ok(nfc)
+    })();
+    world.result = Some(res);
+    drop(input);
+}
+#[when(expr = "I apply orthography rules {string} and {string} to the word {string}")]
+fn when_apply_orthography_rules_two(
+    world: &mut SoundChangeWorld,
+    rule1: String,
+    rule2: String,
+    input: String,
+) {
+    let config = world
+        .config
+        .as_ref()
+        .expect("LanguageConfig should be initialized");
+    let res = (|| {
+        let parsed_word = PhonemeSequence::from_str(&input).map_err(|e| format!("{e:?}"))?;
+        let ipa_word =
+            IpaWord::try_from_sequence(&parsed_word, config).map_err(|e| format!("{e:?}"))?;
+
+        let compiled_ortho =
+            soundchange::compile_ortho_rules(&[rule1, rule2]).map_err(|e| e.to_string())?;
+        let (ortho_res, _) =
+            soundchange::apply_orthography(&ipa_word, &compiled_ortho, config, false)?;
+        let nfc = ortho_res.nfc().collect::<String>();
+        Ok(nfc)
+    })();
+    world.result = Some(res);
+    drop(input);
+}
+#[when(expr = "I apply empty orthography to the word {string}")]
+fn when_apply_empty_orthography(world: &mut SoundChangeWorld, input: String) {
+    let config = world
+        .config
+        .as_ref()
+        .expect("LanguageConfig should be initialized");
+    let res = (|| {
+        let parsed_word = PhonemeSequence::from_str(&input).map_err(|e| format!("{e:?}"))?;
+        let ipa_word =
+            IpaWord::try_from_sequence(&parsed_word, config).map_err(|e| format!("{e:?}"))?;
+
+        let compiled_ortho = Vec::new();
+        let (ortho_res, _) =
+            soundchange::apply_orthography(&ipa_word, &compiled_ortho, config, false)?;
+        let nfc = ortho_res.nfc().collect::<String>();
+        Ok(nfc)
+    })();
+    world.result = Some(res);
+    drop(input);
+}
+
+#[then(expr = "the orthography result should be {string}")]
+fn then_orthography_result_should_be(
+    world: &mut SoundChangeWorld,
+    expected: String,
+) -> Result<(), String> {
+    let res = world
+        .result
+        .as_ref()
+        .ok_or_else(|| "No orthography change was applied".to_string())?;
+    let outcome = match res {
+        Ok(actual) => {
+            let actual_nfc = actual.nfc().collect::<String>();
+            let expected_nfc = expected.nfc().collect::<String>();
+            if actual_nfc == expected_nfc {
+                Ok(())
+            } else {
+                Err(format!(
+                    "Expected orthography result '{expected_nfc}', got '{actual_nfc}'"
+                ))
+            }
+        }
+        Err(err) => Err(format!("Orthography apply failed: {err}")),
+    };
+    drop(expected);
+    outcome
+}
+
+#[when(expr = "I compile orthography rule {string}")]
+fn when_compile_orthography_rule(world: &mut SoundChangeWorld, rule: String) {
+    let res = soundchange::compile_ortho_rules(&[rule])
+        .map(|_| "Compilation Succeeded".to_string())
+        .map_err(|e| e.to_string());
+    world.result = Some(res);
+}
+
+#[then(expr = "it should fail orthography validation with message containing {string}")]
+fn then_it_should_fail_orthography_validation_with_message(
+    world: &mut SoundChangeWorld,
+    expected_error: String,
+) -> Result<(), String> {
+    let res = world
+        .result
+        .as_ref()
+        .ok_or_else(|| "No orthography compilation was performed".to_string())?;
+    let outcome = match res {
+        Ok(_) => Err("Expected orthography compilation to fail, but it succeeded".to_string()),
+        Err(err) => {
+            if err.contains(&expected_error) {
+                Ok(())
+            } else {
+                Err(format!(
+                    "Expected orthography error containing '{expected_error}', got '{err}'"
+                ))
+            }
+        }
+    };
+    drop(expected_error);
+    outcome
+}
+
 #[tokio::main]
 async fn main() {
     SoundChangeWorld::cucumber()

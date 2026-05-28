@@ -140,10 +140,17 @@ fn transform_single_source_phoneme(
 
     let mut p = sp.clone();
     if *copy_modifiers {
-        p.modifiers
-            .extend(get_captured_modifiers_for_element(state, 0, word));
+        for m in get_captured_modifiers_for_element(state, 0, word) {
+            if !p.modifiers.contains(&m) {
+                p.modifiers.push(m);
+            }
+        }
     }
-    p.modifiers.extend(append_modifiers.iter().cloned());
+    for m in append_modifiers {
+        if !p.modifiers.contains(m) {
+            p.modifiers.push(m.clone());
+        }
+    }
 
     let mut stress_update = StressUpdate::Keep;
     if !feature_changes.is_empty() {

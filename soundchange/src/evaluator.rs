@@ -218,7 +218,13 @@ fn apply_opaque_change(
     ctx: &EvalContext<'_>,
 ) -> Result<(), String> {
     let original_word = word.clone();
-    let matches = engine::find_all_matches(&original_word, change, is_leftward, ctx);
+    let matches = engine::find_all_matches(
+        &original_word,
+        &change.match_part,
+        change.condition.as_ref(),
+        is_leftward,
+        ctx,
+    );
 
     // Apply matches in reverse order of their start index to keep indices valid during modification
     let mut sorted_matches = matches;
@@ -244,7 +250,14 @@ fn apply_transparent_change(
             scan_idx = word.phonemes.len();
         }
 
-        let match_opt = engine::find_next_match(word, change, scan_idx, is_leftward, ctx);
+        let match_opt = engine::find_next_match(
+            word,
+            &change.match_part,
+            change.condition.as_ref(),
+            scan_idx,
+            is_leftward,
+            ctx,
+        );
         let Some((range, state)) = match_opt else {
             break;
         };

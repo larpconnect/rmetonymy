@@ -1,19 +1,21 @@
 use crate::ast::{MatchElement, MatchPattern};
-use crate::compiler::CompiledRuleChange;
 use crate::evaluator::condition::evaluate_conditions;
 use crate::evaluator::match_base::get_match_element_lengths;
 use crate::evaluator::{EvalContext, MatchState, WorkingWord};
 
 pub(crate) fn find_all_matches(
     word: &WorkingWord,
-    change: &CompiledRuleChange,
+    match_part: &MatchPattern,
+    condition: Option<&crate::compiler::CompiledConditionExpr>,
     is_leftward: bool,
     ctx: &EvalContext<'_>,
 ) -> Vec<(std::ops::Range<usize>, MatchState)> {
     let mut results = Vec::new();
     let mut idx = if is_leftward { word.phonemes.len() } else { 0 };
 
-    while let Some((range, state)) = find_next_match(word, change, idx, is_leftward, ctx) {
+    while let Some((range, state)) =
+        find_next_match(word, match_part, condition, idx, is_leftward, ctx)
+    {
         results.push((range.clone(), state));
         if is_leftward {
             if range.start == 0 {
@@ -32,17 +34,17 @@ pub(crate) fn find_all_matches(
 
 pub(crate) fn find_next_match(
     word: &WorkingWord,
-    change: &CompiledRuleChange,
+    match_part: &MatchPattern,
+    condition: Option<&crate::compiler::CompiledConditionExpr>,
     scan_idx: usize,
     is_leftward: bool,
     ctx: &EvalContext<'_>,
 ) -> Option<(std::ops::Range<usize>, MatchState)> {
     if is_leftward {
         for start_pos in (0..=scan_idx).rev() {
-            if let Some((len, state)) = evaluate_match(&change.match_part, word, start_pos, ctx) {
+            if let Some((len, state)) = evaluate_match(match_part, word, start_pos, ctx) {
                 let range = start_pos..start_pos + len;
-                if let Some(final_state) =
-                    evaluate_conditions(change.condition.as_ref(), word, &range, &state, ctx)
+                if let Some(final_state) = evaluate_conditions(condition, word, &range, &state, ctx)
                 {
                     return Some((range, final_state));
                 }
@@ -50,10 +52,9 @@ pub(crate) fn find_next_match(
         }
     } else {
         for start_pos in scan_idx..=word.phonemes.len() {
-            if let Some((len, state)) = evaluate_match(&change.match_part, word, start_pos, ctx) {
+            if let Some((len, state)) = evaluate_match(match_part, word, start_pos, ctx) {
                 let range = start_pos..start_pos + len;
-                if let Some(final_state) =
-                    evaluate_conditions(change.condition.as_ref(), word, &range, &state, ctx)
+                if let Some(final_state) = evaluate_conditions(condition, word, &range, &state, ctx)
                 {
                     return Some((range, final_state));
                 }

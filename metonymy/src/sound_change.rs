@@ -20,6 +20,10 @@ pub struct SoundChangeCmd {
     /// Show the results from every individual sound change
     #[arg(short, long)]
     pub verbose: bool,
+
+    /// Apply orthography transform as a final step
+    #[arg(long)]
+    pub orthography: bool,
 }
 
 fn load_config(
@@ -86,12 +90,29 @@ pub(crate) fn handle_sound_change(
     )
     .map_err(|e| anyhow::anyhow!("Failed to apply sound changes: {e}"))?;
 
+    let mut result_str = result_word.to_string();
+    let mut ortho_logs = Vec::new();
+
+    if cmd.orthography {
+        let ortho_rules = config.orthography.as_deref().unwrap_or(&[]);
+        let compiled_ortho = soundchange::compile_ortho_rules(ortho_rules)
+            .map_err(|e| anyhow::anyhow!("Failed to compile orthography rules: {e}"))?;
+        let (ortho_res, logs) =
+            soundchange::apply_orthography(&result_word, &compiled_ortho, &config, cmd.verbose)
+                .map_err(|e| anyhow::anyhow!("Failed to apply orthography: {e}"))?;
+        result_str = ortho_res;
+        ortho_logs = logs;
+    }
+
     if cmd.verbose {
         for log in trace_logs {
             println!("{log}");
         }
+        for log in ortho_logs {
+            println!("{log}");
+        }
     }
 
-    println!("{result_word}");
+    println!("{result_str}");
     Ok(())
 }
