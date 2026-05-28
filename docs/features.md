@@ -148,7 +148,7 @@ language across different historical epochs.
 ### How it Works
 
 *   **Dictionary Schema**: Dictionaries conform to the JSON schema in
-    [dictionary.schema.json](file:///home/clementsd/rmetonymy/language/dictionary.schema.json).
+    [dictionary.schema.json](../language/dictionary.schema.json).
 *   **Historical Eras**: Dictionary entries are linked to historical eras. Adding an entry to a new
     era automatically registers that era inside the dictionary.
 *   **Atomic Writes**: Saves to dictionary files are performed atomically (using a temporary
