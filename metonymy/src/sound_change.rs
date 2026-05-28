@@ -94,8 +94,7 @@ pub(crate) fn handle_sound_change(
     let mut ortho_logs = Vec::new();
 
     if cmd.orthography {
-        let empty_rules = Vec::new();
-        let ortho_rules = config.orthography.as_ref().unwrap_or(&empty_rules);
+        let ortho_rules = config.orthography.as_deref().unwrap_or(&[]);
         let compiled_ortho = soundchange::compile_ortho_rules(ortho_rules)
             .map_err(|e| anyhow::anyhow!("Failed to compile orthography rules: {e}"))?;
         let (ortho_res, logs) =
