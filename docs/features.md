@@ -88,7 +88,7 @@ and secondary (`ˌ`) stress marks.
     Principle* (SSP), the *Maximal Onset Principle* (MOP), *Stressed Vowel Capture*, *Liquid Coda
     Constraints*, *Geminate Splitting*, and language-specific phonotactic blocks.
 *   For complete details on these rules, see the dedicated guide:
-    [Phonological Syllabification Rules](file:///home/clementsd/rmetonymy/docs/syllabification.md).
+    [Phonological Syllabification Rules](syllabification.md).
 *   **Prosodic Stress Configurations**:
     *   `Unstressed`: Preserves existing stress markers but does not generate new ones.
     *   `NoFixedStress`: Places primary stress randomly using a Zipfian distribution, propagating
