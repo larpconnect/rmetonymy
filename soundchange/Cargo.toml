@@ -20,6 +20,8 @@ workspace = true
 serde_json = { workspace = true }
 cucumber.workspace = true
 tokio.workspace = true
+uuid.workspace = true
+time.workspace = true
 
 [[test]]
 name = "soundchange_cucumber"

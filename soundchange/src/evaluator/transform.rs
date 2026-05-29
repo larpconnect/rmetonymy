@@ -21,6 +21,19 @@ pub(crate) fn replace_range(
     let new_len = new_phonemes.len();
 
     word.phonemes.splice(range.clone(), new_phonemes);
+
+    let new_tags = if let Some(tag) = ctx.active_tag {
+        vec![Some(tag); new_len]
+    } else {
+        let replaced_tags = word
+            .tags
+            .get(range.clone())
+            .ok_or_else(|| format!("Invalid tags range: {range:?}"))?;
+        let inherit_tag = replaced_tags.iter().copied().flatten().next();
+        vec![inherit_tag; new_len]
+    };
+    word.tags.splice(range.clone(), new_tags);
+
     adjust_boundaries_and_stress(
         word,
         &range,

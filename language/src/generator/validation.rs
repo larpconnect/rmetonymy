@@ -44,6 +44,16 @@ pub enum ValidationError {
     /// Invalid prosody configuration.
     #[error("Invalid prosody configuration: {0}")]
     InvalidProsodyConfig(String),
+
+    /// Invalid derivation name.
+    #[error(
+        "Invalid derivation name '{0}': must be alphanumeric, all caps, dots/underscores allowed, length 3 to 31"
+    )]
+    InvalidDerivationName(String),
+
+    /// Duplicate derivation name.
+    #[error("Duplicate derivation name '{0}'")]
+    DuplicateDerivationName(String),
 }
 
 /// Validates that all generator map keys conform to the expected syntax and types.
@@ -311,5 +321,75 @@ fn check_generator_cycle(
 
     visiting.remove(node);
     visited.insert(node.to_string());
+    Ok(())
+}
+
+/// Helper to validate if derivation name fits the required character set and length constraints.
+#[must_use]
+pub fn is_valid_derivation_name(name: &str) -> bool {
+    if name.len() < 3 || name.len() > 31 {
+        return false;
+    }
+    name.chars()
+        .all(|c| (c.is_ascii_alphanumeric() && c.is_ascii_uppercase()) || c == '.' || c == '_')
+}
+
+/// Validates that derivation configurations conform to name rules and uniqueness requirements.
+///
+/// # Errors
+/// Returns `Err` if any derivation has an invalid name or duplicate name.
+pub fn validate_derivations(
+    derivations: &[crate::config::Derivation],
+) -> Result<(), ValidationError> {
+    for deriv in derivations {
+        if !is_valid_derivation_name(&deriv.name) {
+            return Err(ValidationError::InvalidDerivationName(deriv.name.clone()));
+        }
+    }
+
+    // Collect all full types mentioned in the derivations
+    let mut all_types = HashSet::new();
+    for deriv in derivations {
+        if let Some(ref from_t) = deriv.from_type {
+            all_types.insert(from_t.clone());
+            if let Some((base, _)) = from_t.split_once('.') {
+                all_types.insert(base.to_string());
+            }
+        }
+    }
+
+    // If there are no types, we still check empty type derivations themselves
+    if all_types.is_empty() {
+        let mut names = HashSet::new();
+        for deriv in derivations {
+            if !names.insert(&deriv.name) {
+                return Err(ValidationError::DuplicateDerivationName(deriv.name.clone()));
+            }
+        }
+        return Ok(());
+    }
+
+    // For each type, check that all derivations that can apply to it have unique names
+    for t in &all_types {
+        let mut names = HashSet::new();
+        for deriv in derivations {
+            let applies = match &deriv.from_type {
+                None => true,
+                Some(from_t) => {
+                    if from_t == t {
+                        true
+                    } else if let Some((t_base, _)) = t.split_once('.') {
+                        from_t == t_base
+                    } else {
+                        false
+                    }
+                }
+            };
+            if applies && !names.insert(&deriv.name) {
+                return Err(ValidationError::DuplicateDerivationName(deriv.name.clone()));
+            }
+        }
+    }
+
     Ok(())
 }

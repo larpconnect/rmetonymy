@@ -76,6 +76,12 @@
     },
     "sound_changes": {
       "$ref": "#/$defs/sound_changes"
+    },
+    "derivations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/derivation"
+      }
     }
   },
   "required": ["id", "name", "metadata", "phonology"],
@@ -196,6 +202,20 @@
         }
       },
       "required": ["changes"]
+    },
+    "derivation": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "era": { "type": "integer", "minimum": 0 },
+        "transforms": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "from_type": { "type": "string" },
+        "to_type": { "type": "string" }
+      },
+      "required": ["name", "transforms"]
     }
   }
 }

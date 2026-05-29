@@ -28,6 +28,7 @@ fn get_test_config(prosody: Option<ProsodicConfig>) -> LanguageConfig {
         },
         sound_changes: None,
         orthography: None,
+        derivations: None,
     }
 }
 

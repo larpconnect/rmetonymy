@@ -67,6 +67,26 @@ pub fn compile_sound_changes(
     Ok(compiled_eras)
 }
 
+/// Compiles a single sound change rule from a string, using the given preamble configuration if present.
+///
+/// # Errors
+/// Returns `SoundChangeParseError` if compilation, parsing or validation fails.
+pub fn compile_single_rule_from_str(
+    rule_str: &str,
+    sound_changes: Option<&SoundChanges>,
+) -> Result<CompiledSoundChangeRule, SoundChangeParseError> {
+    let preamble_map = if let Some(sc) = sound_changes {
+        build_preamble_map(sc)?
+    } else {
+        HashMap::new()
+    };
+    let rule = SoundChangeRule {
+        name: None,
+        changes: vec![rule_str.to_string()],
+    };
+    compile_rule(&rule, &preamble_map)
+}
+
 fn build_preamble_map(
     config: &SoundChanges,
 ) -> Result<HashMap<String, PreambleItem>, SoundChangeParseError> {
