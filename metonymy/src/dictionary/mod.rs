@@ -3,7 +3,7 @@ pub mod ops;
 
 use anyhow::Context;
 use clap::{Parser, Subcommand};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[derive(Parser)]
 pub struct DictionaryCmd {
@@ -91,6 +91,61 @@ pub enum DictionarySubcommand {
     },
 }
 
+fn handle_init(dict_path: &Path, language: Option<&PathBuf>) -> anyhow::Result<()> {
+    ops::handle_dict_init(dict_path, language.map(PathBuf::as_path))
+}
+
+#[expect(clippy::too_many_arguments, reason = "Internal subcommand dispatcher helper")]
+fn handle_add(
+    dict_path: &Path,
+    language: Option<&PathBuf>,
+    meaning: &str,
+    definition: Option<&str>,
+    generate: bool,
+    r#type: String,
+    era: Option<u32>,
+    etymology: &[String],
+    usage_notes: String,
+) -> anyhow::Result<()> {
+    ops::handle_dict_add_cmd(
+        dict_path,
+        language.map(PathBuf::as_path),
+        meaning,
+        definition,
+        generate,
+        r#type,
+        era,
+        etymology,
+        usage_notes,
+    )
+}
+
+fn handle_remove(dict_path: &Path, id: &str) -> anyhow::Result<()> {
+    ops::handle_dict_remove(dict_path, id)
+}
+
+fn handle_print(dict_path: &Path) -> anyhow::Result<()> {
+    ops::handle_dict_print(dict_path)
+}
+
+fn handle_add_era(
+    dict_path: &Path,
+    era: Option<u32>,
+    name: Option<String>,
+    description: Option<String>,
+) -> anyhow::Result<()> {
+    ops::handle_dict_add_era_cmd(dict_path, era, name, description)
+}
+
+fn handle_lookup(
+    dict_path: &Path,
+    language: Option<&PathBuf>,
+    meaning: &str,
+    r#type: Option<&str>,
+) -> anyhow::Result<()> {
+    lookup::handle_dict_lookup(dict_path, language.map(PathBuf::as_path), meaning, r#type)
+}
+
 pub(crate) fn handle_dictionary_cmd(
     dict_cmd: DictionaryCmd,
     language: Option<&PathBuf>,
@@ -100,7 +155,7 @@ pub(crate) fn handle_dictionary_cmd(
         dict.context("Dictionary file path (--dict) is required for dictionary command")?;
     match dict_cmd.subcommand {
         DictionarySubcommand::Init => {
-            ops::handle_dict_init(dict_path, language.map(PathBuf::as_path))?;
+            handle_init(dict_path, language)?;
         }
         DictionarySubcommand::Add {
             meaning,
@@ -111,9 +166,9 @@ pub(crate) fn handle_dictionary_cmd(
             etymology,
             usage_notes,
         } => {
-            ops::handle_dict_add_cmd(
+            handle_add(
                 dict_path,
-                language.map(PathBuf::as_path),
+                language,
                 &meaning,
                 definition.as_deref(),
                 generate,
@@ -124,25 +179,20 @@ pub(crate) fn handle_dictionary_cmd(
             )?;
         }
         DictionarySubcommand::Remove { id } => {
-            ops::handle_dict_remove(dict_path, &id)?;
+            handle_remove(dict_path, &id)?;
         }
         DictionarySubcommand::Print => {
-            ops::handle_dict_print(dict_path)?;
+            handle_print(dict_path)?;
         }
         DictionarySubcommand::AddEra {
             era,
             name,
             description,
         } => {
-            ops::handle_dict_add_era_cmd(dict_path, era, name, description)?;
+            handle_add_era(dict_path, era, name, description)?;
         }
         DictionarySubcommand::Lookup { meaning, r#type } => {
-            lookup::handle_dict_lookup(
-                dict_path,
-                language.map(PathBuf::as_path),
-                &meaning,
-                r#type.as_deref(),
-            )?;
+            handle_lookup(dict_path, language, &meaning, r#type.as_deref())?;
         }
     }
     Ok(())

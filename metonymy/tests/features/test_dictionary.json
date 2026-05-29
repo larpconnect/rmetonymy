@@ -1,0 +1,39 @@
+{
+  "id": "018f4a3e-6b9f-7a1a-9b1a-2b3c4d5e6f7a",
+  "eras": {
+    "0": {
+      "id": "33OrkHfGFeM3imNEqoilZ"
+    },
+    "1": {
+      "id": "33OrkGvvyzVaqJbndkSru",
+      "name": "a",
+      "description": "First Era"
+    }
+  },
+  "entries": [
+    {
+      "id": "33OrkH9sBclcXRB0UYkOw",
+      "meaning": "rɛd",
+      "definition": "pat",
+      "type": "noun.masculine",
+      "era": 1,
+      "usage_notes": ""
+    },
+    {
+      "id": "33OrkHOCpKeOJMj1lIx0T",
+      "meaning": "blu",
+      "definition": "pet",
+      "type": "noun",
+      "era": 1,
+      "usage_notes": ""
+    },
+    {
+      "id": "33OrkHfGFeM3imMYN1iT6",
+      "meaning": "grin",
+      "definition": "pokat",
+      "type": "verb",
+      "era": 0,
+      "usage_notes": ""
+    }
+  ]
+}

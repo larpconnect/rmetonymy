@@ -111,6 +111,54 @@ pub fn apply_derivations(
     })
 }
 
+fn filter_intermediate_eras(
+    compiled_eras: &[(u32, Vec<crate::CompiledSoundChangeRule>)],
+    start_era: u32,
+    end_era: u32,
+) -> Vec<&(u32, Vec<crate::CompiledSoundChangeRule>)> {
+    let mut sorted_eras: Vec<_> = compiled_eras
+        .iter()
+        .filter(|(era, _)| *era >= start_era && *era < end_era)
+        .collect();
+    sorted_eras.sort_by_key(|(era, _)| *era);
+    sorted_eras
+}
+
+fn eval_intermediate_rules(
+    working: &mut WorkingWord,
+    sorted_eras: &[&(u32, Vec<crate::CompiledSoundChangeRule>)],
+    ctx: &EvalContext<'_>,
+) -> Result<(), String> {
+    for (_, rules) in sorted_eras {
+        for rule in rules {
+            apply_rule(working, rule, ctx)?;
+        }
+    }
+    Ok(())
+}
+
+fn rebuild_intermediate_seq_and_tags(
+    seq: &mut PhonemeSequence,
+    tags: &mut Vec<Option<usize>>,
+    working_tags: Vec<Option<usize>>,
+    flat_elements: Vec<SequenceElement>,
+    config: &LanguageConfig,
+) -> Result<(), String> {
+    let flat_seq = PhonemeSequence {
+        elements: flat_elements,
+    };
+    let resyllabified = IpaWord::try_from_sequence(&flat_seq, config)
+        .map_err(|e| format!("Failed to resyllabify word: {e}"))?;
+
+    let mut next_tags = working_tags;
+    if next_tags.len() != resyllabified.phonemes().len() {
+        next_tags.resize(resyllabified.phonemes().len(), None);
+    }
+    *seq = PhonemeSequence::from(resyllabified);
+    *tags = next_tags;
+    Ok(())
+}
+
 fn apply_intermediate_sound_changes(
     seq: &mut PhonemeSequence,
     tags: &mut Vec<Option<usize>>,
@@ -134,37 +182,15 @@ fn apply_intermediate_sound_changes(
         active_tag: None,
     };
 
-    // Filter and sort eras in [start_era, end_era)
-    let mut sorted_eras: Vec<_> = compiled_eras
-        .iter()
-        .filter(|(era, _)| *era >= start_era && *era < end_era)
-        .collect();
-    sorted_eras.sort_by_key(|(era, _)| *era);
-
-    for (_era, rules) in sorted_eras {
-        for rule in rules {
-            apply_rule(&mut working, rule, &ctx)?;
-        }
-    }
+    let sorted_eras = filter_intermediate_eras(&compiled_eras, start_era, end_era);
+    eval_intermediate_rules(&mut working, &sorted_eras, &ctx)?;
 
     let flat_elements: Vec<SequenceElement> = std::mem::take(&mut working.to_flat_sequence().elements)
         .into_iter()
         .filter(|el| !matches!(el, SequenceElement::SyllableBreak))
         .collect();
-    let flat_seq = PhonemeSequence {
-        elements: flat_elements,
-    };
-    let resyllabified = IpaWord::try_from_sequence(&flat_seq, config)
-        .map_err(|e| format!("Failed to resyllabify word: {e}"))?;
 
-    let mut next_tags = working.tags;
-    if next_tags.len() != resyllabified.phonemes().len() {
-        next_tags.resize(resyllabified.phonemes().len(), None);
-    }
-    *seq = PhonemeSequence::from(resyllabified);
-    *tags = next_tags;
-
-    Ok(())
+    rebuild_intermediate_seq_and_tags(seq, tags, working.tags, flat_elements, config)
 }
 
 fn resyllabify_and_update_tags(
@@ -192,6 +218,57 @@ fn resyllabify_and_update_tags(
     Ok(())
 }
 
+fn get_derivation<'a>(
+    config: &'a LanguageConfig,
+    deriv_name: &str,
+) -> Result<&'a language::config::Derivation, String> {
+    config
+        .derivations
+        .as_ref()
+        .and_then(|list| list.iter().find(|d| d.name == deriv_name))
+        .ok_or_else(|| format!("Derivation '{deriv_name}' not found in configuration"))
+}
+
+fn check_era_and_apply_changes(
+    seq: &mut PhonemeSequence,
+    tags: &mut Vec<Option<usize>>,
+    current_era: &mut u32,
+    deriv_era: Option<u32>,
+    deriv_name: &str,
+    config: &LanguageConfig,
+) -> Result<(), String> {
+    let Some(era_val) = deriv_era else {
+        return Ok(());
+    };
+    if era_val < *current_era {
+        return Err(format!(
+            "Cannot apply derivation '{deriv_name}': word era {current_era} is after derivation era {era_val}"
+        ));
+    }
+    if era_val > *current_era {
+        apply_intermediate_sound_changes(seq, tags, *current_era, era_val, config)?;
+        *current_era = era_val;
+    }
+    Ok(())
+}
+
+fn check_type_constraint(
+    current_type: &str,
+    from_type: Option<&String>,
+    deriv_name: &str,
+) -> Result<(), String> {
+    let Some(from_t) = from_type else {
+        return Ok(());
+    };
+    let matches = type_matches(current_type, from_t);
+    if !matches {
+        return Err(format!(
+            "Cannot apply derivation '{deriv_name}': word type '{current_type}' does not match expected '{from_t}'"
+        ));
+    }
+    Ok(())
+}
+
 fn apply_single_derivation(
     seq: &mut PhonemeSequence,
     tags: &mut Vec<Option<usize>>,
@@ -201,32 +278,11 @@ fn apply_single_derivation(
     deriv_name: &str,
     config: &LanguageConfig,
 ) -> Result<(), String> {
-    let deriv = config
-        .derivations
-        .as_ref()
-        .and_then(|list| list.iter().find(|d| d.name == deriv_name))
-        .ok_or_else(|| format!("Derivation '{deriv_name}' not found in configuration"))?;
+    let deriv = get_derivation(config, deriv_name)?;
 
-    if let Some(deriv_era) = deriv.era {
-        if deriv_era < *current_era {
-            return Err(format!(
-                "Cannot apply derivation '{deriv_name}': word era {current_era} is after derivation era {deriv_era}"
-            ));
-        }
-        if deriv_era > *current_era {
-            apply_intermediate_sound_changes(seq, tags, *current_era, deriv_era, config)?;
-            *current_era = deriv_era;
-        }
-    }
+    check_era_and_apply_changes(seq, tags, current_era, deriv.era, deriv_name, config)?;
 
-    if let Some(ref from_t) = deriv.from_type {
-        let matches = type_matches(current_type, from_t);
-        if !matches {
-            return Err(format!(
-                "Cannot apply derivation '{deriv_name}': word type '{current_type}' does not match expected '{from_t}'"
-            ));
-        }
-    }
+    check_type_constraint(current_type, deriv.from_type.as_ref(), deriv_name)?;
 
     for transform in &deriv.transforms {
         apply_derivation_transform(seq, tags, transform, deriv_idx, config)?;

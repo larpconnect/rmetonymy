@@ -222,18 +222,12 @@ fn format_colored_word(word: &language::syllable::IpaWord, tags: &[Option<usize>
     result
 }
 
-pub(crate) fn handle_dict_lookup(
-    dict_path: &Path,
-    language_path: Option<&Path>,
-    meaning: &str,
+fn find_matching_entry<'a>(
+    dict: &'a language::Dictionary,
+    base_meaning: &str,
     filter_type: Option<&str>,
-) -> anyhow::Result<()> {
-    let config_opt = load_language_config(language_path)?;
-    let dict = load_dictionary(dict_path)?;
-    let (base_meaning, derivation_names) = parse_lookup_string(meaning);
-
-    let entry = dict
-        .entries
+) -> anyhow::Result<&'a language::DictionaryEntry> {
+    dict.entries
         .iter()
         .find(|e| {
             if e.meaning.to_string() != base_meaning {
@@ -255,7 +249,20 @@ pub(crate) fn handle_dict_lookup(
             } else {
                 anyhow::anyhow!("Word with meaning '{base_meaning}' not found in dictionary")
             }
-        })?;
+        })
+}
+
+pub(crate) fn handle_dict_lookup(
+    dict_path: &Path,
+    language_path: Option<&Path>,
+    meaning: &str,
+    filter_type: Option<&str>,
+) -> anyhow::Result<()> {
+    let config_opt = load_language_config(language_path)?;
+    let dict = load_dictionary(dict_path)?;
+    let (base_meaning, derivation_names) = parse_lookup_string(meaning);
+
+    let entry = find_matching_entry(&dict, &base_meaning, filter_type)?;
 
     let config = config_opt.context("Language configuration file (--language) is required for lookup")?;
     let ipa_word = config
