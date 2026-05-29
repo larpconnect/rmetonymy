@@ -145,6 +145,7 @@ fn the_output_should_contain_escape_colored(world: &mut MetonymyWorld, pattern: 
     let expected = pattern
         .replace("<RED>", "\x1b[31m")
         .replace("<YELLOW>", "\x1b[33m")
+        .replace("<CYAN>", "\x1b[36m")
         .replace("<GREEN>", "\x1b[32m")
         .replace("<RESET>", "\x1b[0m");
     assert!(

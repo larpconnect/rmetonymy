@@ -1,11 +1,14 @@
 use anyhow::Context;
+use language::generator::validation::is_valid_derivation_name;
 use std::fs;
 use std::path::Path;
-use language::generator::validation::is_valid_derivation_name;
 
 fn load_dictionary(dict_path: &Path) -> anyhow::Result<language::Dictionary> {
     let dict_json = fs::read_to_string(dict_path).with_context(|| {
-        format!("Failed to read dictionary file from {}", dict_path.display())
+        format!(
+            "Failed to read dictionary file from {}",
+            dict_path.display()
+        )
     })?;
     dict_json
         .parse::<language::Dictionary>()
@@ -19,9 +22,8 @@ fn load_language_config(
     let Some(path) = language_path else {
         return Ok(None);
     };
-    let lang_json = fs::read_to_string(path).with_context(|| {
-        format!("Failed to read language config from {}", path.display())
-    })?;
+    let lang_json = fs::read_to_string(path)
+        .with_context(|| format!("Failed to read language config from {}", path.display()))?;
     let config: language::config::LanguageConfig =
         serde_json::from_str(&lang_json).context("Failed to parse language config JSON")?;
     config
@@ -83,23 +85,16 @@ fn print_lookup_without_derivations(
     let compiled_sc = soundchange::compile_sound_changes(&sound_changes)
         .map_err(|e| anyhow::anyhow!("Failed to compile sound changes: {e}"))?;
 
-    let (sc_word, _) = soundchange::apply_sound_changes(
-        ipa_word,
-        &compiled_sc,
-        era,
-        u32::MAX,
-        config,
-        false,
-    )
-    .map_err(|e| anyhow::anyhow!("Failed to apply sound changes: {e}"))?;
+    let (sc_word, _) =
+        soundchange::apply_sound_changes(ipa_word, &compiled_sc, era, u32::MAX, config, false)
+            .map_err(|e| anyhow::anyhow!("Failed to apply sound changes: {e}"))?;
     println!("{sc_word}");
 
     let ortho_rules = config.orthography.as_deref().unwrap_or(&[]);
     let compiled_ortho = soundchange::compile_ortho_rules(ortho_rules)
         .map_err(|e| anyhow::anyhow!("Failed to compile orthography rules: {e}"))?;
-    let (ortho_res, _) =
-        soundchange::apply_orthography(&sc_word, &compiled_ortho, config, false)
-            .map_err(|e| anyhow::anyhow!("Failed to apply orthography: {e}"))?;
+    let (ortho_res, _) = soundchange::apply_orthography(&sc_word, &compiled_ortho, config, false)
+        .map_err(|e| anyhow::anyhow!("Failed to apply orthography: {e}"))?;
     println!("{ortho_res}");
 
     Ok(())
@@ -153,26 +148,30 @@ fn apply_post_derivation_sound_changes(
     Ok((final_sc_word, working.tags))
 }
 
+fn get_derivation_color(idx: usize) -> &'static str {
+    match idx % 3 {
+        1 => "\x1b[31m", // Red
+        2 => "\x1b[36m", // Cyan
+        0 => "\x1b[32m", // Green
+        _ => "",
+    }
+}
+
 fn format_colored_lookup_line(
     base_meaning: &str,
     derivation_names: &[String],
-    final_type: &str,
+    step_types: &[Option<String>],
 ) -> String {
     let mut result = base_meaning.to_string();
     for (i, name) in derivation_names.iter().enumerate() {
         let idx = i + 1;
-        let color = match idx % 3 {
-            1 => "\x1b[31m", // Red
-            2 => "\x1b[33m", // Yellow
-            0 => "\x1b[32m", // Green
-            _ => "",
-        };
+        let color = get_derivation_color(idx);
         result.push_str(color);
         result.push('-');
         result.push_str(name);
-        if i == derivation_names.len() - 1 {
+        if let Some(Some(to_type)) = step_types.get(i) {
             result.push(':');
-            result.push_str(final_type);
+            result.push_str(to_type);
         }
         result.push_str("\x1b[0m");
     }
@@ -187,9 +186,8 @@ fn print_lookup_with_derivations(
     base_meaning: &str,
     config: &language::config::LanguageConfig,
 ) -> anyhow::Result<()> {
-    let res =
-        soundchange::apply_derivations(ipa_word, entry_type, derivation_names, config, era)
-            .map_err(|e| anyhow::anyhow!("Failed to apply derivations: {e}"))?;
+    let res = soundchange::apply_derivations(ipa_word, entry_type, derivation_names, config, era)
+        .map_err(|e| anyhow::anyhow!("Failed to apply derivations: {e}"))?;
     let (final_sc_word, sc_tags) =
         apply_post_derivation_sound_changes(&res.word, &res.tags, res.final_era, config)?;
 
@@ -202,7 +200,7 @@ fn print_lookup_with_derivations(
 
     let colored_derived = format_colored_word(&res.word, &res.tags);
     let colored_sc = format_colored_word(&final_sc_word, &sc_tags);
-    let colored_line = format_colored_lookup_line(base_meaning, derivation_names, &res.final_type);
+    let colored_line = format_colored_lookup_line(base_meaning, derivation_names, &res.step_types);
 
     println!("{colored_line}");
     println!("{colored_derived}");
@@ -224,12 +222,7 @@ fn format_colored_word(word: &language::syllable::IpaWord, tags: &[Option<usize>
             SequenceElement::Phoneme(p) => {
                 let tag = tags.get(phoneme_idx).copied().flatten();
                 if let Some(t) = tag {
-                    let color = match t % 3 {
-                        1 => "\x1b[31m", // Red
-                        2 => "\x1b[33m", // Yellow
-                        0 => "\x1b[32m", // Green
-                        _ => "\x1b[0m",
-                    };
+                    let color = get_derivation_color(t);
                     result.push_str(color);
                     result.push_str(&p.to_string());
                     result.push_str("\x1b[0m");
@@ -321,7 +314,8 @@ pub(crate) fn handle_dict_lookup(
 
     let entry = find_matching_entry(&dict, &base_meaning, filter_type)?;
 
-    let config = config_opt.context("Language configuration file (--language) is required for lookup")?;
+    let config =
+        config_opt.context("Language configuration file (--language) is required for lookup")?;
     let ipa_word = config
         .syllabify(&entry.definition)
         .map_err(|e| anyhow::anyhow!("Failed to syllabify definition: {e}"))?;

@@ -95,7 +95,10 @@ fn handle_init(dict_path: &Path, language: Option<&PathBuf>) -> anyhow::Result<(
     ops::handle_dict_init(dict_path, language.map(PathBuf::as_path))
 }
 
-#[expect(clippy::too_many_arguments, reason = "Internal subcommand dispatcher helper")]
+#[expect(
+    clippy::too_many_arguments,
+    reason = "Internal subcommand dispatcher helper"
+)]
 fn handle_add(
     dict_path: &Path,
     language: Option<&PathBuf>,

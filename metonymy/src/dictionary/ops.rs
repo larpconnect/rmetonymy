@@ -258,9 +258,8 @@ pub(crate) fn handle_dict_add_cmd(
     };
 
     if let Some(path) = language_path {
-        let lang_json = fs::read_to_string(path).with_context(|| {
-            format!("Failed to read language config from {}", path.display())
-        })?;
+        let lang_json = fs::read_to_string(path)
+            .with_context(|| format!("Failed to read language config from {}", path.display()))?;
         let config: language::config::LanguageConfig =
             serde_json::from_str(&lang_json).context("Failed to parse language config JSON")?;
         if let Ok(syllabified) = config.syllabify(&ipa_definition) {

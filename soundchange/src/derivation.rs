@@ -6,7 +6,9 @@ use language::syllable::IpaWord;
 use std::collections::BTreeSet;
 use std::str::FromStr;
 
-fn extract_phonemes_and_boundaries(seq: &PhonemeSequence) -> (Vec<ipa::sequence::Phoneme>, BTreeSet<usize>) {
+fn extract_phonemes_and_boundaries(
+    seq: &PhonemeSequence,
+) -> (Vec<ipa::sequence::Phoneme>, BTreeSet<usize>) {
     let mut phonemes = Vec::new();
     let mut syllable_boundaries = BTreeSet::new();
     for el in &seq.elements {
@@ -70,6 +72,7 @@ pub struct DerivationResult {
     pub tags: Vec<Option<usize>>,
     pub final_type: String,
     pub final_era: u32,
+    pub step_types: Vec<Option<String>>,
 }
 
 /// Applies a list of derivations to a word (and its type), tracking which derivation modified which phonemes.
@@ -87,8 +90,12 @@ pub fn apply_derivations(
     let mut current_era = word_era;
     let mut seq = PhonemeSequence::from(definition.clone());
     let mut tags = vec![None; seq.phonemes().len()];
+    let mut step_types = Vec::new();
 
     for (idx, deriv_name) in derivation_names.iter().enumerate() {
+        let deriv = get_derivation(config, deriv_name)?;
+        step_types.push(deriv.to_type.clone());
+
         apply_single_derivation(
             &mut seq,
             &mut tags,
@@ -108,6 +115,7 @@ pub fn apply_derivations(
         tags,
         final_type: current_type,
         final_era: current_era,
+        step_types,
     })
 }
 
@@ -185,10 +193,11 @@ fn apply_intermediate_sound_changes(
     let sorted_eras = filter_intermediate_eras(&compiled_eras, start_era, end_era);
     eval_intermediate_rules(&mut working, &sorted_eras, &ctx)?;
 
-    let flat_elements: Vec<SequenceElement> = std::mem::take(&mut working.to_flat_sequence().elements)
-        .into_iter()
-        .filter(|el| !matches!(el, SequenceElement::SyllableBreak))
-        .collect();
+    let flat_elements: Vec<SequenceElement> =
+        std::mem::take(&mut working.to_flat_sequence().elements)
+            .into_iter()
+            .filter(|el| !matches!(el, SequenceElement::SyllableBreak))
+            .collect();
 
     rebuild_intermediate_seq_and_tags(seq, tags, working.tags, flat_elements, config)
 }
@@ -346,13 +355,8 @@ fn apply_sound_change_transform(
     deriv_idx: usize,
     config: &LanguageConfig,
 ) -> Result<(), String> {
-    let compiled_rule =
-        compile_single_rule_from_str(transform, config.sound_changes.as_ref())
-            .map_err(|e| {
-                format!(
-                    "Failed to compile derivation sound change '{transform}': {e}"
-                )
-            })?;
+    let compiled_rule = compile_single_rule_from_str(transform, config.sound_changes.as_ref())
+        .map_err(|e| format!("Failed to compile derivation sound change '{transform}': {e}"))?;
 
     let mut working = sequence_to_working_word(seq, tags.clone());
     let ctx = EvalContext {
@@ -361,11 +365,8 @@ fn apply_sound_change_transform(
         active_tag: Some(deriv_idx),
     };
 
-    apply_rule(&mut working, &compiled_rule, &ctx).map_err(|e| {
-        format!(
-            "Failed to apply derivation sound change '{transform}': {e}"
-        )
-    })?;
+    apply_rule(&mut working, &compiled_rule, &ctx)
+        .map_err(|e| format!("Failed to apply derivation sound change '{transform}': {e}"))?;
 
     *seq = working.to_flat_sequence();
     *tags = working.tags;
