@@ -160,7 +160,7 @@ fn get_derivation_color(idx: usize) -> &'static str {
 fn format_colored_lookup_line(
     base_meaning: &str,
     derivation_names: &[String],
-    final_type: &str,
+    step_types: &[Option<String>],
 ) -> String {
     let mut result = base_meaning.to_string();
     for (i, name) in derivation_names.iter().enumerate() {
@@ -169,9 +169,9 @@ fn format_colored_lookup_line(
         result.push_str(color);
         result.push('-');
         result.push_str(name);
-        if i == derivation_names.len() - 1 {
+        if let Some(Some(to_type)) = step_types.get(i) {
             result.push(':');
-            result.push_str(final_type);
+            result.push_str(to_type);
         }
         result.push_str("\x1b[0m");
     }
@@ -200,7 +200,7 @@ fn print_lookup_with_derivations(
 
     let colored_derived = format_colored_word(&res.word, &res.tags);
     let colored_sc = format_colored_word(&final_sc_word, &sc_tags);
-    let colored_line = format_colored_lookup_line(base_meaning, derivation_names, &res.final_type);
+    let colored_line = format_colored_lookup_line(base_meaning, derivation_names, &res.step_types);
 
     println!("{colored_line}");
     println!("{colored_derived}");

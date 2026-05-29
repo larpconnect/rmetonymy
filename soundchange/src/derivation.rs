@@ -72,6 +72,7 @@ pub struct DerivationResult {
     pub tags: Vec<Option<usize>>,
     pub final_type: String,
     pub final_era: u32,
+    pub step_types: Vec<Option<String>>,
 }
 
 /// Applies a list of derivations to a word (and its type), tracking which derivation modified which phonemes.
@@ -89,8 +90,12 @@ pub fn apply_derivations(
     let mut current_era = word_era;
     let mut seq = PhonemeSequence::from(definition.clone());
     let mut tags = vec![None; seq.phonemes().len()];
+    let mut step_types = Vec::new();
 
     for (idx, deriv_name) in derivation_names.iter().enumerate() {
+        let deriv = get_derivation(config, deriv_name)?;
+        step_types.push(deriv.to_type.clone());
+
         apply_single_derivation(
             &mut seq,
             &mut tags,
@@ -110,6 +115,7 @@ pub fn apply_derivations(
         tags,
         final_type: current_type,
         final_era: current_era,
+        step_types,
     })
 }
 

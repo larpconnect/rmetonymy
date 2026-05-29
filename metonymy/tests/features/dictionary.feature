@@ -37,3 +37,5 @@ Feature: Dictionary Subcommand
     And the output should contain escape-colored "<RED>a<RESET>ˈpat.<RED>i<RESET>"
     And the output should contain escape-colored "ˈ<RED>a<RESET>b.aˌd<RED>a<RESET>"
     And the output should contain "abada"
+    When I run dictionary command "--language tests/features/test_language.json dictionary lookup red-PLURAL-DIMINUTIVE"
+    Then the output should contain escape-colored "red<RED>-PLURAL:adjective<RESET><CYAN>-DIMINUTIVE<RESET>"
