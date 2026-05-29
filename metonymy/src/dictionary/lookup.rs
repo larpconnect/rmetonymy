@@ -148,31 +148,30 @@ fn apply_post_derivation_sound_changes(
     Ok((final_sc_word, working.tags))
 }
 
+fn get_derivation_color(idx: usize) -> &'static str {
+    match idx % 3 {
+        1 => "\x1b[31m", // Red
+        2 => "\x1b[36m", // Cyan
+        0 => "\x1b[32m", // Green
+        _ => "",
+    }
+}
+
 fn format_colored_lookup_line(
     base_meaning: &str,
     derivation_names: &[String],
-    config: &language::config::LanguageConfig,
+    final_type: &str,
 ) -> String {
     let mut result = base_meaning.to_string();
     for (i, name) in derivation_names.iter().enumerate() {
         let idx = i + 1;
-        let color = match idx % 3 {
-            1 => "\x1b[31m", // Red
-            2 => "\x1b[36m", // Cyan
-            0 => "\x1b[32m", // Green
-            _ => "",
-        };
+        let color = get_derivation_color(idx);
         result.push_str(color);
         result.push('-');
         result.push_str(name);
-        if let Some(to_type) = config
-            .derivations
-            .as_ref()
-            .and_then(|list| list.iter().find(|d| d.name == *name))
-            .and_then(|d| d.to_type.as_ref())
-        {
+        if i == derivation_names.len() - 1 {
             result.push(':');
-            result.push_str(to_type);
+            result.push_str(final_type);
         }
         result.push_str("\x1b[0m");
     }
@@ -201,7 +200,7 @@ fn print_lookup_with_derivations(
 
     let colored_derived = format_colored_word(&res.word, &res.tags);
     let colored_sc = format_colored_word(&final_sc_word, &sc_tags);
-    let colored_line = format_colored_lookup_line(base_meaning, derivation_names, config);
+    let colored_line = format_colored_lookup_line(base_meaning, derivation_names, &res.final_type);
 
     println!("{colored_line}");
     println!("{colored_derived}");
@@ -223,12 +222,7 @@ fn format_colored_word(word: &language::syllable::IpaWord, tags: &[Option<usize>
             SequenceElement::Phoneme(p) => {
                 let tag = tags.get(phoneme_idx).copied().flatten();
                 if let Some(t) = tag {
-                    let color = match t % 3 {
-                        1 => "\x1b[31m", // Red
-                        2 => "\x1b[36m", // Cyan
-                        0 => "\x1b[32m", // Green
-                        _ => "\x1b[0m",
-                    };
+                    let color = get_derivation_color(t);
                     result.push_str(color);
                     result.push_str(&p.to_string());
                     result.push_str("\x1b[0m");
