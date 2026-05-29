@@ -98,9 +98,9 @@ fn add_test_word(dict_path_str: &str) -> String {
     let assert_add = run_dictionary_add(DictionaryAddArgs {
         lang_path: None,
         dict_path: dict_path_str,
-        meaning: "rɛd",
+        meaning: "red",
         definition: Some("pat"),
-        r#type: "noun.masculine",
+        r#type: "adjective",
         era: Some("1"),
         etymology: &["0:pa,ta"],
         usage_notes: "formal notes",
@@ -141,8 +141,8 @@ fn test_dictionary_cli_workflow() {
         .success()
         .stdout(predicates::str::contains("Total Entries: 1"))
         .stdout(predicates::str::contains("Definition : /pat/"))
-        .stdout(predicates::str::contains("Meaning    : /rɛd/"))
-        .stdout(predicates::str::contains("Type       : noun (masculine)"))
+        .stdout(predicates::str::contains("Meaning    : /red/"))
+        .stdout(predicates::str::contains("Type       : adjective"))
         .stdout(predicates::str::contains("Era        : 1"))
         .stdout(predicates::str::contains("Era 0: pa, ta"))
         .stdout(predicates::str::contains("Usage Notes: formal notes"));
@@ -185,7 +185,7 @@ fn test_dictionary_cli_generate_and_default_era() {
     run_dictionary_add(DictionaryAddArgs {
         lang_path: Some(lang_path),
         dict_path: dict_path_str,
-        meaning: "rɛd",
+        meaning: "red",
         definition: None,
         r#type: "noun.masculine",
         era: None,

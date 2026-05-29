@@ -146,14 +146,12 @@ fn handle_lookup(
     lookup::handle_dict_lookup(dict_path, language.map(PathBuf::as_path), meaning, r#type)
 }
 
-pub(crate) fn handle_dictionary_cmd(
-    dict_cmd: DictionaryCmd,
+fn dispatch_subcommand(
+    subcommand: DictionarySubcommand,
+    dict_path: &Path,
     language: Option<&PathBuf>,
-    dict: Option<&PathBuf>,
 ) -> anyhow::Result<()> {
-    let dict_path =
-        dict.context("Dictionary file path (--dict) is required for dictionary command")?;
-    match dict_cmd.subcommand {
+    match subcommand {
         DictionarySubcommand::Init => {
             handle_init(dict_path, language)?;
         }
@@ -196,4 +194,14 @@ pub(crate) fn handle_dictionary_cmd(
         }
     }
     Ok(())
+}
+
+pub(crate) fn handle_dictionary_cmd(
+    dict_cmd: DictionaryCmd,
+    language: Option<&PathBuf>,
+    dict: Option<&PathBuf>,
+) -> anyhow::Result<()> {
+    let dict_path =
+        dict.context("Dictionary file path (--dict) is required for dictionary command")?;
+    dispatch_subcommand(dict_cmd.subcommand, dict_path, language)
 }

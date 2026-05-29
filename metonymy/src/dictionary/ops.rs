@@ -248,7 +248,7 @@ pub(crate) fn handle_dict_add_cmd(
     let ipa_meaning = meaning
         .parse::<ipa::IpaString>()
         .context("Failed to parse meaning as a valid IPA string")?;
-    let ipa_definition = if generate {
+    let mut ipa_definition = if generate {
         generate_conlang_word(language_path, &r#type)?
     } else {
         let def_str = definition.context("Definition must be provided when not generating")?;
@@ -256,6 +256,18 @@ pub(crate) fn handle_dict_add_cmd(
             .parse::<ipa::IpaString>()
             .context("Failed to parse definition as a valid IPA string")?
     };
+
+    if let Some(path) = language_path {
+        let lang_json = fs::read_to_string(path).with_context(|| {
+            format!("Failed to read language config from {}", path.display())
+        })?;
+        let config: language::config::LanguageConfig =
+            serde_json::from_str(&lang_json).context("Failed to parse language config JSON")?;
+        if let Ok(syllabified) = config.syllabify(&ipa_definition) {
+            ipa_definition = syllabified.to_string().parse::<ipa::IpaString>()?;
+        }
+    }
+
     let ety_map = if etymology.is_empty() {
         None
     } else {

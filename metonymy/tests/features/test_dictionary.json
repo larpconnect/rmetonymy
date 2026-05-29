@@ -13,24 +13,24 @@
   "entries": [
     {
       "id": "33OrkH9sBclcXRB0UYkOw",
-      "meaning": "rɛd",
+      "meaning": "red",
       "definition": "pat",
-      "type": "noun.masculine",
+      "type": "adjective",
       "era": 1,
       "usage_notes": ""
     },
     {
       "id": "33OrkHOCpKeOJMj1lIx0T",
-      "meaning": "blu",
+      "meaning": "blue",
       "definition": "pet",
-      "type": "noun",
+      "type": "adjective",
       "era": 1,
       "usage_notes": ""
     },
     {
       "id": "33OrkHfGFeM3imMYN1iT6",
-      "meaning": "grin",
-      "definition": "pokat",
+      "meaning": "green",
+      "definition": "po.kat",
       "type": "verb",
       "era": 0,
       "usage_notes": ""

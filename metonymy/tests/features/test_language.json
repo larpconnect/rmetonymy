@@ -78,8 +78,8 @@
   "derivations": [
     {
       "name": "PLURAL",
-      "from_type": "noun",
-      "to_type": "noun.plural",
+      "from_type": "adjective",
+      "to_type": "adjective",
       "transforms": ["a-", "-i"]
     },
     {

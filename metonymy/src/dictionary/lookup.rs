@@ -153,12 +153,38 @@ fn apply_post_derivation_sound_changes(
     Ok((final_sc_word, working.tags))
 }
 
+fn format_colored_lookup_line(
+    base_meaning: &str,
+    derivation_names: &[String],
+    final_type: &str,
+) -> String {
+    let mut result = base_meaning.to_string();
+    for (i, name) in derivation_names.iter().enumerate() {
+        let idx = i + 1;
+        let color = match idx % 3 {
+            1 => "\x1b[31m", // Red
+            2 => "\x1b[33m", // Yellow
+            0 => "\x1b[32m", // Green
+            _ => "",
+        };
+        result.push_str(color);
+        result.push('-');
+        result.push_str(name);
+        if i == derivation_names.len() - 1 {
+            result.push(':');
+            result.push_str(final_type);
+        }
+        result.push_str("\x1b[0m");
+    }
+    result
+}
+
 fn print_lookup_with_derivations(
     ipa_word: &language::syllable::IpaWord,
     entry_type: &str,
     derivation_names: &[String],
     era: u32,
-    meaning: &str,
+    base_meaning: &str,
     config: &language::config::LanguageConfig,
 ) -> anyhow::Result<()> {
     let res =
@@ -176,8 +202,9 @@ fn print_lookup_with_derivations(
 
     let colored_derived = format_colored_word(&res.word, &res.tags);
     let colored_sc = format_colored_word(&final_sc_word, &sc_tags);
+    let colored_line = format_colored_lookup_line(base_meaning, derivation_names, &res.final_type);
 
-    println!("{meaning}:{}", res.final_type);
+    println!("{colored_line}");
     println!("{colored_derived}");
     println!("{colored_sc}");
     println!("{ortho_res}");
@@ -222,6 +249,33 @@ fn format_colored_word(word: &language::syllable::IpaWord, tags: &[Option<usize>
     result
 }
 
+fn entry_matches(
+    entry: &language::DictionaryEntry,
+    base_meaning: &str,
+    filter_type: Option<&str>,
+) -> bool {
+    if entry.meaning.to_string() != base_meaning {
+        return false;
+    }
+    if let Some(ft) = filter_type {
+        let matches = type_matches(&entry.r#type, ft);
+        if !matches {
+            return false;
+        }
+    }
+    true
+}
+
+fn make_lookup_error(base_meaning: &str, filter_type: Option<&str>) -> anyhow::Error {
+    if let Some(ft) = filter_type {
+        anyhow::anyhow!(
+            "Word with meaning '{base_meaning}' and type '{ft}' not found in dictionary"
+        )
+    } else {
+        anyhow::anyhow!("Word with meaning '{base_meaning}' not found in dictionary")
+    }
+}
+
 fn find_matching_entry<'a>(
     dict: &'a language::Dictionary,
     base_meaning: &str,
@@ -229,27 +283,8 @@ fn find_matching_entry<'a>(
 ) -> anyhow::Result<&'a language::DictionaryEntry> {
     dict.entries
         .iter()
-        .find(|e| {
-            if e.meaning.to_string() != base_meaning {
-                return false;
-            }
-            if let Some(ft) = filter_type {
-                let matches = type_matches(&e.r#type, ft);
-                if !matches {
-                    return false;
-                }
-            }
-            true
-        })
-        .ok_or_else(|| {
-            if let Some(ft) = filter_type {
-                anyhow::anyhow!(
-                    "Word with meaning '{base_meaning}' and type '{ft}' not found in dictionary"
-                )
-            } else {
-                anyhow::anyhow!("Word with meaning '{base_meaning}' not found in dictionary")
-            }
-        })
+        .find(|e| entry_matches(e, base_meaning, filter_type))
+        .ok_or_else(|| make_lookup_error(base_meaning, filter_type))
 }
 
 pub(crate) fn handle_dict_lookup(
@@ -277,7 +312,7 @@ pub(crate) fn handle_dict_lookup(
             &entry.r#type,
             &derivation_names,
             entry.era,
-            meaning,
+            &base_meaning,
             &config,
         )?;
     }
