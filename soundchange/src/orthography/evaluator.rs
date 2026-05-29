@@ -38,11 +38,12 @@ pub fn apply_orthography(
     verbose: bool,
 ) -> Result<(String, Vec<String>), String> {
     let flat_phonemes = flatten_phonemes_and_modifiers(&word.phonemes());
-
+    let flat_len = flat_phonemes.len();
     let mut working = WorkingWord {
         phonemes: flat_phonemes,
         syllable_boundaries: BTreeSet::new(),
         stress_index: None,
+        tags: vec![None; flat_len],
     };
 
     let ctx = EvalContext {
@@ -50,6 +51,7 @@ pub fn apply_orthography(
         system: ipa::DEFAULT_SYSTEM
             .as_ref()
             .map_err(|e| format!("Failed to load default IPA system: {e:?}"))?,
+        active_tag: None,
     };
 
     let mut trace_logs = Vec::new();
@@ -191,7 +193,9 @@ fn replace_ortho_range(
     let start = range.start;
     let end = range.end;
 
-    word.phonemes.splice(range, new_phonemes);
+    word.phonemes.splice(range.clone(), new_phonemes);
+    let new_tags = vec![None; new_len];
+    word.tags.splice(range, new_tags);
 
     let original_len = end - start;
     let mut updated_boundaries = BTreeSet::new();

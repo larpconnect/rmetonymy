@@ -27,7 +27,7 @@ fn test_dictionary_blank_and_add_remove() {
     assert_eq!(dict.id, lang_id);
     assert!(dict.entries.is_empty());
 
-    let meaning = IpaString::from_str("rɛd").expect("parse meaning");
+    let meaning = IpaString::from_str("red").expect("parse meaning");
     let definition = IpaString::from_str("pat").expect("parse definition");
     let r#type = "noun.masculine".to_string();
     let era = Some(1);

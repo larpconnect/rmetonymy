@@ -74,5 +74,17 @@
         ]
       }
     ]
-  }
+  },
+  "derivations": [
+    {
+      "name": "PLURAL",
+      "from_type": "adjective",
+      "to_type": "adjective",
+      "transforms": ["a-", "-i"]
+    },
+    {
+      "name": "DIMINUTIVE",
+      "transforms": ["t => k"]
+    }
+  ]
 }

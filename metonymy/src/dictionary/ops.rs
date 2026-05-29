@@ -1,82 +1,48 @@
 use anyhow::Context;
-use clap::{Parser, Subcommand};
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
-#[derive(Parser)]
-pub struct DictionaryCmd {
-    #[command(subcommand)]
-    pub subcommand: DictionarySubcommand,
-}
-
-#[derive(Subcommand)]
-pub enum DictionarySubcommand {
-    /// Create a blank dictionary for a language
-    Init,
-
-    /// Add a word to the dictionary
-    Add {
-        /// The meaning of the word (`IpaString`)
-        #[arg(long)]
-        meaning: String,
-
-        /// The conlang definition of the word (`IpaString`)
-        #[arg(
-            long,
-            required_unless_present = "generate",
-            conflicts_with = "generate"
-        )]
-        definition: Option<String>,
-
-        /// Generate the word automatically based on the language configuration
-        #[arg(
-            long,
-            required_unless_present = "definition",
-            conflicts_with = "definition"
-        )]
-        generate: bool,
-
-        /// The type of the word (optionally with a subtype separated by a period, e.g. noun.masculine)
-        #[arg(long)]
-        r#type: String,
-
-        /// The era of the word
-        #[arg(long)]
-        era: Option<u32>,
-
-        /// Etymology entry: `era:source_word1,source_word2`... (can be specified multiple times)
-        #[arg(long)]
-        etymology: Vec<String>,
-
-        /// Usage notes
-        #[arg(long, default_value = "")]
-        usage_notes: String,
-    },
-
-    /// Remove a word from the dictionary
-    Remove {
-        /// The Base62 ID of the word to remove
-        id: String,
-    },
-
-    /// Pretty print the dictionary to stdout
-    Print,
-
-    /// Add an era to the dictionary
-    #[command(name = "add-era")]
-    AddEra {
-        /// The era number. Increments if not specified
-        #[arg(long)]
-        era: Option<u32>,
-
-        /// Optional era name
-        #[arg(long)]
-        name: Option<String>,
-
-        /// Optional description of the era
-        #[arg(long)]
-        description: Option<String>,
-    },
+fn print_entry(
+    idx: usize,
+    entry: &language::DictionaryEntry,
+    eras: &std::collections::BTreeMap<u32, language::Era>,
+) {
+    let id = &entry.id;
+    println!("{idx}. [{id}]");
+    println!("   Definition : /{}/", entry.definition);
+    println!("   Meaning    : /{}/", entry.meaning);
+    let (word_type, word_subtype) = entry.r#type.split_once('.').unwrap_or((&entry.r#type, ""));
+    if word_subtype.is_empty() {
+        println!("   Type       : {word_type}");
+    } else {
+        println!("   Type       : {word_type} ({word_subtype})");
+    }
+    let era = entry.era;
+    if let Some(era_meta) = eras.get(&era) {
+        let name_str = era_meta
+            .name
+            .as_ref()
+            .map_or(String::new(), |n| format!(" /{n}/"));
+        let desc_str = era_meta
+            .description
+            .as_ref()
+            .map_or(String::new(), |d| format!(" - {d}"));
+        println!("   Era        : {era}{name_str}{desc_str}");
+    } else {
+        println!("   Era        : {era}");
+    }
+    if let Some(etymology) = entry.etymology.as_ref().filter(|e| !e.is_empty()) {
+        println!("   Etymology  :");
+        for (era, sources) in etymology {
+            let joined_sources = sources.join(", ");
+            println!("     Era {era}: {joined_sources}");
+        }
+    }
+    if !entry.usage_notes.is_empty() {
+        let notes = &entry.usage_notes;
+        println!("   Usage Notes: {notes}");
+    }
+    println!("--------------------------------------------------------------------------------");
 }
 
 pub(crate) fn handle_dict_init(dict_path: &Path, lang_path: Option<&Path>) -> anyhow::Result<()> {
@@ -152,49 +118,6 @@ pub(crate) fn handle_dict_remove(dict_path: &Path, id: &str) -> anyhow::Result<(
         println!("Word with ID {id} not found in dictionary");
     }
     Ok(())
-}
-
-fn print_entry(
-    idx: usize,
-    entry: &language::DictionaryEntry,
-    eras: &std::collections::BTreeMap<u32, language::Era>,
-) {
-    let id = &entry.id;
-    println!("{idx}. [{id}]");
-    println!("   Definition : /{}/", entry.definition);
-    println!("   Meaning    : /{}/", entry.meaning);
-    let (word_type, word_subtype) = entry.r#type.split_once('.').unwrap_or((&entry.r#type, ""));
-    if word_subtype.is_empty() {
-        println!("   Type       : {word_type}");
-    } else {
-        println!("   Type       : {word_type} ({word_subtype})");
-    }
-    let era = entry.era;
-    if let Some(era_meta) = eras.get(&era) {
-        let name_str = era_meta
-            .name
-            .as_ref()
-            .map_or(String::new(), |n| format!(" /{n}/"));
-        let desc_str = era_meta
-            .description
-            .as_ref()
-            .map_or(String::new(), |d| format!(" - {d}"));
-        println!("   Era        : {era}{name_str}{desc_str}");
-    } else {
-        println!("   Era        : {era}");
-    }
-    if let Some(etymology) = entry.etymology.as_ref().filter(|e| !e.is_empty()) {
-        println!("   Etymology  :");
-        for (era, sources) in etymology {
-            let joined_sources = sources.join(", ");
-            println!("     Era {era}: {joined_sources}");
-        }
-    }
-    if !entry.usage_notes.is_empty() {
-        let notes = &entry.usage_notes;
-        println!("   Usage Notes: {notes}");
-    }
-    println!("--------------------------------------------------------------------------------");
 }
 
 pub(crate) fn handle_dict_print(dict_path: &Path) -> anyhow::Result<()> {
@@ -325,7 +248,7 @@ pub(crate) fn handle_dict_add_cmd(
     let ipa_meaning = meaning
         .parse::<ipa::IpaString>()
         .context("Failed to parse meaning as a valid IPA string")?;
-    let ipa_definition = if generate {
+    let mut ipa_definition = if generate {
         generate_conlang_word(language_path, &r#type)?
     } else {
         let def_str = definition.context("Definition must be provided when not generating")?;
@@ -333,6 +256,18 @@ pub(crate) fn handle_dict_add_cmd(
             .parse::<ipa::IpaString>()
             .context("Failed to parse definition as a valid IPA string")?
     };
+
+    if let Some(path) = language_path {
+        let lang_json = fs::read_to_string(path).with_context(|| {
+            format!("Failed to read language config from {}", path.display())
+        })?;
+        let config: language::config::LanguageConfig =
+            serde_json::from_str(&lang_json).context("Failed to parse language config JSON")?;
+        if let Ok(syllabified) = config.syllabify(&ipa_definition) {
+            ipa_definition = syllabified.to_string().parse::<ipa::IpaString>()?;
+        }
+    }
+
     let ety_map = if etymology.is_empty() {
         None
     } else {
@@ -370,53 +305,4 @@ fn parse_etymology(raw: &[String]) -> anyhow::Result<std::collections::BTreeMap<
         map.entry(era).or_default().extend(words);
     }
     Ok(map)
-}
-
-pub(crate) fn handle_dictionary_cmd(
-    dict_cmd: DictionaryCmd,
-    language: Option<&PathBuf>,
-    dict: Option<&PathBuf>,
-) -> anyhow::Result<()> {
-    let dict_path =
-        dict.context("Dictionary file path (--dict) is required for dictionary command")?;
-    match dict_cmd.subcommand {
-        DictionarySubcommand::Init => {
-            handle_dict_init(dict_path, language.map(PathBuf::as_path))?;
-        }
-        DictionarySubcommand::Add {
-            meaning,
-            definition,
-            generate,
-            r#type,
-            era,
-            etymology,
-            usage_notes,
-        } => {
-            handle_dict_add_cmd(
-                dict_path,
-                language.map(PathBuf::as_path),
-                &meaning,
-                definition.as_deref(),
-                generate,
-                r#type,
-                era,
-                &etymology,
-                usage_notes,
-            )?;
-        }
-        DictionarySubcommand::Remove { id } => {
-            handle_dict_remove(dict_path, &id)?;
-        }
-        DictionarySubcommand::Print => {
-            handle_dict_print(dict_path)?;
-        }
-        DictionarySubcommand::AddEra {
-            era,
-            name,
-            description,
-        } => {
-            handle_dict_add_era_cmd(dict_path, era, name, description)?;
-        }
-    }
-    Ok(())
 }

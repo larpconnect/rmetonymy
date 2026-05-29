@@ -14,6 +14,7 @@ pub struct WorkingWord {
     pub phonemes: Vec<Phoneme>,
     pub syllable_boundaries: BTreeSet<usize>,
     pub stress_index: Option<usize>,
+    pub tags: Vec<Option<usize>>,
 }
 
 impl WorkingWord {
@@ -47,10 +48,12 @@ impl WorkingWord {
             }
         }
 
+        let tags = vec![None; phonemes.len()];
         Self {
             phonemes,
             syllable_boundaries,
             stress_index,
+            tags,
         }
     }
 
@@ -95,6 +98,7 @@ pub struct MatchState {
 pub struct EvalContext<'a> {
     pub classes: &'a BTreeMap<language::sound_class::SoundClassKey, language::config::SoundClass>,
     pub system: &'a ipa::IpaSystem,
+    pub active_tag: Option<usize>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -151,6 +155,7 @@ pub fn apply_sound_changes(
         system: ipa::DEFAULT_SYSTEM
             .as_ref()
             .map_err(|e| format!("Failed to load default IPA system: {e:?}"))?,
+        active_tag: None,
     };
 
     // Filter and sort eras
@@ -172,7 +177,11 @@ pub fn apply_sound_changes(
     Ok((resyllabified, trace_logs))
 }
 
-fn apply_rule(
+/// Applies a compiled sound change rule to a working word.
+///
+/// # Errors
+/// Returns an error if the rule cannot be evaluated or feature updates fail.
+pub fn apply_rule(
     word: &mut WorkingWord,
     rule: &CompiledSoundChangeRule,
     ctx: &EvalContext<'_>,

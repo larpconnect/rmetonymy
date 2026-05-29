@@ -252,3 +252,136 @@ fn test_validate_generator_cycles_detected() {
     );
     let _err = validate_generator_cycles(&generators).expect_err("should detect cycles");
 }
+
+#[test]
+fn test_validate_derivations_valid() {
+    use language::config::Derivation;
+    use language::generator::validation::validate_derivations;
+
+    let derivations = vec![
+        Derivation {
+            name: "PLURAL".to_string(),
+            era: None,
+            transforms: vec!["-a".to_string()],
+            from_type: Some("noun".to_string()),
+            to_type: Some("noun".to_string()),
+        },
+        Derivation {
+            name: "PAST".to_string(),
+            era: None,
+            transforms: vec!["-ed".to_string()],
+            from_type: Some("verb".to_string()),
+            to_type: Some("verb".to_string()),
+        },
+        Derivation {
+            name: "DIMINUTIVE".to_string(),
+            era: None,
+            transforms: vec!["-y".to_string()],
+            from_type: None,
+            to_type: None,
+        },
+    ];
+
+    validate_derivations(&derivations).expect("derivations should be valid");
+}
+
+#[test]
+fn test_validate_derivations_invalid_name() {
+    use language::config::Derivation;
+    use language::generator::validation::validate_derivations;
+
+    let derivations = vec![Derivation {
+        name: "plural".to_string(),
+        era: None,
+        transforms: vec!["-a".to_string()],
+        from_type: None,
+        to_type: None,
+    }];
+
+    assert_eq!(
+        validate_derivations(&derivations).expect_err("should fail on invalid name"),
+        ValidationError::InvalidDerivationName("plural".to_string())
+    );
+}
+
+#[test]
+fn test_validate_derivations_duplicate() {
+    use language::config::Derivation;
+    use language::generator::validation::validate_derivations;
+
+    let derivations = vec![
+        Derivation {
+            name: "DUP".to_string(),
+            era: None,
+            transforms: vec!["-a".to_string()],
+            from_type: Some("noun".to_string()),
+            to_type: None,
+        },
+        Derivation {
+            name: "DUP".to_string(),
+            era: None,
+            transforms: vec!["-b".to_string()],
+            from_type: None,
+            to_type: None,
+        },
+    ];
+
+    assert_eq!(
+        validate_derivations(&derivations).expect_err("should fail on duplicate name"),
+        ValidationError::DuplicateDerivationName("DUP".to_string())
+    );
+}
+
+#[test]
+fn test_validate_derivations_subtypes_no_conflict() {
+    use language::config::Derivation;
+    use language::generator::validation::validate_derivations;
+
+    let derivations = vec![
+        Derivation {
+            name: "PLURAL".to_string(),
+            era: None,
+            transforms: vec!["-a".to_string()],
+            from_type: Some("noun.masculine".to_string()),
+            to_type: None,
+        },
+        Derivation {
+            name: "PLURAL".to_string(),
+            era: None,
+            transforms: vec!["-b".to_string()],
+            from_type: Some("noun.feminine".to_string()),
+            to_type: None,
+        },
+    ];
+
+    validate_derivations(&derivations).expect("different subtypes should not conflict");
+}
+
+#[test]
+fn test_validate_derivations_subtype_base_conflict() {
+    use language::config::Derivation;
+    use language::generator::validation::validate_derivations;
+
+    let derivations = vec![
+        Derivation {
+            name: "PLURAL".to_string(),
+            era: None,
+            transforms: vec!["-a".to_string()],
+            from_type: Some("noun".to_string()),
+            to_type: None,
+        },
+        Derivation {
+            name: "PLURAL".to_string(),
+            era: None,
+            transforms: vec!["-b".to_string()],
+            from_type: Some("noun.masculine".to_string()),
+            to_type: None,
+        },
+    ];
+
+    assert_eq!(
+        validate_derivations(&derivations).expect_err("base type and subtype should conflict"),
+        ValidationError::DuplicateDerivationName("PLURAL".to_string())
+    );
+}
+

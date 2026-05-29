@@ -15,6 +15,8 @@ pub struct LanguageConfig {
     pub sound_changes: Option<SoundChanges>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub orthography: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub derivations: Option<Vec<Derivation>>,
 }
 
 impl LanguageConfig {
@@ -53,6 +55,9 @@ impl LanguageConfig {
         crate::generator::validate_generator_cycles(&self.phonology.phonotactics.generators)?;
         if let Some(prosody) = &self.phonology.prosody {
             prosody.validate()?;
+        }
+        if let Some(derivations) = &self.derivations {
+            crate::generator::validation::validate_derivations(derivations)?;
         }
         Ok(())
     }
@@ -250,6 +255,18 @@ pub struct SoundChangeRule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     pub changes: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct Derivation {
+    pub name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub era: Option<u32>,
+    pub transforms: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub from_type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub to_type: Option<String>,
 }
 
 #[cfg(test)]

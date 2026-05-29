@@ -140,6 +140,21 @@ fn i_run_dictionary_command(
     Ok(())
 }
 
+#[then(expr = "the output should contain escape-colored {string}")]
+fn the_output_should_contain_escape_colored(world: &mut MetonymyWorld, pattern: String) {
+    let expected = pattern
+        .replace("<RED>", "\x1b[31m")
+        .replace("<YELLOW>", "\x1b[33m")
+        .replace("<GREEN>", "\x1b[32m")
+        .replace("<RESET>", "\x1b[0m");
+    assert!(
+        world.output.contains(&expected),
+        "Expected output to contain '{}', but it was:\n{}",
+        expected,
+        world.output
+    );
+}
+
 #[tokio::main]
 async fn main() {
     MetonymyWorld::cucumber()

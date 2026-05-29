@@ -108,6 +108,7 @@ fn make_test_config() -> LanguageConfig {
         },
         sound_changes: None,
         orthography: None,
+        derivations: None,
     }
 }
 
