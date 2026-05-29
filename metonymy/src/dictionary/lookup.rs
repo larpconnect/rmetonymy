@@ -287,6 +287,28 @@ fn find_matching_entry<'a>(
         .ok_or_else(|| make_lookup_error(base_meaning, filter_type))
 }
 
+fn print_lookup_result(
+    ipa_word: &language::syllable::IpaWord,
+    entry: &language::DictionaryEntry,
+    derivation_names: &[String],
+    base_meaning: &str,
+    config: &language::config::LanguageConfig,
+) -> anyhow::Result<()> {
+    if derivation_names.is_empty() {
+        print_lookup_without_derivations(ipa_word, entry.era, config)?;
+    } else {
+        print_lookup_with_derivations(
+            ipa_word,
+            &entry.r#type,
+            derivation_names,
+            entry.era,
+            base_meaning,
+            config,
+        )?;
+    }
+    Ok(())
+}
+
 pub(crate) fn handle_dict_lookup(
     dict_path: &Path,
     language_path: Option<&Path>,
@@ -304,18 +326,5 @@ pub(crate) fn handle_dict_lookup(
         .syllabify(&entry.definition)
         .map_err(|e| anyhow::anyhow!("Failed to syllabify definition: {e}"))?;
 
-    if derivation_names.is_empty() {
-        print_lookup_without_derivations(&ipa_word, entry.era, &config)?;
-    } else {
-        print_lookup_with_derivations(
-            &ipa_word,
-            &entry.r#type,
-            &derivation_names,
-            entry.era,
-            &base_meaning,
-            &config,
-        )?;
-    }
-
-    Ok(())
+    print_lookup_result(&ipa_word, entry, &derivation_names, &base_meaning, &config)
 }
