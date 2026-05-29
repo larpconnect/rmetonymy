@@ -1,3 +1,4 @@
+// qual:allow(srp) - Test module with multiple test cases
 use language::config::{
     Derivation, LanguageConfig, MetadataConfig, NameConfig, PhonologyConfig, PhonotacticsConfig,
     SoundClass,
@@ -8,6 +9,7 @@ use std::collections::BTreeMap;
 use time::OffsetDateTime;
 use uuid::Uuid;
 
+#[allow(dead_code)]
 fn create_test_config(derivations: Vec<Derivation>) -> LanguageConfig {
     let mut sound_classes = BTreeMap::new();
     let defaults = ["C", "D", "L", "V"];

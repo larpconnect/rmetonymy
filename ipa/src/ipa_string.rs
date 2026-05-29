@@ -38,7 +38,7 @@ impl IpaString {
 
 impl Display for IpaString {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.raw)
+        f.write_str(&self.raw)
     }
 }
 

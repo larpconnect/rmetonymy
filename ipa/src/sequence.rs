@@ -3,18 +3,26 @@ use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
+const MODIFIER_RANGE_1: std::ops::RangeInclusive<u32> = 0x02B0..=0x02FF;
+const MODIFIER_RANGE_2: std::ops::RangeInclusive<u32> = 0xA700..=0xA71F;
+const MODIFIER_RANGE_3: std::ops::RangeInclusive<u32> = 0x1AB0..=0x1AFF;
+const MODIFIER_RANGE_4: std::ops::RangeInclusive<u32> = 0x0300..=0x036F;
+const MODIFIER_RANGE_5: std::ops::RangeInclusive<u32> = 0x1DC0..=0x1DFF;
+const MODIFIER_RANGE_6: std::ops::RangeInclusive<u32> = 0x2070..=0x209F;
+const MODIFIER_RANGE_7: std::ops::RangeInclusive<u32> = 0x1D98..=0x1DBF;
+
 /// Checks if a character is a valid modifier according to the allowed Unicode ranges.
 #[must_use]
 #[inline]
 pub fn is_modifier(c: char) -> bool {
     let u = c as u32;
-    (0x02B0..=0x02FF).contains(&u)
-        || (0xA700..=0xA71F).contains(&u)
-        || (0x1AB0..=0x1AFF).contains(&u)
-        || (0x0300..=0x036F).contains(&u)
-        || (0x1DC0..=0x1DFF).contains(&u)
-        || (0x2070..=0x209F).contains(&u)
-        || (0x1D98..=0x1DBF).contains(&u)
+    MODIFIER_RANGE_1.contains(&u)
+        || MODIFIER_RANGE_2.contains(&u)
+        || MODIFIER_RANGE_3.contains(&u)
+        || MODIFIER_RANGE_4.contains(&u)
+        || MODIFIER_RANGE_5.contains(&u)
+        || MODIFIER_RANGE_6.contains(&u)
+        || MODIFIER_RANGE_7.contains(&u)
 }
 
 /// A common interface for sequences of IPA symbols, allowing phonemic analysis.
@@ -129,110 +137,70 @@ impl FromStr for PhonemeSequence {
     }
 }
 
+fn parse_elements_op<F, G>(
+    s: &str,
+    mut is_base_phoneme: F,
+    mut is_mod: G,
+) -> Result<Vec<SequenceElement>, IpaStringError>
+where
+    F: FnMut(&str) -> bool,
+    G: FnMut(char) -> bool,
+{
+    use unicode_normalization::UnicodeNormalization;
+    if s.is_empty() {
+        return Ok(Vec::new());
+    }
+    let chars: Vec<char> = s.nfd().collect::<String>().chars().collect();
+    let mut elements = Vec::new();
+    let mut idx = 0;
+    while idx < chars.len() {
+        let c = chars[idx];
+        if let Some(stress) = match c {
+            '\'' | 'ˈ' => Some(ProsodyMarker::PrimaryStress),
+            'ˌ' => Some(ProsodyMarker::SecondaryStress),
+            _ => None,
+        } {
+            elements.push(SequenceElement::Prosody(stress));
+            idx += 1;
+        } else if c == '.' {
+            elements.push(SequenceElement::SyllableBreak);
+            idx += 1;
+        } else if is_mod(c) {
+            return Err(IpaStringError::InvalidSequence(format!(
+                "Modifier '{c}' found without a preceding base phoneme at index {idx} in string \"{s}\""
+            )));
+        } else {
+            let start = idx;
+            let len = (1..=(chars.len() - start)).rev()
+                .find(|&len| is_base_phoneme(&chars[start..(start + len)].iter().collect::<String>()))
+                .ok_or_else(|| IpaStringError::InvalidSequence(format!(
+                    "Unrecognized base phoneme starting with '{c}' at index {start} in string \"{s}\""
+                )))?;
+            let base: String = chars[start..(start + len)].iter().collect();
+            idx += len;
+            let mut modifiers = Vec::new();
+            while idx < chars.len() && is_mod(chars[idx]) && !matches!(chars[idx], '\'' | 'ˈ' | 'ˌ' | '.') {
+                modifiers.push(chars[idx].to_string());
+                idx += 1;
+            }
+            elements.push(SequenceElement::Phoneme(Phoneme { base, modifiers }));
+        }
+    }
+    Ok(elements)
+}
+
 impl PhonemeSequence {
     /// Parses an IPA string using a specific `IpaSystem`.
     ///
     /// # Errors
     /// Returns `Err` if parsing fails (e.g. unrecognized base phonemes, modifiers without base phonemes).
     pub fn parse_with_system(s: &str, system: &crate::IpaSystem) -> Result<Self, IpaStringError> {
-        use unicode_normalization::UnicodeNormalization;
-        if s.is_empty() {
-            return Ok(Self {
-                elements: Vec::new(),
-            });
-        }
-
-        let normalized = s.nfd().collect::<String>();
-        let chars: Vec<char> = normalized.chars().collect();
-        let mut elements = Vec::new();
-        let mut idx = 0;
-
-        while idx < chars.len() {
-            let element = Self::parse_next_element(&chars, &mut idx, system, s)?;
-            elements.push(element);
-        }
-
+        let elements = parse_elements_op(
+            s,
+            |prefix| system.get_phoneme_data(prefix).is_some(),
+            is_modifier,
+        )?;
         Ok(Self { elements })
-    }
-
-    /// Parses the next `SequenceElement` from the characters at `idx`.
-    #[expect(clippy::indexing_slicing, reason = "bounds are checked in the caller")]
-    fn parse_next_element(
-        chars: &[char],
-        idx: &mut usize,
-        system: &crate::IpaSystem,
-        s: &str,
-    ) -> Result<SequenceElement, IpaStringError> {
-        let c = chars[*idx];
-
-        // 1. Check prosodic marks & syllable break
-        if c == '\'' || c == 'ˈ' {
-            *idx += 1;
-            return Ok(SequenceElement::Prosody(ProsodyMarker::PrimaryStress));
-        }
-        if c == 'ˌ' {
-            *idx += 1;
-            return Ok(SequenceElement::Prosody(ProsodyMarker::SecondaryStress));
-        }
-        if c == '.' {
-            *idx += 1;
-            return Ok(SequenceElement::SyllableBreak);
-        }
-
-        // 2. Check if it's a modifier (without a base phoneme)
-        if is_modifier(c) {
-            return Err(IpaStringError::InvalidSequence(format!(
-                "Modifier '{c}' found without a preceding base phoneme at index {idx} in string \"{s}\""
-            )));
-        }
-
-        // 3. Find the longest prefix starting at idx that is a recognized base phoneme
-        Self::parse_phoneme(chars, idx, system, s)
-    }
-
-    /// Parses a base phoneme and its modifiers starting at `idx`.
-    #[expect(clippy::indexing_slicing, reason = "bounds are checked in the caller")]
-    fn parse_phoneme(
-        chars: &[char],
-        idx: &mut usize,
-        system: &crate::IpaSystem,
-        s: &str,
-    ) -> Result<SequenceElement, IpaStringError> {
-        let start = *idx;
-        let mut matched_len = None;
-
-        for len in (1..=(chars.len() - start)).rev() {
-            let prefix: String = chars[start..(start + len)].iter().collect();
-            if system.get_phoneme_data(&prefix).is_some() {
-                matched_len = Some(len);
-                break;
-            }
-        }
-
-        if let Some(len) = matched_len {
-            let base: String = chars[start..(start + len)].iter().collect();
-            *idx += len;
-
-            // Accumulate modifiers
-            let mut modifiers = Vec::new();
-            while *idx < chars.len()
-                && is_modifier(chars[*idx])
-                && chars[*idx] != '\''
-                && chars[*idx] != 'ˈ'
-                && chars[*idx] != 'ˌ'
-                && chars[*idx] != '.'
-            {
-                modifiers.push(chars[*idx].to_string());
-                *idx += 1;
-            }
-
-            Ok(SequenceElement::Phoneme(Phoneme { base, modifiers }))
-        } else {
-            let c = chars[start];
-            Err(IpaStringError::InvalidSequence(format!(
-                "Unrecognized base phoneme starting with '{c}' at index {start} in string \"{s}\""
-            )))
-        }
     }
 }
 

@@ -57,49 +57,26 @@ fn test_rng_zipf_selection() {
     assert!(count_1 > 270 && count_1 < 400);
 }
 
-fn make_test_config() -> LanguageConfig {
-    let mut sound_classes = BTreeMap::new();
-    sound_classes.insert(
-        "C".parse().expect("valid sound class key"),
-        SoundClass {
-            values: vec!["p".to_string(), "t".to_string(), "k".to_string()],
-            generator: None,
-        },
-    );
-    sound_classes.insert(
-        "V".parse().expect("valid sound class key"),
-        SoundClass {
-            values: vec!["a".to_string(), "e".to_string(), "i".to_string()],
-            generator: None,
-        },
-    );
-
-    let mut generators = BTreeMap::new();
-    generators.insert(
-        "default".to_string(),
-        language::generator::WordGenerator {
-            patterns: vec!["CVC".parse().expect("valid pattern")],
+#[test]
+fn test_word_generation() {
+    let sound_classes = BTreeMap::from([
+        ("C".parse().unwrap(), SoundClass { values: vec!["p".into(), "t".into(), "k".into()], generator: None }),
+        ("V".parse().unwrap(), SoundClass { values: vec!["a".into(), "e".into(), "i".into()], generator: None }),
+    ]);
+    let generators = BTreeMap::from([
+        ("default".into(), language::generator::WordGenerator {
+            patterns: vec!["CVC".parse().unwrap()],
             generator: GeneratorConfig::Equiprobable,
-        },
-    );
-    generators.insert(
-        "noun".to_string(),
-        language::generator::WordGenerator {
-            patterns: vec!["(C)V[default]".parse().expect("valid pattern")],
+        }),
+        ("noun".into(), language::generator::WordGenerator {
+            patterns: vec!["(C)V[default]".parse().unwrap()],
             generator: GeneratorConfig::Equiprobable,
-        },
-    );
-
-    LanguageConfig {
+        }),
+    ]);
+    let config = LanguageConfig {
         id: Uuid::now_v7(),
-        name: NameConfig {
-            endonym: "test".parse().expect("valid word"),
-            exonym: None,
-        },
-        metadata: MetadataConfig {
-            created_at: OffsetDateTime::now_utc(),
-            updated_at: None,
-        },
+        name: NameConfig { endonym: "test".parse().unwrap(), exonym: None },
+        metadata: MetadataConfig { created_at: OffsetDateTime::now_utc(), updated_at: None },
         phonology: PhonologyConfig {
             sound_classes,
             phonotactics: PhonotacticsConfig { generators },
@@ -109,14 +86,8 @@ fn make_test_config() -> LanguageConfig {
         sound_changes: None,
         orthography: None,
         derivations: None,
-    }
-}
+    };
 
-#[test]
-fn test_word_generation() {
-    let config = make_test_config();
-
-    // Verify config is valid
     config.validate().expect("config should be valid");
 
     let mut rng = StdRng::seed_from_u64(12345);
@@ -124,6 +95,5 @@ fn test_word_generation() {
     let word = generate_word("noun", &config, &mut rng, 1, &mut warning_logged)
         .expect("should generate word");
 
-    // We assert that the generated word is not empty
     assert!(!word.is_empty());
 }

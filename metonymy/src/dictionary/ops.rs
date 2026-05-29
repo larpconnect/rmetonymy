@@ -1,6 +1,7 @@
 use anyhow::Context;
-use std::fs;
 use std::path::Path;
+
+const MAX_GENERATION_ATTEMPTS: usize = 8;
 
 fn print_entry(
     idx: usize,
@@ -49,14 +50,7 @@ pub(crate) fn handle_dict_init(dict_path: &Path, lang_path: Option<&Path>) -> an
     let lang_path = lang_path.context(
         "Language configuration file (--language) is required to initialize a dictionary",
     )?;
-    let lang_json = fs::read_to_string(lang_path).with_context(|| {
-        format!(
-            "Failed to read language config from {}",
-            lang_path.display()
-        )
-    })?;
-    let lang_config: language::config::LanguageConfig =
-        serde_json::from_str(&lang_json).context("Failed to parse language config JSON")?;
+    let lang_config = super::load_language_config(lang_path)?;
 
     let new_dict = language::Dictionary::new(lang_config.id);
     new_dict
@@ -72,47 +66,35 @@ pub(crate) fn handle_dict_init(dict_path: &Path, lang_path: Option<&Path>) -> an
     Ok(())
 }
 
-pub(crate) fn handle_dict_add(dict_path: &Path, entry: language::NewEntry) -> anyhow::Result<()> {
-    let dict_json = fs::read_to_string(dict_path).with_context(|| {
-        format!(
-            "Failed to read dictionary file from {}",
-            dict_path.display()
-        )
-    })?;
-    let mut dict = dict_json
-        .parse::<language::Dictionary>()
+fn read_and_parse_dict(dict_path: &Path) -> anyhow::Result<language::Dictionary> {
+    super::load_dictionary(dict_path)
+}
+
+fn save_dict(dict: &language::Dictionary, dict_path: &Path) -> anyhow::Result<()> {
+    dict.save_to_file(dict_path)
         .map_err(|e| anyhow::anyhow!(e))
-        .context("Failed to parse dictionary")?;
+        .context("Failed to save dictionary")
+}
+
+pub(crate) fn handle_dict_add(dict_path: &Path, entry: language::NewEntry) -> anyhow::Result<()> {
+    let mut dict = read_and_parse_dict(dict_path)?;
 
     let definition = entry.definition.to_string();
     let meaning = entry.meaning.to_string();
 
     let entry_id = dict.add_entry(entry);
 
-    dict.save_to_file(dict_path)
-        .map_err(|e| anyhow::anyhow!(e))
-        .context("Failed to save dictionary")?;
+    save_dict(&dict, dict_path)?;
 
     println!("Added word '{definition}' (meaning: '{meaning}') with ID {entry_id}");
     Ok(())
 }
 
 pub(crate) fn handle_dict_remove(dict_path: &Path, id: &str) -> anyhow::Result<()> {
-    let dict_json = fs::read_to_string(dict_path).with_context(|| {
-        format!(
-            "Failed to read dictionary file from {}",
-            dict_path.display()
-        )
-    })?;
-    let mut dict = dict_json
-        .parse::<language::Dictionary>()
-        .map_err(|e| anyhow::anyhow!(e))
-        .context("Failed to parse dictionary")?;
+    let mut dict = read_and_parse_dict(dict_path)?;
 
     if dict.remove_entry(id) {
-        dict.save_to_file(dict_path)
-            .map_err(|e| anyhow::anyhow!(e))
-            .context("Failed to save dictionary")?;
+        save_dict(&dict, dict_path)?;
         println!("Removed word with ID {id}");
     } else {
         println!("Word with ID {id} not found in dictionary");
@@ -120,25 +102,20 @@ pub(crate) fn handle_dict_remove(dict_path: &Path, id: &str) -> anyhow::Result<(
     Ok(())
 }
 
-pub(crate) fn handle_dict_print(dict_path: &Path) -> anyhow::Result<()> {
-    let dict_json = fs::read_to_string(dict_path).with_context(|| {
-        format!(
-            "Failed to read dictionary file from {}",
-            dict_path.display()
-        )
-    })?;
-    let dict = dict_json
-        .parse::<language::Dictionary>()
-        .map_err(|e| anyhow::anyhow!(e))
-        .context("Failed to parse dictionary")?;
-
+fn print_border() {
     println!("================================================================================");
+}
+
+pub(crate) fn handle_dict_print(dict_path: &Path) -> anyhow::Result<()> {
+    let dict = read_and_parse_dict(dict_path)?;
+
+    print_border();
     println!("Dictionary ID: {}", dict.id);
     if !dict.eras.is_empty() {
         println!("Total Eras   : {}", dict.eras.len());
     }
     println!("Total Entries: {}", dict.entries.len());
-    println!("================================================================================");
+    print_border();
 
     if !dict.eras.is_empty() {
         println!("Eras:");
@@ -153,9 +130,7 @@ pub(crate) fn handle_dict_print(dict_path: &Path) -> anyhow::Result<()> {
                 .map_or(String::new(), |d| format!(" - {d}"));
             println!("  * Era {num} (ID: {}){}{}", era.id, name_str, desc_str);
         }
-        println!(
-            "================================================================================"
-        );
+        print_border();
     }
 
     for (i, entry) in dict.entries.iter().enumerate() {
@@ -170,16 +145,7 @@ pub(crate) fn handle_dict_add_era_cmd(
     name: Option<String>,
     description: Option<String>,
 ) -> anyhow::Result<()> {
-    let dict_json = fs::read_to_string(dict_path).with_context(|| {
-        format!(
-            "Failed to read dictionary file from {}",
-            dict_path.display()
-        )
-    })?;
-    let mut dict = dict_json
-        .parse::<language::Dictionary>()
-        .map_err(|e| anyhow::anyhow!(e))
-        .context("Failed to parse dictionary")?;
+    let mut dict = read_and_parse_dict(dict_path)?;
 
     let ipa_name = match name {
         Some(n) => Some(
@@ -193,9 +159,7 @@ pub(crate) fn handle_dict_add_era_cmd(
         .add_era(era, ipa_name, description)
         .map_err(|e| anyhow::anyhow!(e))?;
 
-    dict.save_to_file(dict_path)
-        .map_err(|e| anyhow::anyhow!(e))
-        .context("Failed to save dictionary")?;
+    save_dict(&dict, dict_path)?;
 
     println!("Added era {assigned_era} with ID {era_id}");
     Ok(())
@@ -207,17 +171,7 @@ fn generate_conlang_word(
 ) -> anyhow::Result<ipa::IpaString> {
     let lang_path = language_path
         .context("Language configuration file (--language) is required to generate the word")?;
-    let lang_json = fs::read_to_string(lang_path).with_context(|| {
-        format!(
-            "Failed to read language config from {}",
-            lang_path.display()
-        )
-    })?;
-    let config: language::config::LanguageConfig =
-        serde_json::from_str(&lang_json).context("Failed to parse language config JSON")?;
-    config
-        .validate()
-        .context("Language configuration validation failed")?;
+    let config = super::load_language_config(lang_path)?;
 
     let mut rng = language::generator::thread_rng();
     let mut warning_logged = false;
@@ -226,61 +180,61 @@ fn generate_conlang_word(
         r#type,
         &config,
         &mut rng,
-        8, // max attempts
+        MAX_GENERATION_ATTEMPTS,
         &mut warning_logged,
     )?;
     word.parse::<ipa::IpaString>()
         .context("Failed to parse generated word as a valid IPA string")
 }
 
-#[expect(clippy::too_many_arguments, reason = "Command line parameter wrapper")]
+pub struct DictAddParams<'a> {
+    pub dict_path: &'a Path,
+    pub language_path: Option<&'a Path>,
+    pub meaning: &'a str,
+    pub definition: Option<&'a str>,
+    pub generate: bool,
+    pub r#type: String,
+    pub era: Option<u32>,
+    pub etymology: &'a [String],
+    pub usage_notes: String,
+}
+
 pub(crate) fn handle_dict_add_cmd(
-    dict_path: &Path,
-    language_path: Option<&Path>,
-    meaning: &str,
-    definition: Option<&str>,
-    generate: bool,
-    r#type: String,
-    era: Option<u32>,
-    etymology: &[String],
-    usage_notes: String,
+    params: DictAddParams<'_>,
 ) -> anyhow::Result<()> {
-    let ipa_meaning = meaning
+    let ipa_meaning = params.meaning
         .parse::<ipa::IpaString>()
         .context("Failed to parse meaning as a valid IPA string")?;
-    let mut ipa_definition = if generate {
-        generate_conlang_word(language_path, &r#type)?
+    let mut ipa_definition = if params.generate {
+        generate_conlang_word(params.language_path, &params.r#type)?
     } else {
-        let def_str = definition.context("Definition must be provided when not generating")?;
+        let def_str = params.definition.context("Definition must be provided when not generating")?;
         def_str
             .parse::<ipa::IpaString>()
             .context("Failed to parse definition as a valid IPA string")?
     };
 
-    if let Some(path) = language_path {
-        let lang_json = fs::read_to_string(path)
-            .with_context(|| format!("Failed to read language config from {}", path.display()))?;
-        let config: language::config::LanguageConfig =
-            serde_json::from_str(&lang_json).context("Failed to parse language config JSON")?;
+    if let Some(path) = params.language_path {
+        let config = super::load_language_config(path)?;
         if let Ok(syllabified) = config.syllabify(&ipa_definition) {
             ipa_definition = syllabified.to_string().parse::<ipa::IpaString>()?;
         }
     }
 
-    let ety_map = if etymology.is_empty() {
+    let ety_map = if params.etymology.is_empty() {
         None
     } else {
-        Some(parse_etymology(etymology)?)
+        Some(parse_etymology(params.etymology)?)
     };
     let entry = language::NewEntry {
         meaning: ipa_meaning,
         definition: ipa_definition,
-        r#type,
-        era,
+        r#type: params.r#type,
+        era: params.era,
         etymology: ety_map,
-        usage_notes,
+        usage_notes: params.usage_notes,
     };
-    handle_dict_add(dict_path, entry)
+    handle_dict_add(params.dict_path, entry)
 }
 
 fn parse_etymology(raw: &[String]) -> anyhow::Result<std::collections::BTreeMap<u32, Vec<String>>> {

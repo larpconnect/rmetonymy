@@ -120,7 +120,26 @@ pub const IPA_SCHEMA_JSON: &str = include_str!("../ipa_schema.json");
 ///
 /// # Errors
 /// Returns `Err` if the validation against `ipa_schema.json` fails.
-pub fn validate_ipa_data(data: &Value) -> Result<(), Vec<String>> {
+pub fn validate_with_schema(
+    data: &Value,
+    validator_res: &Result<jsonschema::Validator, String>,
+) -> Result<(), String> {
+    let validator = validator_res.as_ref().map_err(|e| e.clone())?;
+
+    if !validator.is_valid(data) {
+        let errors = validator.iter_errors(data);
+        let err_strings: Vec<String> = errors.map(|e| e.to_string()).collect();
+        return Err(err_strings.join("\n"));
+    }
+
+    Ok(())
+}
+
+/// Validate a JSON value against the IPA schema.
+///
+/// # Errors
+/// Returns `Err` if the validation against `ipa_schema.json` fails.
+pub fn validate_ipa_data(data: &Value) -> Result<(), String> {
     static VALIDATOR: std::sync::LazyLock<Result<jsonschema::Validator, String>> =
         std::sync::LazyLock::new(|| {
             let schema_json: Value = serde_json::from_str(IPA_SCHEMA_JSON)
@@ -129,15 +148,7 @@ pub fn validate_ipa_data(data: &Value) -> Result<(), Vec<String>> {
                 .map_err(|e| format!("Failed to compile JSON Schema: {e}"))
         });
 
-    let validator = VALIDATOR.as_ref().map_err(|e| vec![e.clone()])?;
-
-    if !validator.is_valid(data) {
-        let errors = validator.iter_errors(data);
-        let err_strings: Vec<String> = errors.map(|e| e.to_string()).collect();
-        return Err(err_strings);
-    }
-
-    Ok(())
+    validate_with_schema(data, &VALIDATOR)
 }
 
 /// Helper function to parse a JSON string, validate it, and deserialize it into our structures.
@@ -149,7 +160,7 @@ pub fn parse_and_validate(json_str: &str) -> Result<IpaDataset, String> {
         serde_json::from_str(json_str).map_err(|e| format!("JSON parsing error: {e}"))?;
 
     validate_ipa_data(&raw_data)
-        .map_err(|errs| format!("Schema validation failed:\n{}", errs.join("\n")))?;
+        .map_err(|errs| format!("Schema validation failed:\n{errs}"))?;
 
     serde_json::from_value(raw_data).map_err(|e| format!("Deserialization error: {e}"))
 }

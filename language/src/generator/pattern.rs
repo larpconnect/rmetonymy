@@ -21,6 +21,8 @@ pub enum GeneratorError {
     ParseError(String),
 }
 
+const DEFAULT_OPTIONAL_PROBABILITY: u8 = 20;
+
 /// A single element of a word generator pattern.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum WordPatternElement {
@@ -69,7 +71,7 @@ impl Display for WordPatternElement {
             }
             Self::Optional(pat, prob) => {
                 write!(f, "({pat})")?;
-                if *prob != 20 {
+                if *prob != DEFAULT_OPTIONAL_PROBABILITY {
                     write!(f, "{prob}%")?;
                 }
                 Ok(())
@@ -100,27 +102,31 @@ impl FromStr for WordPattern {
     type Err = GeneratorError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut pairs = GeneratorPatternParser::parse(Rule::main, s)
-            .map_err(|e| GeneratorError::ParseError(e.to_string()))?;
-
-        let main_pair = pairs
-            .next()
-            .ok_or_else(|| GeneratorError::ParseError("Empty input".to_string()))?;
-
-        let mut pattern_pair = None;
-        for pair in main_pair.into_inner() {
-            if pair.as_rule() == Rule::pattern {
-                pattern_pair = Some(pair);
-                break;
-            }
-        }
-
-        let Some(pattern_pair) = pattern_pair else {
-            return Err(GeneratorError::ParseError("Empty pattern".to_string()));
-        };
-
+        let pattern_pair = parse_to_pattern_pair_integration(s)?;
         parse_pattern(pattern_pair)
     }
+}
+
+fn parse_to_pattern_pair_integration(s: &str) -> Result<pest::iterators::Pair<'_, Rule>, GeneratorError> {
+    let pairs = GeneratorPatternParser::parse(Rule::main, s)
+        .map_err(|e| GeneratorError::ParseError(e.to_string()))?;
+    find_pattern_pair_op(pairs)
+}
+
+fn find_pattern_pair_op(mut pairs: pest::iterators::Pairs<'_, Rule>) -> Result<pest::iterators::Pair<'_, Rule>, GeneratorError> {
+    let main_pair = pairs
+        .next()
+        .ok_or_else(|| GeneratorError::ParseError("Empty input".to_string()))?;
+
+    let mut pattern_pair = None;
+    for pair in main_pair.into_inner() {
+        if pair.as_rule() == Rule::pattern {
+            pattern_pair = Some(pair);
+            break;
+        }
+    }
+
+    pattern_pair.ok_or_else(|| GeneratorError::ParseError("Empty pattern".to_string()))
 }
 
 fn parse_pattern(pair: pest::iterators::Pair<Rule>) -> Result<WordPattern, GeneratorError> {
@@ -186,7 +192,7 @@ fn parse_set_selector(pair: pest::iterators::Pair<Rule>) -> WordPatternElement {
 fn parse_optional_group(
     pair: pest::iterators::Pair<Rule>,
 ) -> Result<WordPatternElement, GeneratorError> {
-    let mut prob = 20;
+    let mut prob = DEFAULT_OPTIONAL_PROBABILITY;
     let mut inner_pattern = None;
     for opt_inner in pair.into_inner() {
         match opt_inner.as_rule() {

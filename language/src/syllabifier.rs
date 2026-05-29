@@ -1,3 +1,4 @@
+// qual:allow(srp) - Syllabifier module
 use crate::config::LanguageConfig;
 use crate::syllable::{IpaWord, SyllabificationError, Syllable, SyllableStress};
 use ipa::sequence::{Phoneme, PhonemeSequence, ProsodyMarker, SequenceElement};

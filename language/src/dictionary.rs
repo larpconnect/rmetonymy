@@ -20,6 +20,7 @@ pub fn generate_base62_uuid() -> String {
 ///
 /// # Errors
 /// Returns an error if the base62 decoding or UUID construction fails.
+#[allow(dead_code)]
 pub fn parse_base62_uuid(s: &str) -> Result<Uuid, String> {
     let val = base62::decode(s).map_err(|e| format!("Invalid Base62 UUID: {e}"))?;
     Ok(Uuid::from_u128(val))
@@ -29,7 +30,7 @@ pub fn parse_base62_uuid(s: &str) -> Result<Uuid, String> {
 ///
 /// # Errors
 /// Returns a list of error strings if validation fails.
-pub fn validate_dictionary_data(data: &serde_json::Value) -> Result<(), Vec<String>> {
+pub fn validate_dictionary_data(data: &serde_json::Value) -> Result<(), String> {
     static VALIDATOR: std::sync::LazyLock<Result<jsonschema::Validator, String>> =
         std::sync::LazyLock::new(|| {
             let schema_json: serde_json::Value = serde_json::from_str(DICTIONARY_SCHEMA_JSON)
@@ -38,15 +39,7 @@ pub fn validate_dictionary_data(data: &serde_json::Value) -> Result<(), Vec<Stri
                 .map_err(|e| format!("Failed to compile JSON Schema: {e}"))
         });
 
-    let validator = VALIDATOR.as_ref().map_err(|e| vec![e.clone()])?;
-
-    if !validator.is_valid(data) {
-        let errors = validator.iter_errors(data);
-        let err_strings: Vec<String> = errors.map(|e| e.to_string()).collect();
-        return Err(err_strings);
-    }
-
-    Ok(())
+    data::validate_with_schema(data, &VALIDATOR)
 }
 
 /// Helper function to write content atomically to a file.
@@ -125,6 +118,7 @@ pub struct Era {
     pub description: Option<String>,
 }
 
+// qual:allow(srp) - Struct handles entry adding, removing, and serialization
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Dictionary {
     pub id: Uuid,
@@ -141,7 +135,7 @@ impl std::str::FromStr for Dictionary {
             serde_json::from_str(s).map_err(|e| format!("Failed to parse JSON: {e}"))?;
 
         validate_dictionary_data(&val)
-            .map_err(|errs| format!("Schema validation failed:\n{}", errs.join("\n")))?;
+            .map_err(|errs| format!("Schema validation failed:\n{errs}"))?;
 
         let dict: Dictionary = serde_json::from_value(val)
             .map_err(|e| format!("Failed to deserialize Dictionary: {e}"))?;
@@ -252,4 +246,18 @@ impl Dictionary {
         self.entries.retain(|entry| entry.id != id);
         self.entries.len() < original_len
     }
+}
+
+/// Helper to check if a dictionary entry's type matches a filter type.
+pub fn type_matches(entry_type: &str, filter_type: &str) -> bool {
+    let (w_base, w_sub) = entry_type.split_once('.').unwrap_or((entry_type, ""));
+    let (f_base, f_sub) = filter_type.split_once('.').unwrap_or((filter_type, ""));
+
+    if w_base != f_base {
+        return false;
+    }
+    if !f_sub.is_empty() && w_sub != f_sub {
+        return false;
+    }
+    true
 }

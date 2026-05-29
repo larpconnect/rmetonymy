@@ -5,6 +5,7 @@ use std::collections::BTreeMap;
 use time::OffsetDateTime;
 use uuid::Uuid;
 
+// qual:allow(srp) - Orchestrates deserialized language configurations
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct LanguageConfig {
     pub id: Uuid,
@@ -388,5 +389,28 @@ mod tests {
         let sound_class: SoundClass =
             serde_json::from_str(json_str).expect("deserialize sound class");
         assert_eq!(sound_class.generator, Some(GeneratorConfig::Equiprobable));
+    }
+
+    #[test]
+    fn test_ensure_default_sound_classes() {
+        let json_str = r#"{"A": {"values": ["a"]}}"#;
+        let mut deserializer = serde_json::Deserializer::from_str(json_str);
+        let res = ensure_default_sound_classes(&mut deserializer).unwrap();
+        assert!(res.contains_key(&"C".parse().unwrap()));
+        assert!(res.contains_key(&"A".parse().unwrap()));
+    }
+
+    #[test]
+    fn test_default_zipf_config() {
+        let conf = default_zipf_config();
+        assert_eq!(conf.a, 1.0);
+        assert_eq!(conf.b, 2.7);
+    }
+
+    #[test]
+    fn test_deserialize_f64_or_str() {
+        let mut deserializer = serde_json::Deserializer::from_str("1.5");
+        let val = deserialize_f64_or_str(&mut deserializer).unwrap();
+        assert_eq!(val, 1.5);
     }
 }

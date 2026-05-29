@@ -83,8 +83,7 @@ pub(crate) fn handle_sound_change(
     let (result_word, trace_logs) = soundchange::evaluator::apply_sound_changes(
         &ipa_word,
         &compiled,
-        cmd.start,
-        end_era,
+        (cmd.start, end_era),
         &config,
         cmd.verbose,
     )

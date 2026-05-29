@@ -69,6 +69,14 @@ fn pattern_should_not_match(c_world: &mut SoundMatcherWorld) {
 
 #[tokio::main]
 async fn main() {
+    if false {
+        let mut world = SoundMatcherWorld::default();
+        let step = todo!();
+        let _ = given_sound_classes(&mut world, step);
+        let _ = check_pattern(&mut world, String::new(), String::new());
+        pattern_should_match(&mut world);
+        pattern_should_not_match(&mut world);
+    }
     SoundMatcherWorld::cucumber()
         .run_and_exit("tests/features/sound_matcher.feature")
         .await;

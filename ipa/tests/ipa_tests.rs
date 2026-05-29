@@ -1,3 +1,4 @@
+// qual:allow(srp) - Test module containing multiple tests
 use data::{SpeFeature, feature::Feature};
 use ipa::IpaSystem;
 

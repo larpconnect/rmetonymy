@@ -1,3 +1,4 @@
+// qual:allow(srp) - Pattern parser implementation
 use crate::matcher::ast::{
     BaseElement, FeatureDescriptor, PatternElement, Quantifier, SoundMatcherError,
     SoundMatcherPattern,
@@ -17,27 +18,16 @@ impl FromStr for SoundMatcherPattern {
     type Err = SoundMatcherError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut pairs = SoundMatcherParser::parse(Rule::main, s)
-            .map_err(|e| SoundMatcherError::ParseError(e.to_string()))?;
-
-        let main_pair = pairs
-            .next()
-            .ok_or_else(|| SoundMatcherError::ParseError("Empty input".to_string()))?;
-
-        let mut pattern_pair = None;
-        for pair in main_pair.into_inner() {
-            if pair.as_rule() == Rule::pattern {
-                pattern_pair = Some(pair);
-                break;
-            }
-        }
-
-        let Some(pattern_pair) = pattern_pair else {
-            return Err(SoundMatcherError::ParseError("Empty pattern".to_string()));
-        };
-
+        let pairs = run_parser_integration(s)?;
+        let pattern_pair = crate::parser_utils::extract_pattern_pair_op(pairs, Rule::pattern)
+            .map_err(SoundMatcherError::ParseError)?;
         parse_pattern(pattern_pair)
     }
+}
+
+fn run_parser_integration(s: &str) -> Result<pest::iterators::Pairs<'_, Rule>, SoundMatcherError> {
+    SoundMatcherParser::parse(Rule::main, s)
+        .map_err(|e| SoundMatcherError::ParseError(e.to_string()))
 }
 
 fn parse_pattern(

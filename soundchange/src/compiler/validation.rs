@@ -30,67 +30,75 @@ fn validate_opaque_single_use(rule: &CompiledRuleChange) -> Result<(), SoundChan
 pub(crate) fn validate_compiled_rule(
     rule: &CompiledRuleChange,
 ) -> Result<(), SoundChangeParseError> {
-    // 1. Unbound sound classes in transform
     validate_transform_bindings(rule)?;
-
-    // 2. First condition has no `_`
-    if let Some(ref cond) = rule.condition {
-        validate_condition_has_placeholder(cond)?;
-    }
-
-    // 3. Referenced alpha variables in transform are captured in match/condition
+    validate_condition_wrapper(rule)?;
     validate_alpha_variables(rule)?;
-
-    // 4. Null match requires a condition
     validate_null_match(rule)?;
-
-    // 5. Operator single-use cannot be opaque
     validate_opaque_single_use(rule)?;
-
     Ok(())
 }
 
+fn validate_condition_wrapper(rule: &CompiledRuleChange) -> Result<(), SoundChangeParseError> {
+    rule.condition
+        .as_ref()
+        .map(validate_condition_has_placeholder)
+        .unwrap_or(Ok(()))
+}
+
 pub(crate) fn get_match_markers(pattern: &MatchPattern) -> HashSet<u8> {
+    get_match_markers_op(pattern, collect_base_markers_op)
+}
+
+fn get_match_markers_op<F>(pattern: &MatchPattern, mut collect_fn: F) -> HashSet<u8>
+where
+    F: FnMut(&MatchBase) -> HashSet<u8>,
+{
     let mut markers = HashSet::new();
     for el in &pattern.elements {
-        collect_base_markers(&el.base, &mut markers);
+        markers.extend(collect_fn(&el.base));
     }
     markers
 }
 
-fn collect_base_markers(base: &MatchBase, markers: &mut HashSet<u8>) {
-    match base {
-        MatchBase::SoundClass {
-            marker: Some(m), ..
-        }
-        | MatchBase::SetExclusion {
-            marker: Some(m), ..
-        } => {
-            markers.insert(*m);
-        }
-        MatchBase::FeatureClass {
-            key_opt: Some(key), ..
-        } => {
-            if let Some(m) = key.marker {
-                markers.insert(m);
+fn collect_base_markers_op(base: &MatchBase) -> HashSet<u8> {
+    let mut markers = HashSet::new();
+    let mut stack = vec![base];
+    while let Some(current) = stack.pop() {
+        match current {
+            MatchBase::SoundClass { marker: Some(m), .. }
+            | MatchBase::SetExclusion { marker: Some(m), .. } => {
+                markers.insert(*m);
             }
-        }
-        MatchBase::Set(elements) => {
-            for el in elements {
-                collect_base_markers(el, markers);
+            MatchBase::FeatureClass { key_opt: Some(key), .. } => {
+                if let Some(m) = key.marker {
+                    markers.insert(m);
+                }
             }
-        }
-        MatchBase::OptionalGroup(pattern) => {
-            for el in &pattern.elements {
-                collect_base_markers(&el.base, markers);
+            MatchBase::Set(elements) => {
+                for el in elements {
+                    stack.push(el);
+                }
             }
+            MatchBase::OptionalGroup(pattern) => {
+                for el in &pattern.elements {
+                    stack.push(&el.base);
+                }
+            }
+            _ => {}
         }
-        _ => {}
     }
+    markers
 }
 
 fn validate_transform_bindings(rule: &CompiledRuleChange) -> Result<(), SoundChangeParseError> {
     let match_markers = get_match_markers(&rule.match_part);
+    validate_transform_bindings_op(rule, &match_markers)
+}
+
+fn validate_transform_bindings_op(
+    rule: &CompiledRuleChange,
+    match_markers: &HashSet<u8>,
+) -> Result<(), SoundChangeParseError> {
     for el in &rule.transform_part.elements {
         if let TransformElement::Ref {
             marker,
@@ -145,58 +153,75 @@ fn has_match_placeholder(cond: &CompiledConditionExpr) -> bool {
     }
 }
 
-fn get_captured_alpha_variables(rule: &CompiledRuleChange) -> HashSet<String> {
+enum AlphaNode<'a> {
+    Base(&'a MatchBase),
+    Condition(&'a CompiledConditionExpr),
+}
+
+fn collect_alphas_op(rule: &CompiledRuleChange) -> HashSet<String> {
     let mut alphas = HashSet::new();
+    let mut stack = Vec::new();
+
     for el in &rule.match_part.elements {
-        collect_base_alphas(&el.base, &mut alphas);
+        stack.push(AlphaNode::Base(&el.base));
     }
     if let Some(ref cond) = rule.condition {
-        collect_condition_alphas(cond, &mut alphas);
+        stack.push(AlphaNode::Condition(cond));
+    }
+
+    while let Some(node) = stack.pop() {
+        match node {
+            AlphaNode::Base(base) => match base {
+                MatchBase::FeatureClass { features, .. } => {
+                    for f in features {
+                        if let Some(ref alpha) = f.alpha {
+                            alphas.insert(alpha.name.clone());
+                        }
+                    }
+                }
+                MatchBase::Set(elements) => {
+                    for el in elements {
+                        stack.push(AlphaNode::Base(el));
+                    }
+                }
+                MatchBase::OptionalGroup(pattern) => {
+                    for el in &pattern.elements {
+                        stack.push(AlphaNode::Base(&el.base));
+                    }
+                }
+                _ => {}
+            },
+            AlphaNode::Condition(cond) => match cond {
+                CompiledConditionExpr::Term { pattern, .. } => {
+                    for el in &pattern.elements {
+                        if let ConditionBase::Element(ref base) = el.base {
+                            stack.push(AlphaNode::Base(base));
+                        }
+                    }
+                }
+                CompiledConditionExpr::Binary { left, right, .. } => {
+                    stack.push(AlphaNode::Condition(left));
+                    stack.push(AlphaNode::Condition(right));
+                }
+            },
+        }
     }
     alphas
 }
 
-fn collect_base_alphas(base: &MatchBase, alphas: &mut HashSet<String>) {
-    match base {
-        MatchBase::FeatureClass { features, .. } => {
-            for f in features {
-                if let Some(ref alpha) = f.alpha {
-                    alphas.insert(alpha.name.clone());
-                }
-            }
-        }
-        MatchBase::Set(elements) => {
-            for el in elements {
-                collect_base_alphas(el, alphas);
-            }
-        }
-        MatchBase::OptionalGroup(pattern) => {
-            for el in &pattern.elements {
-                collect_base_alphas(&el.base, alphas);
-            }
-        }
-        _ => {}
-    }
-}
-
-fn collect_condition_alphas(cond: &CompiledConditionExpr, alphas: &mut HashSet<String>) {
-    match cond {
-        CompiledConditionExpr::Term { pattern, .. } => {
-            for el in &pattern.elements {
-                if let ConditionBase::Element(ref base) = el.base {
-                    collect_base_alphas(base, alphas);
-                }
-            }
-        }
-        CompiledConditionExpr::Binary { left, right, .. } => {
-            collect_condition_alphas(left, alphas);
-            collect_condition_alphas(right, alphas);
-        }
-    }
+fn get_captured_alpha_variables(rule: &CompiledRuleChange) -> HashSet<String> {
+    collect_alphas_op(rule)
 }
 
 fn validate_alpha_variables(rule: &CompiledRuleChange) -> Result<(), SoundChangeParseError> {
     let captured = get_captured_alpha_variables(rule);
+    validate_transform_alphas_op(rule, &captured)
+}
+
+fn validate_transform_alphas_op(
+    rule: &CompiledRuleChange,
+    captured: &HashSet<String>,
+) -> Result<(), SoundChangeParseError> {
     for el in &rule.transform_part.elements {
         if let TransformElement::Ref {
             feature_changes, ..

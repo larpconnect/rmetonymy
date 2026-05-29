@@ -1,8 +1,16 @@
 pub mod condition;
+pub(crate) mod repeated;
+pub(crate) mod condition_match;
 pub mod engine;
 pub mod features;
 pub mod match_base;
 pub mod transform;
+pub mod helper;
+pub mod descriptor;
+pub mod boundary;
+pub mod lengths;
+pub mod boundary_adjust;
+pub mod feature_changes;
 
 use crate::ast::Operator;
 use crate::compiler::{CompiledRuleChange, CompiledSoundChangeRule};
@@ -108,24 +116,28 @@ pub enum StressUpdate {
     Keep,
 }
 
+pub struct TraceContext<'a> {
+    pub verbose: bool,
+    pub logs: &'a mut Vec<String>,
+}
+
 /// Internal helper to apply rules for a single era.
 fn apply_era_rules(
     working: &mut WorkingWord,
     era: u32,
     rules: &[CompiledSoundChangeRule],
     ctx: &EvalContext<'_>,
-    verbose: bool,
-    trace_logs: &mut Vec<String>,
+    trace: &mut TraceContext<'_>,
 ) -> Result<(), String> {
-    if verbose {
-        trace_logs.push(format!("--- Era {era} ---"));
+    if trace.verbose {
+        trace.logs.push(format!("--- Era {era} ---"));
     }
     for rule in rules {
         let before = working.clone();
         apply_rule(working, rule, ctx)?;
-        if verbose && *working != before {
+        if trace.verbose && *working != before {
             let rule_name = rule.name.as_deref().unwrap_or("<unnamed>");
-            trace_logs.push(format!(
+            trace.logs.push(format!(
                 "Rule: {rule_name}\n  In : {}\n  Out: {}",
                 before.to_flat_sequence(),
                 working.to_flat_sequence()
@@ -142,8 +154,7 @@ fn apply_era_rules(
 pub fn apply_sound_changes(
     word: &language::syllable::IpaWord,
     compiled_eras: &[(u32, Vec<CompiledSoundChangeRule>)],
-    start_era: u32,
-    end_era: u32,
+    era_range: (u32, u32),
     config: &language::config::LanguageConfig,
     verbose: bool,
 ) -> Result<(language::syllable::IpaWord, Vec<String>), String> {
@@ -159,14 +170,20 @@ pub fn apply_sound_changes(
     };
 
     // Filter and sort eras
+    let (start_era, end_era) = era_range;
     let mut sorted_eras: Vec<_> = compiled_eras
         .iter()
         .filter(|(era, _)| *era >= start_era && *era <= end_era)
         .collect();
     sorted_eras.sort_by_key(|(era, _)| *era);
 
+    let mut trace = TraceContext {
+        verbose,
+        logs: &mut trace_logs,
+    };
+
     for (era, rules) in sorted_eras {
-        apply_era_rules(&mut working, *era, rules, &ctx, verbose, &mut trace_logs)?;
+        apply_era_rules(&mut working, *era, rules, &ctx, &mut trace)?;
     }
 
     // Convert back to IpaWord by resyllabifying
@@ -252,43 +269,14 @@ fn apply_transparent_change(
     is_single: bool,
     ctx: &EvalContext<'_>,
 ) -> Result<(), String> {
-    let mut scan_idx = if is_leftward { word.phonemes.len() } else { 0 };
-
-    loop {
-        if is_leftward && scan_idx > word.phonemes.len() {
-            scan_idx = word.phonemes.len();
-        }
-
-        let match_opt = engine::find_next_match(
-            word,
-            &change.match_part,
-            change.condition.as_ref(),
-            scan_idx,
-            is_leftward,
-            ctx,
-        );
-        let Some((range, state)) = match_opt else {
-            break;
-        };
-
-        let new_range =
-            transform::replace_range(word, range.clone(), &state, &change.transform_part, ctx)?;
-
-        if is_single {
-            break;
-        }
-
-        if is_leftward {
-            if range.start == 0 {
-                break;
-            }
-            scan_idx = range.start;
-        } else {
-            scan_idx = new_range.end;
-            if scan_idx > word.phonemes.len() {
-                break;
-            }
-        }
-    }
-    Ok(())
+    let params = engine::TransparentLoopParams {
+        match_part: &change.match_part,
+        condition: change.condition.as_ref(),
+        is_leftward,
+        is_single,
+        ctx,
+    };
+    engine::evaluate_transparent_loop(word, &params, |word, range, state| {
+        transform::replace_range(word, range, state, &change.transform_part, ctx)
+    })
 }

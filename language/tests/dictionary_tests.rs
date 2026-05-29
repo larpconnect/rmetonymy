@@ -1,3 +1,4 @@
+// qual:allow(srp) - Dictionary test suite
 use ipa::IpaString;
 use language::dictionary::{Dictionary, NewEntry, generate_base62_uuid, parse_base62_uuid};
 use std::collections::BTreeMap;
@@ -116,6 +117,7 @@ fn test_dictionary_optional_etymology() {
     );
 }
 
+// qual:allow(dry) - Test setup boilerplate
 #[test]
 fn test_dictionary_default_era() {
     let lang_id = Uuid::now_v7();
@@ -250,6 +252,7 @@ fn test_dictionary_add_era() {
     assert_eq!(dict.eras.get(&4).expect("era 4 exists").description, None);
 }
 
+// qual:allow(dry) - Test setup boilerplate
 #[test]
 fn test_dictionary_auto_create_era() {
     let lang_id = Uuid::now_v7();

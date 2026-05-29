@@ -67,6 +67,7 @@ pub fn get_sonority(p: &Phoneme) -> i32 {
 
 /// Check if a vowel is a candidate for capture (not long, not rhotic).
 #[must_use]
+#[allow(dead_code)]
 pub fn can_vowel_capture(v: &Phoneme) -> bool {
     is_vowel(v)
         && !has_feature(v, data::feature::Feature::Long)

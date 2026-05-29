@@ -53,27 +53,16 @@ impl FromStr for PhonotacticPattern {
     type Err = PhonotacticsError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut pairs = PhonotacticsParser::parse(Rule::main, s)
-            .map_err(|e| PhonotacticsError::ParseError(e.to_string()))?;
-
-        // main -> pattern -> EOI
-        let main_pair = pairs
-            .next()
-            .ok_or_else(|| PhonotacticsError::ParseError("Empty input".to_string()))?;
-        let mut pattern_pair = None;
-        for pair in main_pair.into_inner() {
-            if pair.as_rule() == Rule::pattern {
-                pattern_pair = Some(pair);
-                break;
-            }
-        }
-
-        let Some(pattern_pair) = pattern_pair else {
-            return Err(PhonotacticsError::ParseError("Empty pattern".to_string()));
-        };
-
+        let pairs = run_phonotactic_parser_integration(s)?;
+        let pattern_pair = crate::parser_utils::extract_pattern_pair_op(pairs, Rule::pattern)
+            .map_err(PhonotacticsError::ParseError)?;
         parse_pattern(pattern_pair)
     }
+}
+
+fn run_phonotactic_parser_integration(s: &str) -> Result<pest::iterators::Pairs<'_, Rule>, PhonotacticsError> {
+    PhonotacticsParser::parse(Rule::main, s)
+        .map_err(|e| PhonotacticsError::ParseError(e.to_string()))
 }
 
 fn parse_pattern(
@@ -234,8 +223,8 @@ mod tests {
         ];
 
         for case in invalid_cases {
-            let res = case.parse::<PhonotacticPattern>();
-            assert!(res.err().is_some(), "Should have failed to parse: {case}");
+            let res = <PhonotacticPattern as std::str::FromStr>::from_str(case);
+            assert!(res.is_err(), "Should have failed to parse: {case}");
         }
     }
 }

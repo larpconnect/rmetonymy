@@ -1,19 +1,10 @@
 use anyhow::Context;
-use language::generator::validation::is_valid_derivation_name;
-use std::fs;
 use std::path::Path;
 
+const NUM_COLORS: usize = 3;
+
 fn load_dictionary(dict_path: &Path) -> anyhow::Result<language::Dictionary> {
-    let dict_json = fs::read_to_string(dict_path).with_context(|| {
-        format!(
-            "Failed to read dictionary file from {}",
-            dict_path.display()
-        )
-    })?;
-    dict_json
-        .parse::<language::Dictionary>()
-        .map_err(|e| anyhow::anyhow!(e))
-        .context("Failed to parse dictionary")
+    super::load_dictionary(dict_path)
 }
 
 fn load_language_config(
@@ -22,51 +13,12 @@ fn load_language_config(
     let Some(path) = language_path else {
         return Ok(None);
     };
-    let lang_json = fs::read_to_string(path)
-        .with_context(|| format!("Failed to read language config from {}", path.display()))?;
-    let config: language::config::LanguageConfig =
-        serde_json::from_str(&lang_json).context("Failed to parse language config JSON")?;
-    config
-        .validate()
-        .context("Language configuration validation failed")?;
-    Ok(Some(config))
+    super::load_language_config(path).map(Some)
 }
 
-fn parse_lookup_string(s: &str) -> (String, Vec<String>) {
-    let parts: Vec<&str> = s.split('-').collect();
-    if parts.len() <= 1 {
-        return (s.to_string(), Vec::new());
-    }
+use super::parse::parse_lookup_string;
 
-    let mut parts = parts;
-    let mut derivations = Vec::new();
-    while parts.len() > 1 {
-        if let Some(last) = parts.last() {
-            if is_valid_derivation_name(last) {
-                derivations.push((*last).to_string());
-                parts.pop();
-            } else {
-                break;
-            }
-        }
-    }
-    derivations.reverse();
-    let base_meaning = parts.join("-");
-    (base_meaning, derivations)
-}
 
-fn type_matches(entry_type: &str, filter_type: &str) -> bool {
-    let (w_base, w_sub) = entry_type.split_once('.').unwrap_or((entry_type, ""));
-    let (f_base, f_sub) = filter_type.split_once('.').unwrap_or((filter_type, ""));
-
-    if w_base != f_base {
-        return false;
-    }
-    if !f_sub.is_empty() && w_sub != f_sub {
-        return false;
-    }
-    true
-}
 
 fn print_lookup_without_derivations(
     ipa_word: &language::syllable::IpaWord,
@@ -86,7 +38,7 @@ fn print_lookup_without_derivations(
         .map_err(|e| anyhow::anyhow!("Failed to compile sound changes: {e}"))?;
 
     let (sc_word, _) =
-        soundchange::apply_sound_changes(ipa_word, &compiled_sc, era, u32::MAX, config, false)
+        soundchange::apply_sound_changes(ipa_word, &compiled_sc, (era, u32::MAX), config, false)
             .map_err(|e| anyhow::anyhow!("Failed to apply sound changes: {e}"))?;
     println!("{sc_word}");
 
@@ -149,7 +101,7 @@ fn apply_post_derivation_sound_changes(
 }
 
 fn get_derivation_color(idx: usize) -> &'static str {
-    match idx % 3 {
+    match idx % NUM_COLORS {
         1 => "\x1b[31m", // Red
         2 => "\x1b[36m", // Cyan
         0 => "\x1b[32m", // Green
@@ -178,29 +130,39 @@ fn format_colored_lookup_line(
     result
 }
 
-fn print_lookup_with_derivations(
-    ipa_word: &language::syllable::IpaWord,
-    entry_type: &str,
-    derivation_names: &[String],
+struct LookupDerivationsParams<'a> {
+    ipa_word: &'a language::syllable::IpaWord,
+    entry_type: &'a str,
+    derivation_names: &'a [String],
     era: u32,
-    base_meaning: &str,
-    config: &language::config::LanguageConfig,
-) -> anyhow::Result<()> {
-    let res = soundchange::apply_derivations(ipa_word, entry_type, derivation_names, config, era)
-        .map_err(|e| anyhow::anyhow!("Failed to apply derivations: {e}"))?;
-    let (final_sc_word, sc_tags) =
-        apply_post_derivation_sound_changes(&res.word, &res.tags, res.final_era, config)?;
+    base_meaning: &'a str,
+    config: &'a language::config::LanguageConfig,
+}
 
-    let ortho_rules = config.orthography.as_deref().unwrap_or(&[]);
+fn print_lookup_with_derivations(
+    params: LookupDerivationsParams<'_>,
+) -> anyhow::Result<()> {
+    let res = soundchange::apply_derivations(
+        params.ipa_word,
+        params.entry_type,
+        params.derivation_names,
+        params.config,
+        params.era,
+    )
+    .map_err(|e| anyhow::anyhow!("Failed to apply derivations: {e}"))?;
+    let (final_sc_word, sc_tags) =
+        apply_post_derivation_sound_changes(&res.word, &res.tags, res.final_era, params.config)?;
+
+    let ortho_rules = params.config.orthography.as_deref().unwrap_or(&[]);
     let compiled_ortho = soundchange::compile_ortho_rules(ortho_rules)
         .map_err(|e| anyhow::anyhow!("Failed to compile orthography rules: {e}"))?;
     let (ortho_res, _) =
-        soundchange::apply_orthography(&final_sc_word, &compiled_ortho, config, false)
+        soundchange::apply_orthography(&final_sc_word, &compiled_ortho, params.config, false)
             .map_err(|e| anyhow::anyhow!("Failed to apply orthography: {e}"))?;
 
     let colored_derived = format_colored_word(&res.word, &res.tags);
     let colored_sc = format_colored_word(&final_sc_word, &sc_tags);
-    let colored_line = format_colored_lookup_line(base_meaning, derivation_names, &res.step_types);
+    let colored_line = format_colored_lookup_line(params.base_meaning, params.derivation_names, &res.step_types);
 
     println!("{colored_line}");
     println!("{colored_derived}");
@@ -251,7 +213,7 @@ fn entry_matches(
         return false;
     }
     if let Some(ft) = filter_type {
-        let matches = type_matches(&entry.r#type, ft);
+        let matches = language::type_matches(&entry.r#type, ft);
         if !matches {
             return false;
         }
@@ -290,14 +252,15 @@ fn print_lookup_result(
     if derivation_names.is_empty() {
         print_lookup_without_derivations(ipa_word, entry.era, config)?;
     } else {
-        print_lookup_with_derivations(
+        let params = LookupDerivationsParams {
             ipa_word,
-            &entry.r#type,
+            entry_type: &entry.r#type,
             derivation_names,
-            entry.era,
+            era: entry.era,
             base_meaning,
             config,
-        )?;
+        };
+        print_lookup_with_derivations(params)?;
     }
     Ok(())
 }

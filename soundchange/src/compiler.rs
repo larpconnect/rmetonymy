@@ -1,9 +1,9 @@
 pub mod validation;
+pub mod resolver;
+pub mod cond_resolver;
 
 use crate::ast::{
-    ConditionExpr, ConditionOp, ConditionPattern, MatchPattern, Operator, ParsedMatchPart,
-    ParsedSoundChange, ParsedTransformPart, PreambleItem, PreambleType, SoundChangeRule,
-    SoundChanges, TransformElement, TransformPattern,
+    PreambleItem, SoundChangeRule, SoundChanges,
 };
 use crate::parser::{SoundChangeParseError, parse_rule_string};
 use data::feature::Feature;
@@ -19,9 +19,9 @@ pub struct CompiledSoundChangeRule {
 #[derive(Debug, Clone)]
 pub struct CompiledRuleChange {
     pub original_string: String,
-    pub match_part: MatchPattern,
-    pub operator: Operator,
-    pub transform_part: TransformPattern,
+    pub match_part: crate::ast::MatchPattern,
+    pub operator: crate::ast::Operator,
+    pub transform_part: crate::ast::TransformPattern,
     pub condition: Option<CompiledConditionExpr>,
 }
 
@@ -29,11 +29,11 @@ pub struct CompiledRuleChange {
 pub enum CompiledConditionExpr {
     Term {
         negated: bool,
-        pattern: ConditionPattern,
+        pattern: crate::ast::ConditionPattern,
     },
     Binary {
         left: Box<CompiledConditionExpr>,
-        op: ConditionOp,
+        op: crate::ast::ConditionOp,
         right: Box<CompiledConditionExpr>,
     },
 }
@@ -51,19 +51,25 @@ pub fn is_distinctive_feature_name(name: &str) -> bool {
 pub fn compile_sound_changes(
     config: &SoundChanges,
 ) -> Result<Vec<(u32, Vec<CompiledSoundChangeRule>)>, SoundChangeParseError> {
-    // 1. Build and validate the preamble map
     let preamble_map = build_preamble_map(config)?;
+    compile_eras_op(&config.eras, |rule| compile_rule(rule, &preamble_map))
+}
 
-    // 2. Compile era rules
+fn compile_eras_op<F>(
+    eras: &[crate::ast::EraRules],
+    mut compile_rule_fn: F,
+) -> Result<Vec<(u32, Vec<CompiledSoundChangeRule>)>, SoundChangeParseError>
+where
+    F: FnMut(&SoundChangeRule) -> Result<CompiledSoundChangeRule, SoundChangeParseError>,
+{
     let mut compiled_eras = Vec::new();
-    for era_rules in &config.eras {
+    for era_rules in eras {
         let mut compiled_rules = Vec::new();
         for rule in &era_rules.rules {
-            compiled_rules.push(compile_rule(rule, &preamble_map)?);
+            compiled_rules.push(compile_rule_fn(rule)?);
         }
         compiled_eras.push((era_rules.era, compiled_rules));
     }
-
     Ok(compiled_eras)
 }
 
@@ -75,24 +81,42 @@ pub fn compile_single_rule_from_str(
     rule_str: &str,
     sound_changes: Option<&SoundChanges>,
 ) -> Result<CompiledSoundChangeRule, SoundChangeParseError> {
-    let preamble_map = if let Some(sc) = sound_changes {
-        build_preamble_map(sc)?
-    } else {
-        HashMap::new()
-    };
-    let rule = SoundChangeRule {
+    let preamble_map = build_preamble_for_single_rule(sound_changes)?;
+    let rule = make_single_rule_op(rule_str);
+    compile_rule(&rule, &preamble_map)
+}
+
+fn build_preamble_for_single_rule(
+    sound_changes: Option<&SoundChanges>,
+) -> Result<HashMap<String, PreambleItem>, SoundChangeParseError> {
+    sound_changes
+        .map(build_preamble_map)
+        .unwrap_or_else(|| Ok(HashMap::new()))
+}
+
+fn make_single_rule_op(rule_str: &str) -> SoundChangeRule {
+    SoundChangeRule {
         name: None,
         changes: vec![rule_str.to_string()],
-    };
-    compile_rule(&rule, &preamble_map)
+    }
 }
 
 fn build_preamble_map(
     config: &SoundChanges,
 ) -> Result<HashMap<String, PreambleItem>, SoundChangeParseError> {
+    build_preamble_map_op(config, is_distinctive_feature_name)
+}
+
+fn build_preamble_map_op<F>(
+    config: &SoundChanges,
+    mut check_fn: F,
+) -> Result<HashMap<String, PreambleItem>, SoundChangeParseError>
+where
+    F: FnMut(&str) -> bool,
+{
     let mut map = HashMap::new();
     for item in &config.preamble {
-        if is_distinctive_feature_name(&item.name) {
+        if check_fn(&item.name) {
             return Err(SoundChangeParseError::ValidationError(format!(
                 "Preamble item name '{}' is a distinctive feature name, which is forbidden.",
                 item.name
@@ -107,251 +131,55 @@ fn compile_rule(
     rule: &SoundChangeRule,
     preamble: &HashMap<String, PreambleItem>,
 ) -> Result<CompiledSoundChangeRule, SoundChangeParseError> {
-    if let Some(name) = rule
-        .name
-        .as_ref()
-        .filter(|n| is_distinctive_feature_name(n))
-    {
-        return Err(SoundChangeParseError::ValidationError(format!(
-            "Rule name '{name}' is a distinctive feature name, which is forbidden."
-        )));
-    }
-
-    let mut compiled_changes = Vec::new();
-    for change_str in &rule.changes {
-        let parsed = parse_rule_string(change_str)?;
-        let expanded = expand_references(parsed, preamble, change_str)?;
-        for r in expanded {
-            validation::validate_compiled_rule(&r)?;
-            compiled_changes.push(r);
-        }
-    }
-
+    validate_rule_name(rule)?;
+    let compiled_changes = compile_changes(rule, preamble)?;
     Ok(CompiledSoundChangeRule {
         name: rule.name.clone(),
         changes: compiled_changes,
     })
 }
 
-fn expand_preamble_reference(
-    name: String,
+fn validate_rule_name(rule: &SoundChangeRule) -> Result<(), SoundChangeParseError> {
+    validate_rule_name_op(rule, is_distinctive_feature_name)
+}
+
+fn validate_rule_name_op<F>(rule: &SoundChangeRule, mut check_fn: F) -> Result<(), SoundChangeParseError>
+where
+    F: FnMut(&str) -> bool,
+{
+    if let Some(name) = rule.name.as_ref().filter(|n| check_fn(n)) {
+        return Err(SoundChangeParseError::ValidationError(format!(
+            "Rule name '{name}' is a distinctive feature name, which is forbidden."
+        )));
+    }
+    Ok(())
+}
+
+fn compile_changes(
+    rule: &SoundChangeRule,
     preamble: &HashMap<String, PreambleItem>,
-    visited: &mut std::collections::HashSet<String>,
 ) -> Result<Vec<CompiledRuleChange>, SoundChangeParseError> {
-    let name_str = name.clone();
-    if !visited.insert(name) {
-        return Err(SoundChangeParseError::ReferenceError(format!(
-            "Circular reference detected in preamble: '{name_str}'"
-        )));
-    }
-    let item = preamble.get(&name_str).ok_or_else(|| {
-        SoundChangeParseError::ReferenceError(format!("Preamble item '{name_str}' not found"))
-    })?;
-    if item.r#type != PreambleType::Full {
-        visited.remove(&name_str);
-        return Err(SoundChangeParseError::ReferenceError(format!(
-            "Preamble item '{name_str}' is not of type 'full'"
-        )));
-    }
-    let mut changes = Vec::new();
-    for sub_str in &item.changes {
-        let sub_parsed = parse_rule_string(sub_str)?;
-        let mut sub_expanded = expand_references_rec(sub_parsed, preamble, sub_str, visited)?;
-        changes.append(&mut sub_expanded);
-    }
-    visited.remove(&name_str);
-    Ok(changes)
+    rule.changes
+        .iter()
+        .map(|change_str| compile_change(change_str, preamble))
+        .collect::<Result<Vec<Vec<CompiledRuleChange>>, _>>()
+        .map(|v| v.into_iter().flatten().collect())
 }
 
-fn expand_references_rec(
-    parsed: ParsedSoundChange,
+fn compile_change(
+    change_str: &str,
     preamble: &HashMap<String, PreambleItem>,
-    original: &str,
-    visited: &mut std::collections::HashSet<String>,
 ) -> Result<Vec<CompiledRuleChange>, SoundChangeParseError> {
-    match parsed {
-        ParsedSoundChange::Reference(name) => expand_preamble_reference(name, preamble, visited),
-        ParsedSoundChange::Rule {
-            match_part,
-            operator,
-            transform_part,
-            condition,
-        } => {
-            let m = resolve_match_part(match_part, preamble)?;
-            let t = resolve_transform_part(transform_part, preamble)?;
-            let c = resolve_condition_expr(condition, preamble)?;
-
-            Ok(vec![CompiledRuleChange {
-                original_string: original.to_string(),
-                match_part: m,
-                operator,
-                transform_part: t,
-                condition: c,
-            }])
-        }
-    }
+    let parsed = parse_rule_string(change_str)?;
+    let expanded = resolver::expand_references(parsed, preamble, change_str)?;
+    validate_compiled_changes(&expanded)?;
+    Ok(expanded)
 }
 
-fn expand_references(
-    parsed: ParsedSoundChange,
-    preamble: &HashMap<String, PreambleItem>,
-    original: &str,
-) -> Result<Vec<CompiledRuleChange>, SoundChangeParseError> {
-    let mut visited = std::collections::HashSet::new();
-    expand_references_rec(parsed, preamble, original, &mut visited)
-}
-
-fn resolve_match_reference(
-    name: &str,
-    preamble: &HashMap<String, PreambleItem>,
-) -> Result<MatchPattern, SoundChangeParseError> {
-    let item = preamble.get(name).ok_or_else(|| {
-        SoundChangeParseError::ReferenceError(format!("Preamble item '{name}' not found"))
-    })?;
-    if item.r#type != PreambleType::Match {
-        return Err(SoundChangeParseError::ReferenceError(format!(
-            "Preamble item '{name}' is not of type 'match'"
-        )));
-    }
-    let val = item.value.as_ref().ok_or_else(|| {
-        SoundChangeParseError::ReferenceError(format!("Preamble match item '{name}' has no value"))
-    })?;
-    let parsed = parse_rule_string(&format!("{val} => ∅"))?;
-    if let ParsedSoundChange::Rule {
-        match_part: Some(ParsedMatchPart::Pattern(p)),
-        ..
-    } = parsed
-    {
-        Ok(p)
-    } else {
-        Err(SoundChangeParseError::ReferenceError(format!(
-            "Failed to parse preamble match pattern for '{name}'"
-        )))
-    }
-}
-
-fn resolve_match_part(
-    part_opt: Option<ParsedMatchPart>,
-    preamble: &HashMap<String, PreambleItem>,
-) -> Result<MatchPattern, SoundChangeParseError> {
-    let Some(part) = part_opt else {
-        return Ok(MatchPattern {
-            elements: Vec::new(),
-        });
-    };
-    match part {
-        ParsedMatchPart::Pattern(p) => Ok(p),
-        ParsedMatchPart::Reference(name) => resolve_match_reference(&name, preamble),
-    }
-}
-
-fn resolve_transform_reference(
-    name: &str,
-    preamble: &HashMap<String, PreambleItem>,
-) -> Result<TransformPattern, SoundChangeParseError> {
-    let item = preamble.get(name).ok_or_else(|| {
-        SoundChangeParseError::ReferenceError(format!("Preamble item '{name}' not found"))
-    })?;
-    if item.r#type != PreambleType::Transform {
-        return Err(SoundChangeParseError::ReferenceError(format!(
-            "Preamble item '{name}' is not of type 'transform'"
-        )));
-    }
-    let val = item.value.as_ref().ok_or_else(|| {
-        SoundChangeParseError::ReferenceError(format!(
-            "Preamble transform item '{name}' has no value"
-        ))
-    })?;
-    let parsed = parse_rule_string(&format!("∅ => {val}"))?;
-    if let ParsedSoundChange::Rule {
-        transform_part: Some(ParsedTransformPart::Pattern(p)),
-        ..
-    } = parsed
-    {
-        Ok(p)
-    } else {
-        Err(SoundChangeParseError::ReferenceError(format!(
-            "Failed to parse preamble transform pattern for '{name}'"
-        )))
-    }
-}
-
-fn resolve_transform_part(
-    part_opt: Option<ParsedTransformPart>,
-    preamble: &HashMap<String, PreambleItem>,
-) -> Result<TransformPattern, SoundChangeParseError> {
-    let Some(part) = part_opt else {
-        return Ok(TransformPattern {
-            elements: vec![TransformElement::Empty],
-        });
-    };
-    match part {
-        ParsedTransformPart::Pattern(p) => Ok(p),
-        ParsedTransformPart::Empty => Ok(TransformPattern {
-            elements: vec![TransformElement::Empty],
-        }),
-        ParsedTransformPart::Reference(name) => resolve_transform_reference(&name, preamble),
-    }
-}
-
-fn resolve_condition_reference(
-    name: &str,
-    preamble: &HashMap<String, PreambleItem>,
-) -> Result<Option<CompiledConditionExpr>, SoundChangeParseError> {
-    let item = preamble.get(name).ok_or_else(|| {
-        SoundChangeParseError::ReferenceError(format!("Preamble item '{name}' not found"))
-    })?;
-    if item.r#type != PreambleType::Condition {
-        return Err(SoundChangeParseError::ReferenceError(format!(
-            "Preamble item '{name}' is not of type 'condition'"
-        )));
-    }
-    let val = item.value.as_ref().ok_or_else(|| {
-        SoundChangeParseError::ReferenceError(format!(
-            "Preamble condition item '{name}' has no value"
-        ))
-    })?;
-    let parsed = parse_rule_string(&format!("∅ => ∅ / {val}"))?;
-    if let ParsedSoundChange::Rule {
-        condition: Some(c), ..
-    } = parsed
-    {
-        resolve_condition_expr(Some(c), preamble)
-    } else {
-        Err(SoundChangeParseError::ReferenceError(format!(
-            "Failed to parse preamble condition pattern for '{name}'"
-        )))
-    }
-}
-
-fn resolve_condition_expr(
-    cond_opt: Option<ConditionExpr>,
-    preamble: &HashMap<String, PreambleItem>,
-) -> Result<Option<CompiledConditionExpr>, SoundChangeParseError> {
-    let Some(cond) = cond_opt else {
-        return Ok(None);
-    };
-    match cond {
-        ConditionExpr::Reference(name) => resolve_condition_reference(&name, preamble),
-        ConditionExpr::Term { negated, pattern } => {
-            Ok(Some(CompiledConditionExpr::Term { negated, pattern }))
-        }
-        ConditionExpr::Binary { left, op, right } => {
-            let l = resolve_condition_expr(Some(*left), preamble)?.ok_or_else(|| {
-                SoundChangeParseError::ReferenceError(
-                    "Empty left condition binary branch".to_string(),
-                )
-            })?;
-            let r = resolve_condition_expr(Some(*right), preamble)?.ok_or_else(|| {
-                SoundChangeParseError::ReferenceError(
-                    "Empty right condition binary branch".to_string(),
-                )
-            })?;
-            Ok(Some(CompiledConditionExpr::Binary {
-                left: Box::new(l),
-                op,
-                right: Box::new(r),
-            }))
-        }
-    }
+fn validate_compiled_changes(
+    changes: &[CompiledRuleChange],
+) -> Result<(), SoundChangeParseError> {
+    changes
+        .iter()
+        .try_for_each(validation::validate_compiled_rule)
 }

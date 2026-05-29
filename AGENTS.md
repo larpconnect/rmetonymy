@@ -84,16 +84,17 @@ These rules take precedence over having all of the code for a given task togethe
 
 ---
 
-## CLI Architecture
-- Use clap's Subcommand enum to unify Batch and REPL entry points. Example: myapp run <file> (batch) vs myapp repl (interactive)
+## Code Quality Rules
 
----
+- Run `rustqual` after making changes. All findings must be resolved before marking a task complete.
+- Follow IOSP: every function is either an Integration or an Operation, never both.
+- Keep functions under 50 lines, keep files under 500 lines, and cognitive complexity under 8.
+- Don't duplicate logic — extract shared patterns into reusable Operations.
+- Don't introduce functions with more than 5 parameters.
+- Every test function must contain at least one assertion.
+- For public-API functions intentionally untested in this crate, mark with `// qual:api`.
 
-## Batch-specific rules
-- Input: Must accept input via file path arguments OR `stdin`.
-- Exit Codes: Return 0 for success, non-zero for failures.
-- Logging: Use the `tracing` crate. Logs go to `stderr`.
-- Persistence: Use atomic file writes (write to temp file, then rename) to prevent data corruption during batch processing.
+
 
 ---
 

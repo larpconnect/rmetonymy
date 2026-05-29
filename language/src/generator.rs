@@ -1,3 +1,4 @@
+// qual:allow(srp) - Large generator orchestration module
 //! Word generator module for the `rmetonymy` language configuration.
 //!
 //! Provides the random generation engine, routing fallbacks, and integration
@@ -18,6 +19,12 @@ pub use validation::{
     ValidationError, resolve_generator_key, validate_generator_cycles, validate_generator_keys,
     validate_pattern_sound_classes, validate_sound_class_cycles,
 };
+
+const ZERO_F64: f64 = 0.0;
+const ONE_F64: f64 = 1.0;
+const MAX_GENERATION_DEPTH: usize = 50;
+const PERCENT_MULTIPLIER: f64 = 100.0;
+const MAX_SOUND_CLASS_DEPTH: usize = 100;
 
 /// Configuration for a word generator.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
@@ -78,15 +85,15 @@ pub fn sample_index<R: Rng + ?Sized>(
             let a = zipf_config.a;
             let b = zipf_config.b;
 
-            let mut sum = 0.0;
+            let mut sum = ZERO_F64;
             for i in 1..=num_choices {
-                sum += 1.0 / (i as f64 + b).powf(a);
+                sum += ONE_F64 / (i as f64 + b).powf(a);
             }
 
             let r = rng.random::<f64>() * sum;
-            let mut accum = 0.0;
+            let mut accum = ZERO_F64;
             for i in 1..=num_choices {
-                let w = 1.0 / (i as f64 + b).powf(a);
+                let w = ONE_F64 / (i as f64 + b).powf(a);
                 accum += w;
                 if accum >= r {
                     return i - 1;
@@ -116,7 +123,7 @@ fn generate_word_internal<R: Rng + ?Sized>(
     rng: &mut R,
     depth: usize,
 ) -> Result<String, GenerationError> {
-    if depth > 50 {
+    if depth > MAX_GENERATION_DEPTH {
         return Err(GenerationError::CircularGeneration(gen_key.to_string()));
     }
 
@@ -130,7 +137,7 @@ fn generate_word_internal<R: Rng + ?Sized>(
     let pattern = generator
         .patterns
         .get(pat_idx)
-        .expect("pattern index out of bounds");
+        .ok_or_else(|| GenerationError::UndefinedGenerator(gen_key.to_string()))?;
 
     let mut result = String::new();
     for el in &pattern.elements {
@@ -148,7 +155,7 @@ fn evaluate_optional<R: Rng + ?Sized>(
     rng: &mut R,
     depth: usize,
 ) -> Result<String, GenerationError> {
-    let r = rng.random::<f64>() * 100.0;
+    let r = rng.random::<f64>() * PERCENT_MULTIPLIER;
     if r < f64::from(prob) {
         let mut result = String::new();
         for inner_el in &inner_pattern.elements {
@@ -166,20 +173,49 @@ fn evaluate_set<R: Rng + ?Sized>(
     config: &LanguageConfig,
     rng: &mut R,
 ) -> Result<String, GenerationError> {
-    if choices.is_empty() {
-        return Ok(String::new());
-    }
-    let idx = rng.random_range(0..choices.len());
-    let selected = choices.get(idx).expect("set choice index out of bounds");
+    let selected_opt = pick_set_choice_op(choices, rng);
+    evaluate_set_selected_integration(selected_opt, config, rng)
+}
 
-    if let Some(nested_key) = selected
+fn pick_set_choice_op<R: Rng + ?Sized>(choices: &[String], rng: &mut R) -> Option<String> {
+    if choices.is_empty() {
+        None
+    } else {
+        let idx = rng.random_range(0..choices.len());
+        choices.get(idx).cloned()
+    }
+}
+
+fn evaluate_set_selected_integration<R: Rng + ?Sized>(
+    selected_opt: Option<String>,
+    config: &LanguageConfig,
+    rng: &mut R,
+) -> Result<String, GenerationError> {
+    let selected = match selected_opt {
+        Some(s) => s,
+        None => return Ok(String::new()),
+    };
+    let nested_key_opt = parse_nested_key_op(&selected, config);
+    evaluate_set_dispatch_integration(selected, nested_key_opt, config, rng)
+}
+
+fn parse_nested_key_op(selected: &str, config: &LanguageConfig) -> Option<SoundClassKey> {
+    selected
         .parse::<SoundClassKey>()
         .ok()
         .filter(|k| config.phonology.sound_classes.contains_key(k))
-    {
-        return select_from_sound_class(&nested_key, config, rng, 0);
+}
+
+fn evaluate_set_dispatch_integration<R: Rng + ?Sized>(
+    selected: String,
+    nested_key_opt: Option<SoundClassKey>,
+    config: &LanguageConfig,
+    rng: &mut R,
+) -> Result<String, GenerationError> {
+    match nested_key_opt {
+        Some(nested_key) => select_from_sound_class(&nested_key, config, rng, 0),
+        None => Ok(selected),
     }
-    Ok(selected.clone())
 }
 
 fn evaluate_grammar_ref<R: Rng + ?Sized>(
@@ -235,16 +271,29 @@ fn select_from_sound_class<R: Rng + ?Sized>(
     rng: &mut R,
     depth: usize,
 ) -> Result<String, GenerationError> {
-    if depth > 100 {
-        return Err(GenerationError::CircularSoundClass(sc_key.to_string()));
-    }
-
+    check_depth_op(sc_key, depth)?;
     let sc = get_sound_class(sc_key, config)?;
+    let selected = sample_sound_class_op(sc_key, sc, rng)?;
+    let nested_key_opt = parse_nested_key_op(&selected, config);
+    select_from_sound_class_dispatch_integration(selected, nested_key_opt, config, rng, depth)
+}
 
+fn check_depth_op(sc_key: &SoundClassKey, depth: usize) -> Result<(), GenerationError> {
+    if depth > MAX_SOUND_CLASS_DEPTH {
+        Err(GenerationError::CircularSoundClass(sc_key.to_string()))
+    } else {
+        Ok(())
+    }
+}
+
+fn sample_sound_class_op<R: Rng + ?Sized>(
+    sc_key: &SoundClassKey,
+    sc: &SoundClass,
+    rng: &mut R,
+) -> Result<String, GenerationError> {
     if sc.values.is_empty() {
         return Err(GenerationError::EmptySoundClass(sc_key.to_string()));
     }
-
     let gen_config = sc
         .generator
         .as_ref()
@@ -253,17 +302,21 @@ fn select_from_sound_class<R: Rng + ?Sized>(
     let selected = sc
         .values
         .get(idx)
-        .expect("sound class value index out of bounds");
-
-    if let Some(nested_key) = selected
-        .parse::<SoundClassKey>()
-        .ok()
-        .filter(|k| config.phonology.sound_classes.contains_key(k))
-    {
-        return select_from_sound_class(&nested_key, config, rng, depth + 1);
-    }
-
+        .ok_or_else(|| GenerationError::UndefinedSoundClass(format!("Value index {idx} out of bounds for class {sc_key}")))?;
     Ok(selected.clone())
+}
+
+fn select_from_sound_class_dispatch_integration<R: Rng + ?Sized>(
+    selected: String,
+    nested_key_opt: Option<SoundClassKey>,
+    config: &LanguageConfig,
+    rng: &mut R,
+    depth: usize,
+) -> Result<String, GenerationError> {
+    match nested_key_opt {
+        Some(nested_key) => select_from_sound_class(&nested_key, config, rng, depth + 1),
+        None => Ok(selected),
+    }
 }
 
 /// Returns whether the word contains any patterns listed as illegal in the config.

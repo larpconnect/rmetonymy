@@ -5,6 +5,8 @@ use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 use thiserror::Error;
 
+const DEFAULT_ZIPF_PARAM: f64 = 1.0;
+
 /// Stress variants for a syllable.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum SyllableStress {
@@ -223,7 +225,10 @@ impl IpaWord {
         let initial_word = crate::syllabifier::syllabify_sequence(seq, config)?;
         let prosody = config.phonology.prosody.as_ref().unwrap_or(
             &crate::prosody::ProsodicConfig::NoFixedStress {
-                config: crate::config::ZipfConfig { a: 1.0, b: 1.0 },
+                config: crate::config::ZipfConfig {
+                    a: DEFAULT_ZIPF_PARAM,
+                    b: DEFAULT_ZIPF_PARAM,
+                },
             },
         );
         let updated_word = prosody.apply_prosody(&initial_word, config);

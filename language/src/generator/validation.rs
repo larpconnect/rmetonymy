@@ -1,10 +1,17 @@
 //! Validation system for the word generator configurations.
 
-use crate::config::SoundClass;
+pub mod cycles;
+pub use cycles::{validate_sound_class_cycles, validate_generator_cycles};
+
+
 use crate::generator::{WordGenerator, WordPattern, WordPatternElement};
 use crate::sound_class::SoundClassKey;
 use std::collections::{BTreeMap, HashSet};
 use thiserror::Error;
+
+const MAX_SECONDARY_TYPE_LEN: usize = 32;
+const MIN_DERIVATION_NAME_LEN: usize = 3;
+const MAX_DERIVATION_NAME_LEN: usize = 31;
 
 /// Validation errors that may occur when loading configuration.
 #[derive(Debug, Error, PartialEq, Clone)]
@@ -102,7 +109,7 @@ fn validate_key_format(key: &str) -> Result<(), ValidationError> {
     }
 
     if let Some(sec) = secondary {
-        if sec.is_empty() || sec.len() > 32 {
+        if sec.is_empty() || sec.len() > MAX_SECONDARY_TYPE_LEN {
             return Err(ValidationError::InvalidSecondaryType(sec.to_string()));
         }
         if !sec
@@ -205,129 +212,11 @@ pub fn validate_pattern_sound_classes<S: std::hash::BuildHasher>(
     Ok(())
 }
 
-/// Validates that there are no circular containment relationships in sound classes.
-///
-/// # Errors
-/// Returns `Err` if any containment cycle is detected.
-pub fn validate_sound_class_cycles(
-    sound_classes: &BTreeMap<SoundClassKey, SoundClass>,
-) -> Result<(), ValidationError> {
-    let mut graph = BTreeMap::new();
-    for (key, sc) in sound_classes {
-        let mut deps = Vec::new();
-        for val in &sc.values {
-            if let Some(nested_key) = val
-                .parse::<SoundClassKey>()
-                .ok()
-                .filter(|k| sound_classes.contains_key(k))
-            {
-                deps.push(nested_key);
-            }
-        }
-        graph.insert(key.clone(), deps);
-    }
-
-    let mut visiting = HashSet::new();
-    let mut visited = HashSet::new();
-
-    for key in graph.keys() {
-        if !visited.contains(key) {
-            check_sound_class_cycle(key, &graph, &mut visiting, &mut visited)?;
-        }
-    }
-
-    Ok(())
-}
-
-fn check_sound_class_cycle(
-    node: &SoundClassKey,
-    graph: &BTreeMap<SoundClassKey, Vec<SoundClassKey>>,
-    visiting: &mut HashSet<SoundClassKey>,
-    visited: &mut HashSet<SoundClassKey>,
-) -> Result<(), ValidationError> {
-    visiting.insert(node.clone());
-
-    if let Some(deps) = graph.get(node) {
-        for dep in deps {
-            if visiting.contains(dep) {
-                return Err(ValidationError::CircularSoundClassContainment(
-                    node.to_string(),
-                ));
-            }
-            if !visited.contains(dep) {
-                check_sound_class_cycle(dep, graph, visiting, visited)?;
-            }
-        }
-    }
-
-    visiting.remove(node);
-    visited.insert(node.clone());
-    Ok(())
-}
-
-/// Validates that there are no circular generation dependencies.
-///
-/// # Errors
-/// Returns `Err` if any pattern reference cycle is detected.
-pub fn validate_generator_cycles(
-    generators: &BTreeMap<String, WordGenerator>,
-) -> Result<(), ValidationError> {
-    let mut graph = BTreeMap::new();
-    for (key, generator) in generators {
-        let mut deps = HashSet::new();
-        for pattern in &generator.patterns {
-            let mut sound_classes = Vec::new();
-            let mut grammar_refs = Vec::new();
-            collect_pattern_references(pattern, &mut sound_classes, &mut grammar_refs);
-
-            for r in grammar_refs {
-                let resolved = resolve_generator_key(&r, generators)?;
-                deps.insert(resolved);
-            }
-        }
-        graph.insert(key.clone(), deps);
-    }
-
-    let mut visiting = HashSet::new();
-    let mut visited = HashSet::new();
-
-    for key in graph.keys() {
-        if !visited.contains(key) {
-            check_generator_cycle(key, &graph, &mut visiting, &mut visited)?;
-        }
-    }
-
-    Ok(())
-}
-
-fn check_generator_cycle(
-    node: &str,
-    graph: &BTreeMap<String, HashSet<String>>,
-    visiting: &mut HashSet<String>,
-    visited: &mut HashSet<String>,
-) -> Result<(), ValidationError> {
-    visiting.insert(node.to_string());
-
-    if let Some(deps) = graph.get(node) {
-        for dep in deps {
-            if visiting.contains(dep) {
-                return Err(ValidationError::CircularPatternReferences(node.to_string()));
-            }
-            if !visited.contains(dep) {
-                check_generator_cycle(dep, graph, visiting, visited)?;
-            }
-        }
-    }
-
-    visiting.remove(node);
-    visited.insert(node.to_string());
-    Ok(())
-}
 
 /// Helper to validate if derivation name fits the required character set and length constraints.
 #[must_use]
 pub fn is_valid_derivation_name(name: &str) -> bool {
-    if name.len() < 3 || name.len() > 31 {
+    if name.len() < MIN_DERIVATION_NAME_LEN || name.len() > MAX_DERIVATION_NAME_LEN {
         return false;
     }
     name.chars()
