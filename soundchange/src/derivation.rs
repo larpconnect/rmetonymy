@@ -6,7 +6,9 @@ use language::syllable::IpaWord;
 use std::collections::BTreeSet;
 use std::str::FromStr;
 
-fn extract_phonemes_and_boundaries(seq: &PhonemeSequence) -> (Vec<ipa::sequence::Phoneme>, BTreeSet<usize>) {
+fn extract_phonemes_and_boundaries(
+    seq: &PhonemeSequence,
+) -> (Vec<ipa::sequence::Phoneme>, BTreeSet<usize>) {
     let mut phonemes = Vec::new();
     let mut syllable_boundaries = BTreeSet::new();
     for el in &seq.elements {
@@ -185,10 +187,11 @@ fn apply_intermediate_sound_changes(
     let sorted_eras = filter_intermediate_eras(&compiled_eras, start_era, end_era);
     eval_intermediate_rules(&mut working, &sorted_eras, &ctx)?;
 
-    let flat_elements: Vec<SequenceElement> = std::mem::take(&mut working.to_flat_sequence().elements)
-        .into_iter()
-        .filter(|el| !matches!(el, SequenceElement::SyllableBreak))
-        .collect();
+    let flat_elements: Vec<SequenceElement> =
+        std::mem::take(&mut working.to_flat_sequence().elements)
+            .into_iter()
+            .filter(|el| !matches!(el, SequenceElement::SyllableBreak))
+            .collect();
 
     rebuild_intermediate_seq_and_tags(seq, tags, working.tags, flat_elements, config)
 }
@@ -346,13 +349,8 @@ fn apply_sound_change_transform(
     deriv_idx: usize,
     config: &LanguageConfig,
 ) -> Result<(), String> {
-    let compiled_rule =
-        compile_single_rule_from_str(transform, config.sound_changes.as_ref())
-            .map_err(|e| {
-                format!(
-                    "Failed to compile derivation sound change '{transform}': {e}"
-                )
-            })?;
+    let compiled_rule = compile_single_rule_from_str(transform, config.sound_changes.as_ref())
+        .map_err(|e| format!("Failed to compile derivation sound change '{transform}': {e}"))?;
 
     let mut working = sequence_to_working_word(seq, tags.clone());
     let ctx = EvalContext {
@@ -361,11 +359,8 @@ fn apply_sound_change_transform(
         active_tag: Some(deriv_idx),
     };
 
-    apply_rule(&mut working, &compiled_rule, &ctx).map_err(|e| {
-        format!(
-            "Failed to apply derivation sound change '{transform}': {e}"
-        )
-    })?;
+    apply_rule(&mut working, &compiled_rule, &ctx)
+        .map_err(|e| format!("Failed to apply derivation sound change '{transform}': {e}"))?;
 
     *seq = working.to_flat_sequence();
     *tags = working.tags;

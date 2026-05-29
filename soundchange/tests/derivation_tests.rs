@@ -75,8 +75,7 @@ fn test_apply_derivations_prefix_suffix() {
     let config = create_test_config(derivations);
     let word = IpaWord::try_from_sequence(&"pataka".parse().unwrap(), &config).unwrap();
 
-    let res =
-        apply_derivations(&word, "noun", &vec!["PLURAL".to_string()], &config, 0).unwrap();
+    let res = apply_derivations(&word, "noun", &vec!["PLURAL".to_string()], &config, 0).unwrap();
 
     assert_eq!(res.word.to_string(), "a.pa.ta.ka.i");
     assert_eq!(res.final_type, "noun.plural");
@@ -104,8 +103,7 @@ fn test_apply_derivations_sound_change() {
     let config = create_test_config(derivations);
     let word = IpaWord::try_from_sequence(&"pataka".parse().unwrap(), &config).unwrap();
 
-    let res =
-        apply_derivations(&word, "verb", &vec!["MUTATION".to_string()], &config, 0).unwrap();
+    let res = apply_derivations(&word, "verb", &vec!["MUTATION".to_string()], &config, 0).unwrap();
 
     // "p" at index 0 changes to "t"
     assert_eq!(res.word.to_string(), "ta.ta.ka");
@@ -130,7 +128,8 @@ fn test_apply_derivations_type_constraints() {
     let word = IpaWord::try_from_sequence(&"pataka".parse().unwrap(), &config).unwrap();
 
     // noun is not matching verb, so should fail
-    let err = apply_derivations(&word, "noun", &vec!["GERUND".to_string()], &config, 0).unwrap_err();
+    let err =
+        apply_derivations(&word, "noun", &vec!["GERUND".to_string()], &config, 0).unwrap_err();
     assert!(err.contains("does not match expected"));
 }
 
@@ -164,17 +163,35 @@ fn test_apply_derivations_era_tracking_and_validation() {
     let word = IpaWord::try_from_sequence(&"pataka".parse().unwrap(), &config).unwrap();
 
     // Valid: Word era 0 <= EARLY era 1 <= LATE era 3
-    let res =
-        apply_derivations(&word, "noun", &vec!["EARLY".to_string(), "LATE".to_string()], &config, 0).unwrap();
+    let res = apply_derivations(
+        &word,
+        "noun",
+        &vec!["EARLY".to_string(), "LATE".to_string()],
+        &config,
+        0,
+    )
+    .unwrap();
     assert_eq!(res.word.to_string(), "a.pa.ta.ka.i");
     assert_eq!(res.final_era, 3);
 
     // Invalid: Word era 2 > EARLY era 1
-    let err1 = apply_derivations(&word, "noun", &vec!["EARLY".to_string()], &config, 2).unwrap_err();
+    let err1 =
+        apply_derivations(&word, "noun", &vec!["EARLY".to_string()], &config, 2).unwrap_err();
     assert!(err1.contains("word era 2 is after derivation era 1"));
 
     // Invalid: EARLY era 1 -> LATE era 3 -> OUT_OF_ORDER era 2 (3 > 2)
-    let err2 = apply_derivations(&word, "noun", &vec!["EARLY".to_string(), "LATE".to_string(), "OUT_OF_ORDER".to_string()], &config, 0).unwrap_err();
+    let err2 = apply_derivations(
+        &word,
+        "noun",
+        &vec![
+            "EARLY".to_string(),
+            "LATE".to_string(),
+            "OUT_OF_ORDER".to_string(),
+        ],
+        &config,
+        0,
+    )
+    .unwrap_err();
     assert!(err2.contains("word era 3 is after derivation era 2"));
 }
 
@@ -215,8 +232,5 @@ fn test_apply_derivations_intermediate_sound_changes() {
     // The derived suffix 'i' should be tagged Some(1), but the sound-changed 't' should be None
     // since sound changes do not set derivation tags.
     // phonemes: t a t a k a i
-    assert_eq!(
-        res.tags,
-        vec![None, None, None, None, None, None, Some(1)]
-    );
+    assert_eq!(res.tags, vec![None, None, None, None, None, None, Some(1)]);
 }

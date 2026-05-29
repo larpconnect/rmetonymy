@@ -384,4 +384,3 @@ fn test_validate_derivations_subtype_base_conflict() {
         ValidationError::DuplicateDerivationName("PLURAL".to_string())
     );
 }
-
