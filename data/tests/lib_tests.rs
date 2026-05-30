@@ -19,8 +19,7 @@ fn test_spe_feature_deserialize_invalid() {
         result.is_err(),
         "Deserializing a plain string as SpeFeature should fail (missing +/- prefix)"
     );
-    // Reference SUT directly to establish test quality dependency
-    let _sut_ref = SpeFeature::Plus(Feature::Nasal);
+    assert_eq!(SpeFeature::Plus(Feature::Nasal).to_string(), "+nasal");
 }
 
 #[test]

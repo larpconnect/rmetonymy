@@ -10,29 +10,29 @@ pub(crate) fn evaluate_place_manner_descriptor(
     p: &Phoneme,
     state: &mut MatchState,
 ) -> bool {
-    let phoneme_strings = if let Some(data) = ipa::get_phoneme_data(&p.base) {
-        if fd.feature == Feature::Place {
-            data.place.clone()
-        } else {
-            data.manner.clone()
-        }
-    } else {
-        Vec::new()
+    let Some(ref alpha) = fd.alpha else {
+        return false;
     };
 
-    if let Some(ref alpha) = fd.alpha {
-        match state.alpha.get(&alpha.name) {
-            Some(CapturedAlpha::Strings(s)) => phoneme_strings == *s,
-            None => {
-                state
-                    .alpha
-                    .insert(alpha.name.clone(), CapturedAlpha::Strings(phoneme_strings));
-                true
-            }
-            _ => false,
+    let phoneme_strings = if let Some(data) = ipa::get_phoneme_data(&p.base) {
+        if fd.feature == Feature::Place {
+            &data.place
+        } else {
+            &data.manner
         }
     } else {
-        false
+        &[] as &[String]
+    };
+
+    match state.alpha.get(&alpha.name) {
+        Some(CapturedAlpha::Strings(s)) => phoneme_strings == s.as_slice(),
+        None => {
+            state
+                .alpha
+                .insert(alpha.name.clone(), CapturedAlpha::Strings(phoneme_strings.to_vec()));
+            true
+        }
+        _ => false,
     }
 }
 

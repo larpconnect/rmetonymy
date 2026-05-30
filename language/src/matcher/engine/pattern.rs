@@ -93,7 +93,9 @@ impl SoundMatcherPattern {
         if pattern.is_empty() {
             None
         } else {
-            Some((&pattern[0], &pattern[1..]))
+            let first = pattern.first()?;
+            let rest = pattern.get(1..).unwrap_or(&[]);
+            Some((first, rest))
         }
     }
 
@@ -140,14 +142,14 @@ impl SoundMatcherPattern {
             tokens,
             classes,
         };
-        self.dispatch_match_lengths_integration(&ctx, el.quantifier.clone(), bindings, &mut match_lengths);
+        self.dispatch_match_lengths_integration(&ctx, &el.quantifier, bindings, &mut match_lengths);
         match_lengths
     }
 
     fn dispatch_match_lengths_integration(
         &self,
         ctx: &RepeatContext<'_>,
-        quantifier: Quantifier,
+        quantifier: &Quantifier,
         bindings: &BTreeMap<u8, Vec<Token>>,
         results: &mut Vec<(usize, BTreeMap<u8, Vec<Token>>)>,
     ) {
@@ -207,20 +209,18 @@ impl SoundMatcherPattern {
             results.push((current_len, bindings.clone()));
         }
 
-        if max > 0 {
-            if let Some(tokens_slice) = tokens.get(current_len..) {
-                if let Some((len, next_bindings)) = match_base_fn(tokens_slice, bindings) {
-                    if len > 0 {
-                        let next_min = min.saturating_sub(1);
-                        recurse_fn(
-                            (next_min, max - 1),
-                            current_len + len,
-                            &next_bindings,
-                            results,
-                        );
-                    }
-                }
-            }
+        if max > 0
+            && let Some(tokens_slice) = tokens.get(current_len..)
+            && let Some((len, next_bindings)) = match_base_fn(tokens_slice, bindings)
+            && len > 0
+        {
+            let next_min = min.saturating_sub(1);
+            recurse_fn(
+                (next_min, max - 1),
+                current_len + len,
+                &next_bindings,
+                results,
+            );
         }
     }
 
@@ -311,7 +311,9 @@ impl SoundMatcherPattern {
     }
 
     fn split_pattern_el_op(pattern: &[PatternElement]) -> (&PatternElement, &[PatternElement]) {
-        (&pattern[0], &pattern[1..])
+        let first = pattern.first().expect("pattern is not empty");
+        let rest = pattern.get(1..).unwrap_or(&[]);
+        (first, rest)
     }
 
     fn recurse_group_op<F>(

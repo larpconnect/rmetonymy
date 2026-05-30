@@ -1,3 +1,9 @@
+#![expect(
+    clippy::unwrap_used,
+    clippy::too_many_lines,
+    clippy::useless_vec,
+    reason = "allowances for test code patterns"
+)]
 // qual:allow(srp) - Test module with multiple test cases
 use language::config::{
     Derivation, LanguageConfig, MetadataConfig, NameConfig, PhonologyConfig, PhonotacticsConfig,
@@ -9,59 +15,59 @@ use std::collections::BTreeMap;
 use time::OffsetDateTime;
 use uuid::Uuid;
 
-#[allow(dead_code)]
-fn create_test_config(derivations: Vec<Derivation>) -> LanguageConfig {
-    let mut sound_classes = BTreeMap::new();
-    let defaults = ["C", "D", "L", "V"];
-    for default_key in defaults {
-        let key = default_key.parse().unwrap();
+macro_rules! create_test_config {
+    ($derivations:expr) => {{
+        let mut sound_classes = BTreeMap::new();
+        let defaults = ["C", "D", "L", "V"];
+        for default_key in defaults {
+            let key = default_key.parse().unwrap();
+            sound_classes.insert(
+                key,
+                SoundClass {
+                    values: Vec::new(),
+                    generator: None,
+                },
+            );
+        }
+
+        let key_c = "C".parse().unwrap();
+        let key_v = "V".parse().unwrap();
         sound_classes.insert(
-            key,
+            key_c,
             SoundClass {
-                values: Vec::new(),
+                values: vec!["p".to_string(), "t".to_string(), "k".to_string()],
                 generator: None,
             },
         );
-    }
+        sound_classes.insert(
+            key_v,
+            SoundClass {
+                values: vec!["a".to_string(), "i".to_string(), "u".to_string()],
+                generator: None,
+            },
+        );
 
-    // Insert actual phonemes for C and V so syllabifier works
-    let key_c = "C".parse().unwrap();
-    let key_v = "V".parse().unwrap();
-    sound_classes.insert(
-        key_c,
-        SoundClass {
-            values: vec!["p".to_string(), "t".to_string(), "k".to_string()],
-            generator: None,
-        },
-    );
-    sound_classes.insert(
-        key_v,
-        SoundClass {
-            values: vec!["a".to_string(), "i".to_string(), "u".to_string()],
-            generator: None,
-        },
-    );
-
-    LanguageConfig {
-        id: Uuid::now_v7(),
-        name: NameConfig {
-            endonym: "test".parse().unwrap(),
-            exonym: None,
-        },
-        metadata: MetadataConfig {
-            created_at: OffsetDateTime::now_utc(),
-            updated_at: None,
-        },
-        phonology: PhonologyConfig {
-            sound_classes,
-            phonotactics: PhonotacticsConfig::default(),
-            illegal_patterns: Vec::new(),
-            prosody: Some(language::prosody::ProsodicConfig::Unstressed),
-        },
-        sound_changes: None,
-        orthography: None,
-        derivations: Some(derivations),
-    }
+        LanguageConfig {
+            id: Uuid::now_v7(),
+            name: NameConfig {
+                endonym: "test".parse().unwrap(),
+                exonym: None,
+            },
+            metadata: MetadataConfig {
+                created_at: OffsetDateTime::now_utc(),
+                updated_at: None,
+            },
+            phonology: PhonologyConfig {
+                sound_classes,
+                phonotactics: PhonotacticsConfig::default(),
+                illegal_patterns: Vec::new(),
+                prosody: Some(language::prosody::ProsodicConfig::Unstressed),
+            },
+            sound_changes: None,
+            orthography: None,
+            derivations: Some($derivations),
+        }
+    }};
 }
 
 #[test]
@@ -74,7 +80,7 @@ fn test_apply_derivations_prefix_suffix() {
         to_type: Some("noun.plural".to_string()),
     }];
 
-    let config = create_test_config(derivations);
+    let config = create_test_config!(derivations);
     let word = IpaWord::try_from_sequence(&"pataka".parse().unwrap(), &config).unwrap();
 
     let res = apply_derivations(&word, "noun", &vec!["PLURAL".to_string()], &config, 0).unwrap();
@@ -102,7 +108,7 @@ fn test_apply_derivations_sound_change() {
         to_type: None,
     }];
 
-    let config = create_test_config(derivations);
+    let config = create_test_config!(derivations);
     let word = IpaWord::try_from_sequence(&"pataka".parse().unwrap(), &config).unwrap();
 
     let res = apply_derivations(&word, "verb", &vec!["MUTATION".to_string()], &config, 0).unwrap();
@@ -126,7 +132,7 @@ fn test_apply_derivations_type_constraints() {
         to_type: Some("noun".to_string()),
     }];
 
-    let config = create_test_config(derivations);
+    let config = create_test_config!(derivations);
     let word = IpaWord::try_from_sequence(&"pataka".parse().unwrap(), &config).unwrap();
 
     // noun is not matching verb, so should fail
@@ -161,7 +167,7 @@ fn test_apply_derivations_era_tracking_and_validation() {
         },
     ];
 
-    let config = create_test_config(derivations);
+    let config = create_test_config!(derivations);
     let word = IpaWord::try_from_sequence(&"pataka".parse().unwrap(), &config).unwrap();
 
     // Valid: Word era 0 <= EARLY era 1 <= LATE era 3
@@ -209,7 +215,7 @@ fn test_apply_derivations_intermediate_sound_changes() {
         to_type: None,
     }];
 
-    let mut config = create_test_config(derivations);
+    let mut config = create_test_config!(derivations);
     config.sound_changes = Some(SoundChanges {
         preamble: Vec::new(),
         eras: vec![EraRules {

@@ -62,6 +62,7 @@ fn convert_sound_change(
     match_rule_type_integration(rule_type, pair)
 }
 
+#[derive(Copy, Clone)]
 enum RuleType {
     Reference,
     Standard,

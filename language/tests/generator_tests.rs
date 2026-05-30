@@ -60,22 +60,22 @@ fn test_rng_zipf_selection() {
 #[test]
 fn test_word_generation() {
     let sound_classes = BTreeMap::from([
-        ("C".parse().unwrap(), SoundClass { values: vec!["p".into(), "t".into(), "k".into()], generator: None }),
-        ("V".parse().unwrap(), SoundClass { values: vec!["a".into(), "e".into(), "i".into()], generator: None }),
+        ("C".parse().expect("valid sound class key C"), SoundClass { values: vec!["p".into(), "t".into(), "k".into()], generator: None }),
+        ("V".parse().expect("valid sound class key V"), SoundClass { values: vec!["a".into(), "e".into(), "i".into()], generator: None }),
     ]);
     let generators = BTreeMap::from([
         ("default".into(), language::generator::WordGenerator {
-            patterns: vec!["CVC".parse().unwrap()],
+            patterns: vec!["CVC".parse().expect("valid pattern CVC")],
             generator: GeneratorConfig::Equiprobable,
         }),
         ("noun".into(), language::generator::WordGenerator {
-            patterns: vec!["(C)V[default]".parse().unwrap()],
+            patterns: vec!["(C)V[default]".parse().expect("valid pattern (C)V[default]")],
             generator: GeneratorConfig::Equiprobable,
         }),
     ]);
     let config = LanguageConfig {
         id: Uuid::now_v7(),
-        name: NameConfig { endonym: "test".parse().unwrap(), exonym: None },
+        name: NameConfig { endonym: "test".parse().expect("valid endonym"), exonym: None },
         metadata: MetadataConfig { created_at: OffsetDateTime::now_utc(), updated_at: None },
         phonology: PhonologyConfig {
             sound_classes,

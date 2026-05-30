@@ -1,6 +1,6 @@
-pub mod validation;
-pub mod resolver;
-pub mod cond_resolver;
+pub(crate) mod validation;
+pub(crate) mod resolver;
+pub(crate) mod cond_resolver;
 
 use crate::ast::{
     PreambleItem, SoundChangeRule, SoundChanges,
@@ -52,21 +52,11 @@ pub fn compile_sound_changes(
     config: &SoundChanges,
 ) -> Result<Vec<(u32, Vec<CompiledSoundChangeRule>)>, SoundChangeParseError> {
     let preamble_map = build_preamble_map(config)?;
-    compile_eras_op(&config.eras, |rule| compile_rule(rule, &preamble_map))
-}
-
-fn compile_eras_op<F>(
-    eras: &[crate::ast::EraRules],
-    mut compile_rule_fn: F,
-) -> Result<Vec<(u32, Vec<CompiledSoundChangeRule>)>, SoundChangeParseError>
-where
-    F: FnMut(&SoundChangeRule) -> Result<CompiledSoundChangeRule, SoundChangeParseError>,
-{
     let mut compiled_eras = Vec::new();
-    for era_rules in eras {
+    for era_rules in &config.eras {
         let mut compiled_rules = Vec::new();
         for rule in &era_rules.rules {
-            compiled_rules.push(compile_rule_fn(rule)?);
+            compiled_rules.push(compile_rule(rule, &preamble_map)?);
         }
         compiled_eras.push((era_rules.era, compiled_rules));
     }
@@ -90,8 +80,7 @@ fn build_preamble_for_single_rule(
     sound_changes: Option<&SoundChanges>,
 ) -> Result<HashMap<String, PreambleItem>, SoundChangeParseError> {
     sound_changes
-        .map(build_preamble_map)
-        .unwrap_or_else(|| Ok(HashMap::new()))
+        .map_or_else(|| Ok(HashMap::new()), build_preamble_map)
 }
 
 fn make_single_rule_op(rule_str: &str) -> SoundChangeRule {

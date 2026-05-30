@@ -191,9 +191,8 @@ fn evaluate_set_selected_integration<R: Rng + ?Sized>(
     config: &LanguageConfig,
     rng: &mut R,
 ) -> Result<String, GenerationError> {
-    let selected = match selected_opt {
-        Some(s) => s,
-        None => return Ok(String::new()),
+    let Some(selected) = selected_opt else {
+        return Ok(String::new());
     };
     let nested_key_opt = parse_nested_key_op(&selected, config);
     evaluate_set_dispatch_integration(selected, nested_key_opt, config, rng)

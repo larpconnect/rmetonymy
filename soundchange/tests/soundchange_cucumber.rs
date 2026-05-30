@@ -350,6 +350,7 @@ fn then_it_should_fail_orthography_validation_with_message(
 }
 
 #[tokio::main]
+#[expect(clippy::let_underscore_must_use, reason = "dummy block to keep functions in scope")]
 async fn main() {
     if false {
         let mut world = SoundChangeWorld::default();

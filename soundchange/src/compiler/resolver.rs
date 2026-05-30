@@ -179,7 +179,7 @@ pub fn expand_single_preamble_change(
 }
 
 pub fn expand_preamble_item_changes(
-    item: PreambleItem,
+    item: &PreambleItem,
     preamble: &HashMap<String, PreambleItem>,
     visited: &mut std::collections::HashSet<String>,
 ) -> Result<Vec<CompiledRuleChange>, SoundChangeParseError> {
@@ -189,12 +189,12 @@ pub fn expand_preamble_item_changes(
 }
 
 pub fn expand_preamble_reference(
-    name: String,
+    name: &str,
     preamble: &HashMap<String, PreambleItem>,
     visited: &mut std::collections::HashSet<String>,
 ) -> Result<Vec<CompiledRuleChange>, SoundChangeParseError> {
-    let item = get_full_preamble_item_op(&name, preamble, visited)?;
-    expand_preamble_item_changes(item, preamble, visited)
+    let item = get_full_preamble_item_op(name, preamble, visited)?;
+    expand_preamble_item_changes(&item, preamble, visited)
 }
 
 pub fn make_compiled_rule_change_op(
@@ -246,7 +246,7 @@ pub fn expand_references_rec(
 ) -> Result<Vec<CompiledRuleChange>, SoundChangeParseError> {
     match_parsed_sound_change_op(
         parsed,
-        |name| expand_preamble_reference(name, preamble, visited),
+        |name| expand_preamble_reference(&name, preamble, visited),
         |match_part, operator, transform_part, condition| {
             let m = resolve_match_part(match_part, preamble)?;
             let t = resolve_transform_part(transform_part, preamble)?;

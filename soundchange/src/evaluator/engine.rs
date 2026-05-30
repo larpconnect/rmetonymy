@@ -163,7 +163,7 @@ pub(crate) fn match_pattern(
 }
 
 fn sort_element_lengths_op(
-    element_lengths: &mut Vec<(usize, MatchState, std::ops::Range<usize>)>,
+    element_lengths: &mut [(usize, MatchState, std::ops::Range<usize>)],
 ) {
     element_lengths.sort_by_key(|(len, _, _)| std::cmp::Reverse(*len));
 }

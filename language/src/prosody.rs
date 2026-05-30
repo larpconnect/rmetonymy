@@ -552,7 +552,7 @@ mod tests {
     #[test]
     fn test_default_no_fixed_stress_zipf() {
         let conf = default_no_fixed_stress_zipf();
-        assert_eq!(conf.a, 1.0);
-        assert_eq!(conf.b, 1.0);
+        assert!((conf.a - 1.0).abs() < f64::EPSILON);
+        assert!((conf.b - 1.0).abs() < f64::EPSILON);
     }
 }

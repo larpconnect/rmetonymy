@@ -395,22 +395,22 @@ mod tests {
     fn test_ensure_default_sound_classes() {
         let json_str = r#"{"A": {"values": ["a"]}}"#;
         let mut deserializer = serde_json::Deserializer::from_str(json_str);
-        let res = ensure_default_sound_classes(&mut deserializer).unwrap();
-        assert!(res.contains_key(&"C".parse().unwrap()));
-        assert!(res.contains_key(&"A".parse().unwrap()));
+        let res = ensure_default_sound_classes(&mut deserializer).expect("valid");
+        assert!(res.contains_key(&"C".parse().expect("valid")));
+        assert!(res.contains_key(&"A".parse().expect("valid")));
     }
 
     #[test]
     fn test_default_zipf_config() {
         let conf = default_zipf_config();
-        assert_eq!(conf.a, 1.0);
-        assert_eq!(conf.b, 2.7);
+        assert!((conf.a - 1.0).abs() < f64::EPSILON);
+        assert!((conf.b - 2.7).abs() < f64::EPSILON);
     }
 
     #[test]
     fn test_deserialize_f64_or_str() {
         let mut deserializer = serde_json::Deserializer::from_str("1.5");
-        let val = deserialize_f64_or_str(&mut deserializer).unwrap();
-        assert_eq!(val, 1.5);
+        let val = deserialize_f64_or_str(&mut deserializer).expect("valid");
+        assert!((val - 1.5).abs() < f64::EPSILON);
     }
 }

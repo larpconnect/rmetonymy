@@ -4,10 +4,13 @@ use pest::RuleType;
 use pest::iterators::{Pair, Pairs};
 
 /// Extracts the target pattern pair from a main pair.
-pub fn extract_pattern_pair_op<'a, Rule>(
-    mut pairs: Pairs<'a, Rule>,
+///
+/// # Errors
+/// Returns an error if the input is empty or does not contain the expected rule.
+pub fn extract_pattern_pair_op<Rule>(
+    mut pairs: Pairs<'_, Rule>,
     pattern_rule: Rule,
-) -> Result<Pair<'a, Rule>, String>
+) -> Result<Pair<'_, Rule>, String>
 where
     Rule: RuleType,
 {

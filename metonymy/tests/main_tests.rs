@@ -1,3 +1,7 @@
+#![expect(
+    clippy::panic_in_result_fn,
+    reason = "allowances for test code patterns"
+)]
 // qual:allow(srp) - Integration test module containing multiple distinct CLI test scenarios
 use anyhow::Context;
 use assert_cmd::Command;

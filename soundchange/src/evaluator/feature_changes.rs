@@ -12,14 +12,14 @@ pub(crate) fn apply_feature_changes(
 ) -> Result<Phoneme, String> {
     let mut map = get_phoneme_features_map(p);
     let mut target_place = if let Some(d) = ipa::get_phoneme_data(&p.base) {
-        d.place.clone()
+        d.place.as_slice()
     } else {
-        Vec::new()
+        &[]
     };
     let mut target_manner = if let Some(d) = ipa::get_phoneme_data(&p.base) {
-        d.manner.clone()
+        d.manner.as_slice()
     } else {
-        Vec::new()
+        &[]
     };
 
     for fd in changes {
@@ -33,9 +33,9 @@ pub(crate) fn apply_feature_changes(
                 .and_then(|alpha| state.alpha.get(&alpha.name))
             {
                 if fd.feature == Feature::Place {
-                    target_place.clone_from(s);
+                    target_place = s.as_slice();
                 } else {
-                    target_manner.clone_from(s);
+                    target_manner = s.as_slice();
                 }
             }
             continue;
@@ -57,7 +57,7 @@ pub(crate) fn apply_feature_changes(
         map.insert(fd.feature, sign);
     }
 
-    let best_base = super::helper::find_best_phoneme_base(&map, &target_place, &target_manner, ctx)?;
+    let best_base = super::helper::find_best_phoneme_base(&map, target_place, target_manner, ctx)?;
     Ok(Phoneme {
         base: best_base,
         modifiers: p.modifiers.clone(),

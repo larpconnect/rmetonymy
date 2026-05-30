@@ -130,6 +130,7 @@ fn format_colored_lookup_line(
     result
 }
 
+#[derive(Copy, Clone)]
 struct LookupDerivationsParams<'a> {
     ipa_word: &'a language::syllable::IpaWord,
     entry_type: &'a str,

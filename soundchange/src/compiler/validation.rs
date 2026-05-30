@@ -41,8 +41,7 @@ pub(crate) fn validate_compiled_rule(
 fn validate_condition_wrapper(rule: &CompiledRuleChange) -> Result<(), SoundChangeParseError> {
     rule.condition
         .as_ref()
-        .map(validate_condition_has_placeholder)
-        .unwrap_or(Ok(()))
+        .map_or(Ok(()), validate_condition_has_placeholder)
 }
 
 pub(crate) fn get_match_markers(pattern: &MatchPattern) -> HashSet<u8> {

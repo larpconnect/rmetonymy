@@ -129,21 +129,18 @@ impl SoundMatcherPattern {
         temp_bindings: &mut BTreeMap<u8, Vec<Token>>,
     ) -> Option<(usize, BTreeMap<u8, Vec<Token>>)> {
         let (tokens, skip) = tokens_skip;
-        match marker {
-            Some(m) => {
-                let ctx = BaseContext {
-                    base,
-                    m,
-                    tokens,
-                    skip,
-                    classes,
-                };
-                self.match_marked_base(&ctx, temp_bindings)
-            }
-            None => {
-                let len = self.match_base(base, tokens, classes, temp_bindings)?;
-                Some((len, temp_bindings.clone()))
-            }
+        if let Some(m) = marker {
+            let ctx = BaseContext {
+                base,
+                m,
+                tokens,
+                skip,
+                classes,
+            };
+            self.match_marked_base(&ctx, temp_bindings)
+        } else {
+            let len = self.match_base(base, tokens, classes, temp_bindings)?;
+            Some((len, temp_bindings.clone()))
         }
     }
 
@@ -293,16 +290,16 @@ impl SoundMatcherPattern {
     }
 
     #[inline]
-    fn get_phoneme_data_op(in_class: bool, p: &str) -> Option<data::PhonemeData> {
-        if !in_class {
-            None
+    fn get_phoneme_data_op(in_class: bool, p: &str) -> Option<&data::PhonemeData> {
+        if in_class {
+            get_phoneme_data(p)
         } else {
-            get_phoneme_data(p).cloned()
+            None
         }
     }
 
     fn match_features_from_data_integration(
-        phoneme_data_opt: Option<data::PhonemeData>,
+        phoneme_data_opt: Option<&data::PhonemeData>,
         features: &[FeatureDescriptor],
     ) -> Option<usize> {
         let has_all = Self::check_phoneme_features_from_opt_op(phoneme_data_opt, features);
@@ -310,7 +307,7 @@ impl SoundMatcherPattern {
     }
 
     fn check_phoneme_features_from_opt_op(
-        phoneme_data_opt: Option<data::PhonemeData>,
+        phoneme_data_opt: Option<&data::PhonemeData>,
         features: &[FeatureDescriptor],
     ) -> bool {
         let Some(phoneme_data) = phoneme_data_opt else {
@@ -428,8 +425,8 @@ impl SoundMatcherPattern {
         entry: Option<&IpaEntry>,
     ) -> bool {
         match key.as_str() {
-            "V" => entry.map_or(false, |e| matches!(e, IpaEntry::Vowel(_))),
-            "C" => entry.map_or(false, |e| matches!(e, IpaEntry::Consonant(_))),
+            "V" => entry.is_some_and(|e| matches!(e, IpaEntry::Vowel(_))),
+            "C" => entry.is_some_and(|e| matches!(e, IpaEntry::Consonant(_))),
             "D" => entry.is_some() && (p.contains('\u{0361}') || p.contains('\u{035C}')),
             _ => {
                 if let Some(sc) = classes.get(key) {

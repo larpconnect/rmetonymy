@@ -86,18 +86,18 @@ These rules take precedence over having all of the code for a given task togethe
 
 ## Code Quality Rules
 
-- Run `rustqual` after making changes. All findings must be resolved before marking a task complete.
+- Run `rustqual` before finishing a task. All findings should be resolved before marking a task complete.
 - Follow IOSP: every function is either an Integration or an Operation, never both.
 - Keep functions under 50 lines, keep files under 500 lines, and cognitive complexity under 8.
 - Don't duplicate logic — extract shared patterns into reusable Operations.
 - Don't introduce functions with more than 5 parameters.
 - Every test function must contain at least one assertion.
 - For public-API functions intentionally untested in this crate, mark with `// qual:api`.
-
-
+- When `rustqual` flags an issue, you MUST either fix it or explicitly suppress it with `// qual:ignore:"Reason"`. Prefer fixing it where practicable.
+- When `rustqual` flags an issue that you do not understand, investigate it and document it.
+- `rustqual` must pass before considering a task complete.
 
 ---
-
 
 ## File Formats
 

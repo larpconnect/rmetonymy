@@ -110,23 +110,8 @@ impl FromStr for WordPattern {
 fn parse_to_pattern_pair_integration(s: &str) -> Result<pest::iterators::Pair<'_, Rule>, GeneratorError> {
     let pairs = GeneratorPatternParser::parse(Rule::main, s)
         .map_err(|e| GeneratorError::ParseError(e.to_string()))?;
-    find_pattern_pair_op(pairs)
-}
-
-fn find_pattern_pair_op(mut pairs: pest::iterators::Pairs<'_, Rule>) -> Result<pest::iterators::Pair<'_, Rule>, GeneratorError> {
-    let main_pair = pairs
-        .next()
-        .ok_or_else(|| GeneratorError::ParseError("Empty input".to_string()))?;
-
-    let mut pattern_pair = None;
-    for pair in main_pair.into_inner() {
-        if pair.as_rule() == Rule::pattern {
-            pattern_pair = Some(pair);
-            break;
-        }
-    }
-
-    pattern_pair.ok_or_else(|| GeneratorError::ParseError("Empty pattern".to_string()))
+    crate::parser_utils::extract_pattern_pair_op(pairs, Rule::pattern)
+        .map_err(GeneratorError::ParseError)
 }
 
 fn parse_pattern(pair: pest::iterators::Pair<Rule>) -> Result<WordPattern, GeneratorError> {

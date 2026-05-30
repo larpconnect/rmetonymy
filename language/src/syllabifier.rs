@@ -212,8 +212,11 @@ fn check_stressed_capture_constraint(
             SyllableStress::PrimaryStress | SyllableStress::SecondaryStress
         );
     let vi_phonemes = seg.phonemes.get(n_curr.start..n_curr.end).unwrap_or(&[]);
-    let is_vi_single_short_vowel =
-        matches!(vi_phonemes, [v] if crate::phonology::can_vowel_capture(v));
+    let is_vi_single_short_vowel = if let [v] = vi_phonemes {
+        crate::phonology::can_vowel_capture(v)
+    } else {
+        false
+    };
 
     if is_vi_stressed
         && is_vi_single_short_vowel

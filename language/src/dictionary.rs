@@ -16,15 +16,6 @@ pub fn generate_base62_uuid() -> String {
     base62::encode(uuid.as_u128())
 }
 
-/// Helper to decode a Base62 representation of a `UUIDv7`.
-///
-/// # Errors
-/// Returns an error if the base62 decoding or UUID construction fails.
-#[allow(dead_code)]
-pub fn parse_base62_uuid(s: &str) -> Result<Uuid, String> {
-    let val = base62::decode(s).map_err(|e| format!("Invalid Base62 UUID: {e}"))?;
-    Ok(Uuid::from_u128(val))
-}
 
 /// Validate a JSON value against the dictionary schema.
 ///
@@ -39,7 +30,8 @@ pub fn validate_dictionary_data(data: &serde_json::Value) -> Result<(), String> 
                 .map_err(|e| format!("Failed to compile JSON Schema: {e}"))
         });
 
-    data::validate_with_schema(data, &VALIDATOR)
+    let validator = VALIDATOR.as_ref().map_err(String::clone)?;
+    data::validate_with_schema(data, validator)
 }
 
 /// Helper function to write content atomically to a file.
@@ -249,6 +241,7 @@ impl Dictionary {
 }
 
 /// Helper to check if a dictionary entry's type matches a filter type.
+#[must_use]
 pub fn type_matches(entry_type: &str, filter_type: &str) -> bool {
     let (w_base, w_sub) = entry_type.split_once('.').unwrap_or((entry_type, ""));
     let (f_base, f_sub) = filter_type.split_once('.').unwrap_or((filter_type, ""));

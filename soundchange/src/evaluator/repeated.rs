@@ -28,73 +28,74 @@ pub struct RepeatedState {
     pub current_len: usize,
 }
 
+fn record_if_needed_op(
+    context: &mut RepeatedMatchContext<'_, '_, '_>,
+    rstate: RepeatedState,
+    state: &MatchState,
+) {
+    if rstate.min == 0 {
+        context.results.push((
+            rstate.current_len,
+            state.clone(),
+            rstate.word_idx - rstate.current_len..rstate.word_idx,
+        ));
+    }
+}
+
+fn build_next_rstate_op(rstate: RepeatedState, len: usize) -> RepeatedState {
+    RepeatedState {
+        word_idx: rstate.word_idx + len,
+        min: rstate.min.saturating_sub(1),
+        max: rstate.max - 1,
+        current_len: rstate.current_len + len,
+    }
+}
+
+fn build_match_params_op<'a, 'b>(
+    context: &RepeatedMatchContext<'a, 'b, '_>,
+) -> MatchParams<'a, 'b> {
+    MatchParams {
+        wildcard: context.wildcard,
+        word: context.word,
+        ctx: context.ctx,
+    }
+}
+
+fn should_recurse_op(rstate: RepeatedState, word_len: usize) -> bool {
+    rstate.max > 0 && rstate.word_idx < word_len
+}
+
+fn recurse_matches_integration(
+    context: &mut RepeatedMatchContext<'_, '_, '_>,
+    rstate: RepeatedState,
+    base_matches: Vec<(usize, MatchState)>,
+) {
+    base_matches
+        .into_iter()
+        .filter(|&(len, _)| len > 0)
+        .for_each(|(len, next_state)| {
+            let next_rstate = build_next_rstate_op(rstate, len);
+            match_repeated(context, next_rstate, &next_state);
+        });
+}
+
+fn recurse_if_needed_integration(
+    context: &mut RepeatedMatchContext<'_, '_, '_>,
+    rstate: RepeatedState,
+    state: &MatchState,
+) {
+    if should_recurse_op(rstate, context.word.phonemes.len()) {
+        let params = build_match_params_op(context);
+        let base_matches = match_base(context.base, &params, rstate.word_idx, state);
+        recurse_matches_integration(context, rstate, base_matches);
+    }
+}
+
 pub(crate) fn match_repeated(
     context: &mut RepeatedMatchContext<'_, '_, '_>,
     rstate: RepeatedState,
     state: &MatchState,
 ) {
-    push_min_match_op(rstate.min, context.results, rstate.current_len, rstate.word_idx, state);
-    let can_match = can_continue_match_op(rstate.max, rstate.word_idx, context.word.phonemes.len());
-    match_repeated_step_integration(context, rstate, state, can_match);
-}
-
-fn push_min_match_op(
-    min: usize,
-    results: &mut Vec<(usize, MatchState, std::ops::Range<usize>)>,
-    current_len: usize,
-    word_idx: usize,
-    state: &MatchState,
-) {
-    if min == 0 {
-        results.push((current_len, state.clone(), word_idx - current_len..word_idx));
-    }
-}
-
-pub fn can_continue_match_op(max: usize, word_idx: usize, word_len: usize) -> bool {
-    max > 0 && word_idx < word_len
-}
-
-fn match_repeated_step_integration(
-    context: &mut RepeatedMatchContext<'_, '_, '_>,
-    rstate: RepeatedState,
-    state: &MatchState,
-    can_match: bool,
-) {
-    branch_on_match_op(can_match, || {
-        let params = MatchParams {
-            wildcard: context.wildcard,
-            word: context.word,
-            ctx: context.ctx,
-        };
-        let bases = match_base(context.base, &params, rstate.word_idx, state);
-        match_repeated_recurse_integration(context, rstate, bases);
-    });
-}
-
-pub fn branch_on_match_op<F>(can_match: bool, mut match_fn: F)
-where
-    F: FnMut(),
-{
-    if can_match {
-        match_fn();
-    }
-}
-
-fn match_repeated_recurse_integration(
-    context: &mut RepeatedMatchContext<'_, '_, '_>,
-    rstate: RepeatedState,
-    bases: Vec<(usize, MatchState)>,
-) {
-    bases.into_iter().for_each(|(len, next_state)| {
-        let is_positive = len > 0;
-        branch_on_match_op(is_positive, || {
-            let next_rstate = RepeatedState {
-                word_idx: rstate.word_idx + len,
-                min: rstate.min.saturating_sub(1),
-                max: rstate.max - 1,
-                current_len: rstate.current_len + len,
-            };
-            match_repeated(context, next_rstate, &next_state);
-        });
-    });
+    record_if_needed_op(context, rstate, state);
+    recurse_if_needed_integration(context, rstate, state);
 }

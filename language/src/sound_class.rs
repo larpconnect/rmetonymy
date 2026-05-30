@@ -96,22 +96,22 @@ mod tests {
 
     #[test]
     fn test_sound_class_key_valid() {
-        assert!(<SoundClassKey as std::str::FromStr>::from_str("C").is_ok());
-        assert!(<SoundClassKey as std::str::FromStr>::from_str("Z").is_ok());
-        assert!(<SoundClassKey as std::str::FromStr>::from_str("Γ").is_ok());
-        assert!(<SoundClassKey as std::str::FromStr>::from_str("א").is_ok());
-        assert!(<SoundClassKey as std::str::FromStr>::from_str("A₀").is_ok());
-        assert!(<SoundClassKey as std::str::FromStr>::from_str("Ω₉").is_ok());
-        assert!(<SoundClassKey as std::str::FromStr>::from_str("ת₅").is_ok());
+        let _ = <SoundClassKey as std::str::FromStr>::from_str("C").expect("valid");
+        let _ = <SoundClassKey as std::str::FromStr>::from_str("Z").expect("valid");
+        let _ = <SoundClassKey as std::str::FromStr>::from_str("Γ").expect("valid");
+        let _ = <SoundClassKey as std::str::FromStr>::from_str("א").expect("valid");
+        let _ = <SoundClassKey as std::str::FromStr>::from_str("A₀").expect("valid");
+        let _ = <SoundClassKey as std::str::FromStr>::from_str("Ω₉").expect("valid");
+        let _ = <SoundClassKey as std::str::FromStr>::from_str("ת₅").expect("valid");
     }
 
     #[test]
     fn test_sound_class_key_invalid() {
-        assert!(<SoundClassKey as std::str::FromStr>::from_str("c").is_err()); // Lowercase
-        assert!(<SoundClassKey as std::str::FromStr>::from_str("AA").is_err()); // Too many characters
-        assert!(<SoundClassKey as std::str::FromStr>::from_str("A0").is_err()); // ASCII digit instead of subscript
-        assert!(<SoundClassKey as std::str::FromStr>::from_str("A₀₀").is_err()); // Too many subscripts
-        assert!(<SoundClassKey as std::str::FromStr>::from_str("").is_err()); // Empty
-        assert!(<SoundClassKey as std::str::FromStr>::from_str("1").is_err()); // Number
+        let _ = <SoundClassKey as std::str::FromStr>::from_str("c").expect_err("invalid"); // Lowercase
+        let _ = <SoundClassKey as std::str::FromStr>::from_str("AA").expect_err("invalid"); // Too many characters
+        let _ = <SoundClassKey as std::str::FromStr>::from_str("A0").expect_err("invalid"); // ASCII digit instead of subscript
+        let _ = <SoundClassKey as std::str::FromStr>::from_str("A₀₀").expect_err("invalid"); // Too many subscripts
+        let _ = <SoundClassKey as std::str::FromStr>::from_str("").expect_err("invalid"); // Empty
+        let _ = <SoundClassKey as std::str::FromStr>::from_str("1").expect_err("invalid"); // Number
     }
 }

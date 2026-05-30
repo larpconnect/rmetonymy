@@ -117,15 +117,14 @@ pub type IpaDataset = HashMap<String, IpaEntry>;
 pub const IPA_SCHEMA_JSON: &str = include_str!("../ipa_schema.json");
 
 /// Validate a JSON value against the IPA schema.
+/// Validate a JSON value against a pre-compiled JSON schema.
 ///
 /// # Errors
-/// Returns `Err` if the validation against `ipa_schema.json` fails.
+/// Returns `Err` if the validation against the schema fails.
 pub fn validate_with_schema(
     data: &Value,
-    validator_res: &Result<jsonschema::Validator, String>,
+    validator: &jsonschema::Validator,
 ) -> Result<(), String> {
-    let validator = validator_res.as_ref().map_err(|e| e.clone())?;
-
     if !validator.is_valid(data) {
         let errors = validator.iter_errors(data);
         let err_strings: Vec<String> = errors.map(|e| e.to_string()).collect();
@@ -148,7 +147,8 @@ pub fn validate_ipa_data(data: &Value) -> Result<(), String> {
                 .map_err(|e| format!("Failed to compile JSON Schema: {e}"))
         });
 
-    validate_with_schema(data, &VALIDATOR)
+    let validator = VALIDATOR.as_ref().map_err(String::clone)?;
+    validate_with_schema(data, validator)
 }
 
 /// Helper function to parse a JSON string, validate it, and deserialize it into our structures.
