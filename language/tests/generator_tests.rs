@@ -2,7 +2,9 @@ use language::config::{
     GeneratorConfig, LanguageConfig, MetadataConfig, NameConfig, PhonologyConfig,
     PhonotacticsConfig, SoundClass, ZipfConfig,
 };
-use language::generator::{SeedableRng, StdRng, WordPattern, generate_word, sample_index};
+use language::generator::{
+    SeedableRng, StdRng, WordGenerator, WordPattern, generate_word, sample_index,
+};
 use std::collections::BTreeMap;
 use time::OffsetDateTime;
 use uuid::Uuid;
@@ -57,66 +59,83 @@ fn test_rng_zipf_selection() {
     assert!(count_1 > 270 && count_1 < 400);
 }
 
-fn make_test_config() -> LanguageConfig {
-    let mut sound_classes = BTreeMap::new();
-    sound_classes.insert(
-        "C".parse().expect("valid sound class key"),
-        SoundClass {
-            values: vec!["p".to_string(), "t".to_string(), "k".to_string()],
-            generator: None,
-        },
-    );
-    sound_classes.insert(
-        "V".parse().expect("valid sound class key"),
-        SoundClass {
-            values: vec!["a".to_string(), "e".to_string(), "i".to_string()],
-            generator: None,
-        },
-    );
+macro_rules! build_sound_classes {
+    () => {
+        BTreeMap::from([
+            (
+                "C".parse().expect("valid sound class key C"),
+                SoundClass {
+                    values: vec!["p".into(), "t".into(), "k".into()],
+                    generator: None,
+                },
+            ),
+            (
+                "V".parse().expect("valid sound class key V"),
+                SoundClass {
+                    values: vec!["a".into(), "e".into(), "i".into()],
+                    generator: None,
+                },
+            ),
+        ])
+    };
+}
 
-    let mut generators = BTreeMap::new();
-    generators.insert(
-        "default".to_string(),
-        language::generator::WordGenerator {
-            patterns: vec!["CVC".parse().expect("valid pattern")],
-            generator: GeneratorConfig::Equiprobable,
-        },
-    );
-    generators.insert(
-        "noun".to_string(),
-        language::generator::WordGenerator {
-            patterns: vec!["(C)V[default]".parse().expect("valid pattern")],
-            generator: GeneratorConfig::Equiprobable,
-        },
-    );
+macro_rules! build_generators {
+    () => {
+        BTreeMap::from([
+            (
+                "default".into(),
+                WordGenerator {
+                    patterns: vec!["CVC".parse().expect("valid pattern CVC")],
+                    generator: GeneratorConfig::Equiprobable,
+                },
+            ),
+            (
+                "noun".into(),
+                WordGenerator {
+                    patterns: vec![
+                        "(C)V[default]"
+                            .parse()
+                            .expect("valid pattern (C)V[default]"),
+                    ],
+                    generator: GeneratorConfig::Equiprobable,
+                },
+            ),
+        ])
+    };
+}
 
-    LanguageConfig {
-        id: Uuid::now_v7(),
-        name: NameConfig {
-            endonym: "test".parse().expect("valid word"),
-            exonym: None,
-        },
-        metadata: MetadataConfig {
-            created_at: OffsetDateTime::now_utc(),
-            updated_at: None,
-        },
-        phonology: PhonologyConfig {
-            sound_classes,
-            phonotactics: PhonotacticsConfig { generators },
-            illegal_patterns: vec![],
-            prosody: None,
-        },
-        sound_changes: None,
-        orthography: None,
-        derivations: None,
-    }
+macro_rules! create_test_config {
+    () => {
+        LanguageConfig {
+            id: Uuid::now_v7(),
+            name: NameConfig {
+                endonym: "test".parse().expect("valid endonym"),
+                exonym: None,
+            },
+            metadata: MetadataConfig {
+                created_at: OffsetDateTime::now_utc(),
+                updated_at: None,
+            },
+            phonology: PhonologyConfig {
+                sound_classes: build_sound_classes!(),
+                phonotactics: PhonotacticsConfig {
+                    generators: build_generators!(),
+                },
+                illegal_patterns: vec![],
+                prosody: None,
+            },
+            sound_changes: None,
+            orthography: None,
+            derivations: None,
+        }
+    };
 }
 
 #[test]
 fn test_word_generation() {
-    let config = make_test_config();
+    let config = create_test_config!();
 
-    // Verify config is valid
     config.validate().expect("config should be valid");
 
     let mut rng = StdRng::seed_from_u64(12345);
@@ -124,6 +143,5 @@ fn test_word_generation() {
     let word = generate_word("noun", &config, &mut rng, 1, &mut warning_logged)
         .expect("should generate word");
 
-    // We assert that the generated word is not empty
     assert!(!word.is_empty());
 }

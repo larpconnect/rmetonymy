@@ -1,9 +1,8 @@
 use crate::ast::{MatchPattern, Operator, ParsedMatchPart};
+use crate::parser::Rule;
 use crate::parser::error::SoundChangeParseError;
-use crate::parser::{Rule, SoundChangeParserInternal};
 use ipa::sequence::Phoneme;
 use language::sound_class::SoundClassKey;
-use pest::Parser;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum OrthoTransformElement {
@@ -36,33 +35,37 @@ pub struct ParsedOrthoRule {
 /// # Errors
 /// Returns an error if parsing or structure validation fails.
 pub fn parse_ortho_rule(s: &str) -> Result<ParsedOrthoRule, SoundChangeParseError> {
-    use unicode_normalization::UnicodeNormalization;
-    let s_normalized = s.nfd().collect::<String>();
-    let s_trimmed = s_normalized.trim();
-    if s_trimmed.is_empty() {
-        return Err(SoundChangeParseError::ConversionError(
-            "Empty input".to_string(),
-        ));
-    }
+    let s_trimmed = crate::parser::trim_input_op(s)?;
+    let inner = crate::parser::parse_input_to_inner_op(&s_trimmed)?;
+    convert_ortho_rule_dispatch_integration(inner, &s_trimmed)
+}
 
-    let mut pairs = SoundChangeParserInternal::parse(Rule::sound_change, s_trimmed)
-        .map_err(|e| SoundChangeParseError::PestError(e.to_string()))?;
-    let main_pair = pairs
-        .next()
-        .ok_or_else(|| SoundChangeParseError::ConversionError("Empty input".to_string()))?;
-    let inner = main_pair
-        .into_inner()
-        .next()
-        .ok_or_else(|| SoundChangeParseError::ConversionError("No rules found".to_string()))?;
-
-    match inner.as_rule() {
-        Rule::reference_rule => Err(SoundChangeParseError::ValidationError(
+fn convert_ortho_rule_dispatch_integration(
+    inner: pest::iterators::Pair<'_, Rule>,
+    s_trimmed: &str,
+) -> Result<ParsedOrthoRule, SoundChangeParseError> {
+    match get_ortho_rule_type_op(&inner)? {
+        OrthoRuleType::Reference => Err(SoundChangeParseError::ValidationError(
             "Preamble references are not supported in orthography rules".to_string(),
         )),
-        Rule::standard_rule => convert_standard_ortho_rule(inner, s_trimmed),
+        OrthoRuleType::Standard => convert_standard_ortho_rule(inner, s_trimmed),
+    }
+}
+
+enum OrthoRuleType {
+    Reference,
+    Standard,
+}
+
+fn get_ortho_rule_type_op(
+    pair: &pest::iterators::Pair<'_, Rule>,
+) -> Result<OrthoRuleType, SoundChangeParseError> {
+    match pair.as_rule() {
+        Rule::reference_rule => Ok(OrthoRuleType::Reference),
+        Rule::standard_rule => Ok(OrthoRuleType::Standard),
         _ => Err(SoundChangeParseError::ConversionError(format!(
             "Unexpected rule type {:?}",
-            inner.as_rule()
+            pair.as_rule()
         ))),
     }
 }
@@ -122,72 +125,7 @@ fn extract_ortho_match_pattern(
 fn convert_ortho_match_part(
     pair: pest::iterators::Pair<'_, Rule>,
 ) -> Result<ParsedMatchPart, SoundChangeParseError> {
-    let inner = pair
-        .into_inner()
-        .next()
-        .ok_or_else(|| SoundChangeParseError::ConversionError("Empty match part".to_string()))?;
-
-    match inner.as_rule() {
-        Rule::reference_rule => {
-            let name = crate::parser::pattern::convert_reference_rule(inner)?;
-            Ok(ParsedMatchPart::Reference(name))
-        }
-        Rule::pattern => {
-            let pattern = convert_ortho_pattern(inner)?;
-            Ok(ParsedMatchPart::Pattern(pattern))
-        }
-        Rule::empty_symbol => Ok(ParsedMatchPart::Pattern(MatchPattern {
-            elements: Vec::new(),
-        })),
-        _ => Err(SoundChangeParseError::ConversionError(format!(
-            "Invalid match part rule: {:?}",
-            inner.as_rule()
-        ))),
-    }
-}
-
-fn convert_ortho_pattern(
-    pair: pest::iterators::Pair<'_, Rule>,
-) -> Result<MatchPattern, SoundChangeParseError> {
-    let mut elements = Vec::new();
-    for inner in pair.into_inner() {
-        if inner.as_rule() == Rule::pattern_element {
-            elements.push(convert_ortho_pattern_element(inner)?);
-        }
-    }
-    Ok(MatchPattern { elements })
-}
-
-fn convert_ortho_pattern_element(
-    pair: pest::iterators::Pair<'_, Rule>,
-) -> Result<crate::ast::MatchElement, SoundChangeParseError> {
-    let mut base = None;
-    let mut modifiers_wildcard = false;
-    let mut quantifier = crate::ast::MatchQuantifier::None;
-
-    for inner in pair.into_inner() {
-        match inner.as_rule() {
-            Rule::modifier_wildcard => {
-                modifiers_wildcard = true;
-            }
-            Rule::quantifier => {
-                quantifier = crate::parser::pattern::convert_quantifier(inner)?;
-            }
-            rule => {
-                base = Some(convert_ortho_base_element(inner, rule)?);
-            }
-        }
-    }
-
-    let base = base.ok_or_else(|| {
-        SoundChangeParseError::ConversionError("Pattern element missing base".to_string())
-    })?;
-
-    Ok(crate::ast::MatchElement {
-        base,
-        modifiers_wildcard,
-        quantifier,
-    })
+    crate::parser::pattern::convert_match_part_generic(pair, convert_ortho_base_element)
 }
 
 fn convert_ortho_base_element(

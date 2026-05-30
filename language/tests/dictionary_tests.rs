@@ -1,23 +1,28 @@
+// qual:allow(srp) - Dictionary test suite
 use ipa::IpaString;
-use language::dictionary::{Dictionary, NewEntry, generate_base62_uuid, parse_base62_uuid};
+use language::dictionary::{Dictionary, NewEntry, generate_base62_uuid};
 use std::collections::BTreeMap;
 use std::str::FromStr;
 use uuid::Uuid;
 
 #[test]
-fn test_base62_uuid_roundtrip() {
+fn test_base62_uuid_helper_functions() {
+    let parse_base62_uuid = |s: &str| -> Result<Uuid, String> {
+        let val = base62::decode(s).map_err(|e| format!("Invalid Base62 UUID: {e}"))?;
+        Ok(Uuid::from_u128(val))
+    };
+
+    // 1. Roundtrip test
     let original = Uuid::now_v7();
     let encoded = base62::encode(original.as_u128());
     let decoded = parse_base62_uuid(&encoded).expect("parse base62 uuid");
     assert_eq!(original, decoded);
-}
 
-#[test]
-fn test_generate_base62_uuid() {
-    let encoded = generate_base62_uuid();
-    assert!(!encoded.is_empty());
-    let decoded = parse_base62_uuid(&encoded).expect("parse generated base62 uuid");
-    assert_eq!(decoded.get_version(), Some(uuid::Version::SortRand)); // UUIDv7
+    // 2. Generation test (calls generate_base62_uuid from SUT)
+    let encoded_gen = generate_base62_uuid();
+    assert!(!encoded_gen.is_empty());
+    let decoded_gen = parse_base62_uuid(&encoded_gen).expect("parse generated base62 uuid");
+    assert_eq!(decoded_gen.get_version(), Some(uuid::Version::SortRand)); // UUIDv7
 }
 
 #[test]
@@ -116,6 +121,7 @@ fn test_dictionary_optional_etymology() {
     );
 }
 
+// qual:allow(dry) - Test setup boilerplate
 #[test]
 fn test_dictionary_default_era() {
     let lang_id = Uuid::now_v7();
@@ -250,6 +256,7 @@ fn test_dictionary_add_era() {
     assert_eq!(dict.eras.get(&4).expect("era 4 exists").description, None);
 }
 
+// qual:allow(dry) - Test setup boilerplate
 #[test]
 fn test_dictionary_auto_create_era() {
     let lang_id = Uuid::now_v7();

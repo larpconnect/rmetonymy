@@ -1,8 +1,10 @@
 pub mod lookup;
 pub mod ops;
+pub mod parse;
 
 use anyhow::Context;
 use clap::{Parser, Subcommand};
+use std::fs;
 use std::path::{Path, PathBuf};
 
 #[derive(Parser)]
@@ -95,32 +97,8 @@ fn handle_init(dict_path: &Path, language: Option<&PathBuf>) -> anyhow::Result<(
     ops::handle_dict_init(dict_path, language.map(PathBuf::as_path))
 }
 
-#[expect(
-    clippy::too_many_arguments,
-    reason = "Internal subcommand dispatcher helper"
-)]
-fn handle_add(
-    dict_path: &Path,
-    language: Option<&PathBuf>,
-    meaning: &str,
-    definition: Option<&str>,
-    generate: bool,
-    r#type: String,
-    era: Option<u32>,
-    etymology: &[String],
-    usage_notes: String,
-) -> anyhow::Result<()> {
-    ops::handle_dict_add_cmd(
-        dict_path,
-        language.map(PathBuf::as_path),
-        meaning,
-        definition,
-        generate,
-        r#type,
-        era,
-        etymology,
-        usage_notes,
-    )
+fn handle_add(params: ops::DictAddParams<'_>) -> anyhow::Result<()> {
+    ops::handle_dict_add_cmd(params)
 }
 
 fn handle_remove(dict_path: &Path, id: &str) -> anyhow::Result<()> {
@@ -167,17 +145,18 @@ fn dispatch_subcommand(
             etymology,
             usage_notes,
         } => {
-            handle_add(
+            let params = ops::DictAddParams {
                 dict_path,
-                language,
-                &meaning,
-                definition.as_deref(),
+                language_path: language.map(PathBuf::as_path),
+                meaning: &meaning,
+                definition: definition.as_deref(),
                 generate,
                 r#type,
                 era,
-                &etymology,
+                etymology: &etymology,
                 usage_notes,
-            )?;
+            };
+            handle_add(params)?;
         }
         DictionarySubcommand::Remove { id } => {
             handle_remove(dict_path, &id)?;
@@ -207,4 +186,30 @@ pub(crate) fn handle_dictionary_cmd(
     let dict_path =
         dict.context("Dictionary file path (--dict) is required for dictionary command")?;
     dispatch_subcommand(dict_cmd.subcommand, dict_path, language)
+}
+
+pub(crate) fn load_dictionary(dict_path: &Path) -> anyhow::Result<language::Dictionary> {
+    let dict_json = fs::read_to_string(dict_path).with_context(|| {
+        format!(
+            "Failed to read dictionary file from {}",
+            dict_path.display()
+        )
+    })?;
+    dict_json
+        .parse::<language::Dictionary>()
+        .map_err(|e| anyhow::anyhow!(e))
+        .context("Failed to parse dictionary")
+}
+
+pub(crate) fn load_language_config(
+    path: &Path,
+) -> anyhow::Result<language::config::LanguageConfig> {
+    let lang_json = fs::read_to_string(path)
+        .with_context(|| format!("Failed to read language config from {}", path.display()))?;
+    let config: language::config::LanguageConfig =
+        serde_json::from_str(&lang_json).context("Failed to parse language config JSON")?;
+    config
+        .validate()
+        .context("Language configuration validation failed")?;
+    Ok(config)
 }

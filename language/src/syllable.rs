@@ -5,6 +5,8 @@ use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 use thiserror::Error;
 
+const DEFAULT_ZIPF_PARAM: f64 = 1.0;
+
 /// Stress variants for a syllable.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum SyllableStress {
@@ -26,6 +28,13 @@ pub enum SyllableStructure {
     Arbitrary(PhonemeSequence),
 }
 
+fn extract_phonemes_op(seq: &PhonemeSequence) -> impl Iterator<Item = SequenceElement> + '_ {
+    seq.elements.iter().filter_map(|el| match el {
+        SequenceElement::Phoneme(p) => Some(SequenceElement::Phoneme(p.clone())),
+        _ => None,
+    })
+}
+
 impl SyllableStructure {
     /// Retrieve flat elements for the syllable structure.
     #[must_use]
@@ -38,32 +47,16 @@ impl SyllableStructure {
             } => {
                 let mut elems = Vec::new();
                 if let Some(onset_seq) = onset {
-                    elems.extend(onset_seq.elements.iter().filter_map(|el| match el {
-                        SequenceElement::Phoneme(p) => Some(SequenceElement::Phoneme(p.clone())),
-                        _ => None,
-                    }));
+                    elems.extend(extract_phonemes_op(onset_seq));
                 }
-                elems.extend(nucleus.elements.iter().filter_map(|el| match el {
-                    SequenceElement::Phoneme(p) => Some(SequenceElement::Phoneme(p.clone())),
-                    _ => None,
-                }));
+                elems.extend(extract_phonemes_op(nucleus));
                 if let Some(coda_seq) = coda {
-                    elems.extend(coda_seq.elements.iter().filter_map(|el| match el {
-                        SequenceElement::Phoneme(p) => Some(SequenceElement::Phoneme(p.clone())),
-                        _ => None,
-                    }));
+                    elems.extend(extract_phonemes_op(coda_seq));
                 }
                 elems
             }
             Self::Root(p) => vec![SequenceElement::Phoneme(p.clone())],
-            Self::Arbitrary(seq) => seq
-                .elements
-                .iter()
-                .filter_map(|el| match el {
-                    SequenceElement::Phoneme(p) => Some(SequenceElement::Phoneme(p.clone())),
-                    _ => None,
-                })
-                .collect(),
+            Self::Arbitrary(seq) => extract_phonemes_op(seq).collect(),
         }
     }
 }
@@ -223,7 +216,10 @@ impl IpaWord {
         let initial_word = crate::syllabifier::syllabify_sequence(seq, config)?;
         let prosody = config.phonology.prosody.as_ref().unwrap_or(
             &crate::prosody::ProsodicConfig::NoFixedStress {
-                config: crate::config::ZipfConfig { a: 1.0, b: 1.0 },
+                config: crate::config::ZipfConfig {
+                    a: DEFAULT_ZIPF_PARAM,
+                    b: DEFAULT_ZIPF_PARAM,
+                },
             },
         );
         let updated_word = prosody.apply_prosody(&initial_word, config);

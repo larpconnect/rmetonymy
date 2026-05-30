@@ -1,3 +1,4 @@
+// qual:allow(srp) - Sequence test module
 #![expect(
     clippy::indexing_slicing,
     clippy::unwrap_used,

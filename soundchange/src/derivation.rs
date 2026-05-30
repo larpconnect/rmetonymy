@@ -1,3 +1,4 @@
+// qual:allow(srp) — Orchestration module for sound change derivations has multiple concerns
 use crate::{EvalContext, WorkingWord, apply_rule, compile_single_rule_from_str};
 use ipa::IpaSequence;
 use ipa::sequence::{PhonemeSequence, ProsodyMarker, SequenceElement};
@@ -5,6 +6,13 @@ use language::config::LanguageConfig;
 use language::syllable::IpaWord;
 use std::collections::BTreeSet;
 use std::str::FromStr;
+
+struct DerivationState<'a> {
+    seq: &'a mut PhonemeSequence,
+    tags: &'a mut Vec<Option<usize>>,
+    current_type: &'a mut String,
+    current_era: &'a mut u32,
+}
 
 fn extract_phonemes_and_boundaries(
     seq: &PhonemeSequence,
@@ -96,15 +104,14 @@ pub fn apply_derivations(
         let deriv = get_derivation(config, deriv_name)?;
         step_types.push(deriv.to_type.clone());
 
-        apply_single_derivation(
-            &mut seq,
-            &mut tags,
-            &mut current_type,
-            &mut current_era,
-            idx + 1,
-            deriv_name,
-            config,
-        )?;
+        let mut state = DerivationState {
+            seq: &mut seq,
+            tags: &mut tags,
+            current_type: &mut current_type,
+            current_era: &mut current_era,
+        };
+
+        apply_single_derivation(&mut state, idx + 1, deriv_name, config)?;
     }
 
     let final_word = IpaWord::try_from_sequence(&seq, config)
@@ -239,9 +246,7 @@ fn get_derivation<'a>(
 }
 
 fn check_era_and_apply_changes(
-    seq: &mut PhonemeSequence,
-    tags: &mut Vec<Option<usize>>,
-    current_era: &mut u32,
+    state: &mut DerivationState<'_>,
     deriv_era: Option<u32>,
     deriv_name: &str,
     config: &LanguageConfig,
@@ -249,14 +254,21 @@ fn check_era_and_apply_changes(
     let Some(era_val) = deriv_era else {
         return Ok(());
     };
-    if era_val < *current_era {
+    if era_val < *state.current_era {
+        let current_era_val = *state.current_era;
         return Err(format!(
-            "Cannot apply derivation '{deriv_name}': word era {current_era} is after derivation era {era_val}"
+            "Cannot apply derivation '{deriv_name}': word era {current_era_val} is after derivation era {era_val}"
         ));
     }
-    if era_val > *current_era {
-        apply_intermediate_sound_changes(seq, tags, *current_era, era_val, config)?;
-        *current_era = era_val;
+    if era_val > *state.current_era {
+        apply_intermediate_sound_changes(
+            state.seq,
+            state.tags,
+            *state.current_era,
+            era_val,
+            config,
+        )?;
+        *state.current_era = era_val;
     }
     Ok(())
 }
@@ -269,7 +281,7 @@ fn check_type_constraint(
     let Some(from_t) = from_type else {
         return Ok(());
     };
-    let matches = type_matches(current_type, from_t);
+    let matches = language::type_matches(current_type, from_t);
     if !matches {
         return Err(format!(
             "Cannot apply derivation '{deriv_name}': word type '{current_type}' does not match expected '{from_t}'"
@@ -279,29 +291,26 @@ fn check_type_constraint(
 }
 
 fn apply_single_derivation(
-    seq: &mut PhonemeSequence,
-    tags: &mut Vec<Option<usize>>,
-    current_type: &mut String,
-    current_era: &mut u32,
+    state: &mut DerivationState<'_>,
     deriv_idx: usize,
     deriv_name: &str,
     config: &LanguageConfig,
 ) -> Result<(), String> {
     let deriv = get_derivation(config, deriv_name)?;
 
-    check_era_and_apply_changes(seq, tags, current_era, deriv.era, deriv_name, config)?;
+    check_era_and_apply_changes(state, deriv.era, deriv_name, config)?;
 
-    check_type_constraint(current_type, deriv.from_type.as_ref(), deriv_name)?;
+    check_type_constraint(state.current_type, deriv.from_type.as_ref(), deriv_name)?;
 
     for transform in &deriv.transforms {
-        apply_derivation_transform(seq, tags, transform, deriv_idx, config)?;
+        apply_derivation_transform(state.seq, state.tags, transform, deriv_idx, config)?;
     }
 
     if let Some(ref to_t) = deriv.to_type {
-        current_type.clone_from(to_t);
+        state.current_type.clone_from(to_t);
     }
 
-    resyllabify_and_update_tags(seq, tags, config)?;
+    resyllabify_and_update_tags(state.seq, state.tags, config)?;
     Ok(())
 }
 
@@ -387,17 +396,4 @@ fn apply_derivation_transform(
     } else {
         apply_sound_change_transform(seq, tags, transform, deriv_idx, config)
     }
-}
-
-fn type_matches(word_type: &str, filter_type: &str) -> bool {
-    let (w_base, w_sub) = word_type.split_once('.').unwrap_or((word_type, ""));
-    let (f_base, f_sub) = filter_type.split_once('.').unwrap_or((filter_type, ""));
-
-    if w_base != f_base {
-        return false;
-    }
-    if !f_sub.is_empty() && w_sub != f_sub {
-        return false;
-    }
-    true
 }

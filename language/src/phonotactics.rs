@@ -53,27 +53,43 @@ impl FromStr for PhonotacticPattern {
     type Err = PhonotacticsError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut pairs = PhonotacticsParser::parse(Rule::main, s)
-            .map_err(|e| PhonotacticsError::ParseError(e.to_string()))?;
-
-        // main -> pattern -> EOI
-        let main_pair = pairs
-            .next()
-            .ok_or_else(|| PhonotacticsError::ParseError("Empty input".to_string()))?;
-        let mut pattern_pair = None;
-        for pair in main_pair.into_inner() {
-            if pair.as_rule() == Rule::pattern {
-                pattern_pair = Some(pair);
-                break;
-            }
-        }
-
-        let Some(pattern_pair) = pattern_pair else {
-            return Err(PhonotacticsError::ParseError("Empty pattern".to_string()));
-        };
-
+        let pairs = run_phonotactic_parser_integration(s)?;
+        let pattern_pair = crate::parser_utils::extract_pattern_pair_op(pairs, Rule::pattern)
+            .map_err(PhonotacticsError::ParseError)?;
         parse_pattern(pattern_pair)
     }
+}
+
+fn run_phonotactic_parser_integration(
+    s: &str,
+) -> Result<pest::iterators::Pairs<'_, Rule>, PhonotacticsError> {
+    PhonotacticsParser::parse(Rule::main, s)
+        .map_err(|e| PhonotacticsError::ParseError(e.to_string()))
+}
+
+fn parse_optional_group_op(
+    pair: pest::iterators::Pair<Rule>,
+) -> Result<PhonotacticPattern, PhonotacticsError> {
+    let mut prob = DEFAULT_OPTIONAL_PROBABILITY;
+    let mut inner_pattern = None;
+
+    for opt_inner in pair.into_inner() {
+        match opt_inner.as_rule() {
+            Rule::pattern => {
+                inner_pattern = Some(parse_pattern(opt_inner)?);
+            }
+            Rule::probability => {
+                let s = opt_inner.as_str();
+                let s = s.strip_suffix('%').unwrap_or(s);
+                prob = s.parse::<u8>().unwrap_or(DEFAULT_OPTIONAL_PROBABILITY);
+            }
+            _ => {}
+        }
+    }
+
+    inner_pattern
+        .map(|pat| PhonotacticPattern::OptionalGroup(Box::new(pat), prob))
+        .ok_or_else(|| PhonotacticsError::ParseError("Empty optional group".to_string()))
 }
 
 fn parse_pattern(
@@ -98,26 +114,8 @@ fn parse_pattern(
                 elements.push(PhonotacticPattern::IpaSequence(ipa));
             }
             Rule::optional_group => {
-                let mut prob = DEFAULT_OPTIONAL_PROBABILITY;
-                let mut inner_pattern = None;
-
-                for opt_inner in inner.into_inner() {
-                    match opt_inner.as_rule() {
-                        Rule::pattern => {
-                            inner_pattern = Some(parse_pattern(opt_inner)?);
-                        }
-                        Rule::probability => {
-                            let s = opt_inner.as_str();
-                            let s = s.strip_suffix('%').unwrap_or(s);
-                            prob = s.parse::<u8>().unwrap_or(DEFAULT_OPTIONAL_PROBABILITY);
-                        }
-                        _ => {}
-                    }
-                }
-
-                if let Some(pat) = inner_pattern {
-                    elements.push(PhonotacticPattern::OptionalGroup(Box::new(pat), prob));
-                }
+                let group = parse_optional_group_op(inner)?;
+                elements.push(group);
             }
             _ => {}
         }
@@ -234,8 +232,8 @@ mod tests {
         ];
 
         for case in invalid_cases {
-            let res = case.parse::<PhonotacticPattern>();
-            assert!(res.err().is_some(), "Should have failed to parse: {case}");
+            let res = <PhonotacticPattern as std::str::FromStr>::from_str(case);
+            assert!(res.is_err(), "Should have failed to parse: {case}");
         }
     }
 }

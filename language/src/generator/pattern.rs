@@ -21,6 +21,8 @@ pub enum GeneratorError {
     ParseError(String),
 }
 
+const DEFAULT_OPTIONAL_PROBABILITY: u8 = 20;
+
 /// A single element of a word generator pattern.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum WordPatternElement {
@@ -52,34 +54,46 @@ pub struct WordPattern {
     pub elements: Vec<WordPatternElement>,
 }
 
+fn write_set_op(f: &mut Formatter<'_>, choices: &[String]) -> std::fmt::Result {
+    write!(f, "{{")?;
+    for (i, choice) in choices.iter().enumerate() {
+        if i > 0 {
+            write!(f, ",")?;
+        }
+        write!(f, "{choice}")?;
+    }
+    write!(f, "}}")
+}
+
+fn write_optional_op(f: &mut Formatter<'_>, pat: &WordPattern, prob: u8) -> std::fmt::Result {
+    write!(f, "({pat})")?;
+    if prob != DEFAULT_OPTIONAL_PROBABILITY {
+        write!(f, "{prob}%")?;
+    }
+    Ok(())
+}
+
+fn write_grammar_ref_op(
+    f: &mut Formatter<'_>,
+    primary: &str,
+    secondary: Option<&str>,
+) -> std::fmt::Result {
+    write!(f, "[{primary}")?;
+    if let Some(sec) = secondary {
+        write!(f, ".{sec}")?;
+    }
+    write!(f, "]")
+}
+
 impl Display for WordPatternElement {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::SoundClass(sc) => write!(f, "{sc}"),
             Self::Literal(s) => write!(f, "{s}"),
-            Self::Set(choices) => {
-                write!(f, "{{")?;
-                for (i, choice) in choices.iter().enumerate() {
-                    if i > 0 {
-                        write!(f, ",")?;
-                    }
-                    write!(f, "{choice}")?;
-                }
-                write!(f, "}}")
-            }
-            Self::Optional(pat, prob) => {
-                write!(f, "({pat})")?;
-                if *prob != 20 {
-                    write!(f, "{prob}%")?;
-                }
-                Ok(())
-            }
+            Self::Set(choices) => write_set_op(f, choices),
+            Self::Optional(pat, prob) => write_optional_op(f, pat, *prob),
             Self::GrammarRef { primary, secondary } => {
-                write!(f, "[{primary}")?;
-                if let Some(sec) = secondary {
-                    write!(f, ".{sec}")?;
-                }
-                write!(f, "]")
+                write_grammar_ref_op(f, primary, secondary.as_deref())
             }
             Self::SyllableBreak => write!(f, "."),
             Self::StressMarker => write!(f, "ˈ"),
@@ -100,27 +114,18 @@ impl FromStr for WordPattern {
     type Err = GeneratorError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut pairs = GeneratorPatternParser::parse(Rule::main, s)
-            .map_err(|e| GeneratorError::ParseError(e.to_string()))?;
-
-        let main_pair = pairs
-            .next()
-            .ok_or_else(|| GeneratorError::ParseError("Empty input".to_string()))?;
-
-        let mut pattern_pair = None;
-        for pair in main_pair.into_inner() {
-            if pair.as_rule() == Rule::pattern {
-                pattern_pair = Some(pair);
-                break;
-            }
-        }
-
-        let Some(pattern_pair) = pattern_pair else {
-            return Err(GeneratorError::ParseError("Empty pattern".to_string()));
-        };
-
+        let pattern_pair = parse_to_pattern_pair_integration(s)?;
         parse_pattern(pattern_pair)
     }
+}
+
+fn parse_to_pattern_pair_integration(
+    s: &str,
+) -> Result<pest::iterators::Pair<'_, Rule>, GeneratorError> {
+    let pairs = GeneratorPatternParser::parse(Rule::main, s)
+        .map_err(|e| GeneratorError::ParseError(e.to_string()))?;
+    crate::parser_utils::extract_pattern_pair_op(pairs, Rule::pattern)
+        .map_err(GeneratorError::ParseError)
 }
 
 fn parse_pattern(pair: pest::iterators::Pair<Rule>) -> Result<WordPattern, GeneratorError> {
@@ -186,7 +191,7 @@ fn parse_set_selector(pair: pest::iterators::Pair<Rule>) -> WordPatternElement {
 fn parse_optional_group(
     pair: pest::iterators::Pair<Rule>,
 ) -> Result<WordPatternElement, GeneratorError> {
-    let mut prob = 20;
+    let mut prob = DEFAULT_OPTIONAL_PROBABILITY;
     let mut inner_pattern = None;
     for opt_inner in pair.into_inner() {
         match opt_inner.as_rule() {

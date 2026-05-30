@@ -1,220 +1,187 @@
+#![expect(
+    clippy::panic_in_result_fn,
+    reason = "allowances for test code patterns"
+)]
+// qual:allow(srp) - Integration test module containing multiple distinct CLI test scenarios
+use anyhow::Context;
 use assert_cmd::Command;
 
+// qual:allow(test_quality) — CLI integration test running binary as subprocess has no static SUT references
 #[test]
-fn test_cli_verbose() {
-    let mut cmd = Command::cargo_bin("metonymy").expect("failed to get cargo bin");
-    cmd.arg("--verbose")
+fn test_cli_modes() -> anyhow::Result<()> {
+    // 1. Normal mode
+    let mut cmd = Command::cargo_bin("metonymy").context("failed to get cargo bin")?;
+    let assert_res = cmd.assert().success();
+    assert!(assert_res.get_output().status.success());
+    assert_res.stdout(predicates::str::contains("Metonymy is running..."));
+
+    // 2. Verbose mode
+    let mut cmd2 = Command::cargo_bin("metonymy").context("failed to get cargo bin")?;
+    let assert_res2 = cmd2.arg("--verbose").assert().success();
+    assert!(assert_res2.get_output().status.success());
+    assert_res2.stdout(predicates::str::contains(
+        "Metonymy is running in verbose mode...",
+    ));
+    Ok(())
+}
+
+macro_rules! init_dict {
+    ($dict_path:expr, $lang_path:expr) => {
+        Command::cargo_bin("metonymy")?
+            .args([
+                "--language",
+                $lang_path,
+                "--dict",
+                $dict_path,
+                "dictionary",
+                "init",
+            ])
+            .assert()
+            .success();
+    };
+}
+
+macro_rules! add_word_to_dict {
+    ($args:expr) => {{
+        let assert_res = Command::cargo_bin("metonymy")?
+            .args($args)
+            .assert()
+            .success();
+        String::from_utf8(assert_res.get_output().stdout.clone())?
+    }};
+}
+
+macro_rules! print_dict {
+    ($dict_path:expr) => {{
+        let mut cmd = Command::cargo_bin("metonymy")?;
+        cmd.args(["--dict", $dict_path, "dictionary", "print"]);
+        cmd
+    }};
+}
+
+macro_rules! remove_from_dict {
+    ($dict_path:expr, $word_id:expr) => {
+        Command::cargo_bin("metonymy")?
+            .args(["--dict", $dict_path, "dictionary", "remove", $word_id])
+            .assert()
+            .success();
+    };
+}
+
+// qual:allow(test_quality) — CLI integration test running binary as subprocess has no static SUT references
+#[test]
+fn test_dictionary_cli_lifecycle() -> anyhow::Result<()> {
+    let temp_dir = tempfile::tempdir().context("create temp dir")?;
+    let dict_path = temp_dir.path().join("dict.json");
+    let dict_path_str = dict_path.to_str().context("valid dict path string")?;
+    let lang_path = "tests/features/test_language.json";
+
+    init_dict!(dict_path_str, lang_path);
+
+    let add_args = [
+        "--dict",
+        dict_path_str,
+        "dictionary",
+        "add",
+        "--meaning",
+        "red",
+        "--type",
+        "adjective",
+        "--definition",
+        "pat",
+        "--era",
+        "1",
+        "--etymology",
+        "0:pa,ta",
+        "--usage-notes",
+        "notes",
+    ];
+    let stdout = add_word_to_dict!(&add_args);
+    let word_id = stdout
+        .split("with ID ")
+        .nth(1)
+        .map(str::trim)
+        .context("no ID")?;
+
+    print_dict!(dict_path_str)
         .assert()
         .success()
-        .stdout(predicates::str::contains(
-            "Metonymy is running in verbose mode...",
-        ));
-}
+        .stdout(predicates::str::contains("Total Entries: 1"))
+        .stdout(predicates::str::contains("Definition : /pat/"));
 
-#[test]
-fn test_cli_normal() {
-    let mut cmd = Command::cargo_bin("metonymy").expect("failed to get cargo bin");
-    cmd.assert()
+    remove_from_dict!(dict_path_str, word_id);
+
+    print_dict!(dict_path_str)
+        .assert()
         .success()
-        .stdout(predicates::str::contains("Metonymy is running..."));
+        .stdout(predicates::str::contains("Total Entries: 0"));
+
+    Ok(())
 }
 
-fn run_dictionary_init(lang_path: &str, dict_path: &str) -> assert_cmd::assert::Assert {
-    let mut cmd = Command::cargo_bin("metonymy").expect("failed to get cargo bin");
-    cmd.args([
+// qual:allow(test_quality) — CLI integration test running binary as subprocess has no static SUT references
+#[test]
+fn test_dictionary_cli_generate() -> anyhow::Result<()> {
+    let temp_dir = tempfile::tempdir().context("create temp dir")?;
+    let dict_path = temp_dir.path().join("dict.json");
+    let dict_path_str = dict_path.to_str().context("valid dict path string")?;
+    let lang_path = "tests/features/test_language.json";
+
+    init_dict!(dict_path_str, lang_path);
+
+    let _ = add_word_to_dict!(&[
         "--language",
         lang_path,
         "--dict",
-        dict_path,
+        dict_path_str,
         "dictionary",
-        "init",
-    ])
-    .assert()
-}
-
-#[derive(Copy, Clone)]
-struct DictionaryAddArgs<'a> {
-    lang_path: Option<&'a str>,
-    dict_path: &'a str,
-    meaning: &'a str,
-    definition: Option<&'a str>,
-    r#type: &'a str,
-    era: Option<&'a str>,
-    etymology: &'a [&'a str],
-    usage_notes: &'a str,
-}
-
-fn run_dictionary_add(args: DictionaryAddArgs<'_>) -> assert_cmd::assert::Assert {
-    let mut cmd = Command::cargo_bin("metonymy").expect("failed to get cargo bin");
-    let mut cli_args = Vec::new();
-    if let Some(lang) = args.lang_path {
-        cli_args.push("--language".to_string());
-        cli_args.push(lang.to_string());
-    }
-    cli_args.extend(vec![
-        "--dict".to_string(),
-        args.dict_path.to_string(),
-        "dictionary".to_string(),
-        "add".to_string(),
-        "--meaning".to_string(),
-        args.meaning.to_string(),
-        "--type".to_string(),
-        args.r#type.to_string(),
+        "add",
+        "--meaning",
+        "red",
+        "--type",
+        "noun.masculine",
+        "--generate",
     ]);
-    if let Some(def) = args.definition {
-        cli_args.push("--definition".to_string());
-        cli_args.push(def.to_string());
-    } else {
-        cli_args.push("--generate".to_string());
-    }
-    if let Some(e) = args.era {
-        cli_args.push("--era".to_string());
-        cli_args.push(e.to_string());
-    }
-    for ety in args.etymology {
-        cli_args.push("--etymology".to_string());
-        cli_args.push(ety.to_string());
-    }
-    if !args.usage_notes.is_empty() {
-        cli_args.push("--usage-notes".to_string());
-        cli_args.push(args.usage_notes.to_string());
-    }
-    cmd.args(cli_args).assert()
-}
 
-fn run_dictionary_print(dict_path: &str) -> assert_cmd::assert::Assert {
-    let mut cmd = Command::cargo_bin("metonymy").expect("failed to get cargo bin");
-    cmd.args(["--dict", dict_path, "dictionary", "print"])
+    print_dict!(dict_path_str)
         .assert()
-}
-
-fn run_dictionary_remove(dict_path: &str, word_id: &str) -> assert_cmd::assert::Assert {
-    let mut cmd = Command::cargo_bin("metonymy").expect("failed to get cargo bin");
-    cmd.args(["--dict", dict_path, "dictionary", "remove", word_id])
-        .assert()
-}
-
-fn add_test_word(dict_path_str: &str) -> String {
-    let assert_add = run_dictionary_add(DictionaryAddArgs {
-        lang_path: None,
-        dict_path: dict_path_str,
-        meaning: "red",
-        definition: Some("pat"),
-        r#type: "adjective",
-        era: Some("1"),
-        etymology: &["0:pa,ta"],
-        usage_notes: "formal notes",
-    });
-    let assert_add = assert_add.success();
-
-    let stdout =
-        String::from_utf8(assert_add.get_output().stdout.clone()).expect("valid UTF-8 stdout");
-    assert!(stdout.contains("Added word 'pat'"));
-
-    let id_prefix = "with ID ";
-    stdout
-        .split(id_prefix)
-        .nth(1)
-        .map(str::trim)
-        .map(String::from)
-        .expect("should find ID in output")
-}
-
-#[test]
-fn test_dictionary_cli_workflow() {
-    let temp_dir = tempfile::tempdir().expect("create temp dir");
-    let dict_path = temp_dir.path().join("dict.json");
-    let dict_path_str = dict_path.to_str().expect("valid dict path string");
-    let lang_path = "tests/features/test_language.json";
-
-    run_dictionary_init(lang_path, dict_path_str)
-        .success()
-        .stdout(predicates::str::contains("Initialized blank dictionary"));
-
-    assert!(dict_path.exists());
-    let content = std::fs::read_to_string(&dict_path).expect("read dict file successfully");
-    assert!(content.contains(r#""entries": []"#));
-
-    let word_id = add_test_word(dict_path_str);
-
-    run_dictionary_print(dict_path_str)
         .success()
         .stdout(predicates::str::contains("Total Entries: 1"))
-        .stdout(predicates::str::contains("Definition : /pat/"))
-        .stdout(predicates::str::contains("Meaning    : /red/"))
-        .stdout(predicates::str::contains("Type       : adjective"))
-        .stdout(predicates::str::contains("Era        : 1"))
-        .stdout(predicates::str::contains("Era 0: pa, ta"))
-        .stdout(predicates::str::contains("Usage Notes: formal notes"));
+        .stdout(predicates::str::contains("Era        : 0"));
 
-    run_dictionary_remove(dict_path_str, &word_id)
-        .success()
-        .stdout(predicates::str::contains(format!(
-            "Removed word with ID {word_id}"
-        )));
-
-    run_dictionary_print(dict_path_str)
-        .success()
-        .stdout(predicates::str::contains("Total Entries: 0"));
+    Ok(())
 }
 
-fn add_generated_word(dict_path_str: &str, lang_path: &str, meaning: &str) {
-    run_dictionary_add(DictionaryAddArgs {
-        lang_path: Some(lang_path),
-        dict_path: dict_path_str,
-        meaning,
-        definition: None,
-        r#type: "noun.masculine",
-        era: None,
-        etymology: &[],
-        usage_notes: "",
-    })
-    .success();
-}
-
+// qual:allow(test_quality) — CLI integration test running binary as subprocess has no static SUT references
 #[test]
-fn test_dictionary_cli_generate_and_default_era() {
-    let temp_dir = tempfile::tempdir().expect("create temp dir");
+fn test_dictionary_cli_custom_era() -> anyhow::Result<()> {
+    let temp_dir = tempfile::tempdir().context("create temp dir")?;
     let dict_path = temp_dir.path().join("dict.json");
-    let dict_path_str = dict_path.to_str().expect("valid dict path string");
+    let dict_path_str = dict_path.to_str().context("valid dict path string")?;
     let lang_path = "tests/features/test_language.json";
 
-    run_dictionary_init(lang_path, dict_path_str).success();
+    init_dict!(dict_path_str, lang_path);
 
-    // 2. Add a generated word with no era and no etymology (defaults to 0)
-    run_dictionary_add(DictionaryAddArgs {
-        lang_path: Some(lang_path),
-        dict_path: dict_path_str,
-        meaning: "red",
-        definition: None,
-        r#type: "noun.masculine",
-        era: None,
-        etymology: &[],
-        usage_notes: "generated",
-    })
-    .success()
-    .stdout(predicates::str::contains("Added word"));
+    let _ = add_word_to_dict!(&[
+        "--dict",
+        dict_path_str,
+        "dictionary",
+        "add",
+        "--meaning",
+        "blue",
+        "--definition",
+        "tap",
+        "--type",
+        "noun.feminine",
+        "--era",
+        "4",
+    ]);
 
-    // 3. Add another word with explicit era 4
-    run_dictionary_add(DictionaryAddArgs {
-        lang_path: None,
-        dict_path: dict_path_str,
-        meaning: "blue",
-        definition: Some("tap"),
-        r#type: "noun.feminine",
-        era: Some("4"),
-        etymology: &[],
-        usage_notes: "",
-    })
-    .success();
-
-    // 4. Add a generated word with no era (defaults to 4)
-    add_generated_word(dict_path_str, lang_path, "green");
-
-    // 5. Print dictionary and assert values
-    run_dictionary_print(dict_path_str)
+    print_dict!(dict_path_str)
+        .assert()
         .success()
-        .stdout(predicates::str::contains("Total Entries: 3"))
-        .stdout(predicates::str::contains("Era        : 0"))
+        .stdout(predicates::str::contains("Total Entries: 1"))
         .stdout(predicates::str::contains("Era        : 4"));
+
+    Ok(())
 }

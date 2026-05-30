@@ -15,8 +15,11 @@ fn test_spe_feature_deserialize_valid() {
 #[test]
 fn test_spe_feature_deserialize_invalid() {
     let result: Result<SpeFeature, _> = serde_json::from_value(json!("nasal"));
-    result
-        .expect_err("Deserializing a plain string as SpeFeature should fail (missing +/- prefix)");
+    assert!(
+        result.is_err(),
+        "Deserializing a plain string as SpeFeature should fail (missing +/- prefix)"
+    );
+    assert_eq!(SpeFeature::Plus(Feature::Nasal).to_string(), "+nasal");
 }
 
 #[test]
@@ -118,7 +121,8 @@ fn test_validate_ipa_data_multiple_errors() {
         }
     });
     let result = validate_ipa_data(&invalid_data);
-    let errs = result.expect_err("expected err");
+    let err_str = result.expect_err("expected err");
+    let errs: Vec<&str> = err_str.lines().collect();
     assert!(errs.len() > 1);
     assert!(errs.iter().any(|e| e.contains("invalid_type")));
     assert!(errs.iter().any(|e| e.contains("another_invalid")));

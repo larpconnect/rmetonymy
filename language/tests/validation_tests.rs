@@ -1,3 +1,4 @@
+// qual:allow(srp) - Validation test suite
 use language::config::{GeneratorConfig, SoundClass};
 use language::generator::WordGenerator;
 use language::generator::validation::{

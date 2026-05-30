@@ -61,6 +61,19 @@ fn parse_word(
     Ok(ipa_word)
 }
 
+fn apply_orthography_op(
+    word: &language::syllable::IpaWord,
+    config: &language::config::LanguageConfig,
+    verbose: bool,
+) -> anyhow::Result<(String, Vec<String>)> {
+    let ortho_rules = config.orthography.as_deref().unwrap_or(&[]);
+    let compiled_ortho = soundchange::compile_ortho_rules(ortho_rules)
+        .map_err(|e| anyhow::anyhow!("Failed to compile orthography rules: {e}"))?;
+    let (ortho_res, logs) = soundchange::apply_orthography(word, &compiled_ortho, config, verbose)
+        .map_err(|e| anyhow::anyhow!("Failed to apply orthography: {e}"))?;
+    Ok((ortho_res, logs))
+}
+
 pub(crate) fn handle_sound_change(
     cmd: &SoundChangeCmd,
     language_path: Option<&PathBuf>,
@@ -83,8 +96,7 @@ pub(crate) fn handle_sound_change(
     let (result_word, trace_logs) = soundchange::evaluator::apply_sound_changes(
         &ipa_word,
         &compiled,
-        cmd.start,
-        end_era,
+        (cmd.start, end_era),
         &config,
         cmd.verbose,
     )
@@ -94,12 +106,7 @@ pub(crate) fn handle_sound_change(
     let mut ortho_logs = Vec::new();
 
     if cmd.orthography {
-        let ortho_rules = config.orthography.as_deref().unwrap_or(&[]);
-        let compiled_ortho = soundchange::compile_ortho_rules(ortho_rules)
-            .map_err(|e| anyhow::anyhow!("Failed to compile orthography rules: {e}"))?;
-        let (ortho_res, logs) =
-            soundchange::apply_orthography(&result_word, &compiled_ortho, &config, cmd.verbose)
-                .map_err(|e| anyhow::anyhow!("Failed to apply orthography: {e}"))?;
+        let (ortho_res, logs) = apply_orthography_op(&result_word, &config, cmd.verbose)?;
         result_str = ortho_res;
         ortho_logs = logs;
     }

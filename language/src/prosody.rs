@@ -1,3 +1,4 @@
+// qual:allow(srp) - Large prosody module
 //! Prosody module for managing stress configurations and applying them to words.
 
 use crate::config::{LanguageConfig, ZipfConfig};
@@ -5,6 +6,10 @@ use crate::generator::rng::{Rng, RngExt};
 use crate::generator::validation::ValidationError;
 use crate::syllable::{IpaWord, Syllable, SyllableStress, SyllableStructure};
 use serde::{Deserialize, Serialize};
+
+const ZERO_F64: f64 = 0.0;
+const ONE_F64: f64 = 1.0;
+const THREE_FOOT_SIZE: usize = 3;
 
 /// Options for alternating stress placement.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
@@ -96,12 +101,12 @@ impl ProsodicConfig {
             Self::Patterned(pat) => {
                 let limit = match pat.foot {
                     FootSize::Two => 2,
-                    FootSize::Three => 3,
+                    FootSize::Three => THREE_FOOT_SIZE,
                 };
                 let loc_val = match pat.stress_location {
                     StressLocation::First => 1,
                     StressLocation::Second => 2,
-                    StressLocation::Third => 3,
+                    StressLocation::Third => THREE_FOOT_SIZE,
                 };
                 if loc_val > limit {
                     return Err(ValidationError::InvalidProsodyConfig(format!(
@@ -110,7 +115,7 @@ impl ProsodicConfig {
                     )));
                 }
             }
-            Self::NoFixedStress { config } if config.a < 0.0 || config.b < 0.0 => {
+            Self::NoFixedStress { config } if config.a < ZERO_F64 || config.b < ZERO_F64 => {
                 return Err(ValidationError::InvalidProsodyConfig(
                     "Zipf parameters a and b must be non-negative".to_string(),
                 ));
@@ -195,7 +200,7 @@ fn get_alternating_target_index(option: AlternatingConfig, num_syllables: usize)
     let idx = match option {
         AlternatingConfig::FirstSyllable => 0,
         AlternatingConfig::SecondSyllable => 1,
-        AlternatingConfig::Antepenultimate => num_syllables.saturating_sub(3),
+        AlternatingConfig::Antepenultimate => num_syllables.saturating_sub(THREE_FOOT_SIZE),
         AlternatingConfig::Penultimate => num_syllables.saturating_sub(2),
         AlternatingConfig::Ultimate => num_syllables.saturating_sub(1),
     };
@@ -320,41 +325,46 @@ fn apply_patterned_main_stress_first_anchored(
     }
 }
 
-fn apply_patterned_main_stress_last_remainder_anchored(
-    syllables: &mut [Syllable],
+struct FootParams {
     num_complete_feet: usize,
     foot_size: usize,
     stress_loc: usize,
     remainder: usize,
     p_idx: usize,
+}
+
+struct LongWordParams {
+    num_syllables: usize,
+    foot_size: usize,
+    stress_loc: usize,
+    main_stress: MainStress,
+    anchor_opt: Option<usize>,
+}
+
+fn apply_patterned_main_stress_last_remainder_anchored(
+    syllables: &mut [Syllable],
+    params: &FootParams,
 ) {
-    if let Some(syl) = syllables.get_mut(p_idx) {
+    if let Some(syl) = syllables.get_mut(params.p_idx) {
         syl.stress = SyllableStress::PrimaryStress;
     }
-    for i in 0..num_complete_feet {
-        let stress_idx = remainder + i * foot_size + stress_loc;
+    for i in 0..params.num_complete_feet {
+        let stress_idx = params.remainder + i * params.foot_size + params.stress_loc;
         if let Some(syl) = syllables.get_mut(stress_idx) {
             syl.stress = SyllableStress::SecondaryStress;
         }
     }
 }
 
-fn apply_patterned_main_stress_last_foot_anchored(
-    syllables: &mut [Syllable],
-    num_complete_feet: usize,
-    foot_size: usize,
-    stress_loc: usize,
-    remainder: usize,
-    p_idx: usize,
-) {
-    let primary_foot_idx = (p_idx - remainder) / foot_size;
-    for i in 0..num_complete_feet {
+fn apply_patterned_main_stress_last_foot_anchored(syllables: &mut [Syllable], params: &FootParams) {
+    let primary_foot_idx = (params.p_idx - params.remainder) / params.foot_size;
+    for i in 0..params.num_complete_feet {
         if i == primary_foot_idx {
-            if let Some(syl) = syllables.get_mut(p_idx) {
+            if let Some(syl) = syllables.get_mut(params.p_idx) {
                 syl.stress = SyllableStress::PrimaryStress;
             }
         } else {
-            let stress_idx = remainder + i * foot_size + stress_loc;
+            let stress_idx = params.remainder + i * params.foot_size + params.stress_loc;
             if let Some(syl) = syllables.get_mut(stress_idx) {
                 syl.stress = SyllableStress::SecondaryStress;
             }
@@ -362,75 +372,52 @@ fn apply_patterned_main_stress_last_foot_anchored(
     }
 }
 
-fn apply_patterned_main_stress_last_anchored(
-    syllables: &mut [Syllable],
-    num_complete_feet: usize,
-    foot_size: usize,
-    stress_loc: usize,
-    remainder: usize,
-    p_idx: usize,
-) {
-    if p_idx < remainder {
-        apply_patterned_main_stress_last_remainder_anchored(
-            syllables,
-            num_complete_feet,
-            foot_size,
-            stress_loc,
-            remainder,
-            p_idx,
-        );
+fn apply_patterned_main_stress_last_anchored(syllables: &mut [Syllable], params: &FootParams) {
+    if params.p_idx < params.remainder {
+        apply_patterned_main_stress_last_remainder_anchored(syllables, params);
     } else {
-        apply_patterned_main_stress_last_foot_anchored(
-            syllables,
-            num_complete_feet,
-            foot_size,
-            stress_loc,
-            remainder,
-            p_idx,
-        );
+        apply_patterned_main_stress_last_foot_anchored(syllables, params);
     }
 }
 
-fn apply_patterned_long_word(
-    syllables: &mut [Syllable],
-    num_syllables: usize,
-    foot_size: usize,
-    stress_loc: usize,
-    main_stress: MainStress,
-    anchor_opt: Option<usize>,
-) {
-    let num_complete_feet = num_syllables / foot_size;
-    match main_stress {
+fn apply_patterned_long_word(syllables: &mut [Syllable], params: &LongWordParams) {
+    let num_complete_feet = params.num_syllables / params.foot_size;
+    match params.main_stress {
         MainStress::First => {
-            if let Some(p_idx) = anchor_opt {
+            if let Some(p_idx) = params.anchor_opt {
                 apply_patterned_main_stress_first_anchored(
                     syllables,
                     num_complete_feet,
-                    foot_size,
-                    stress_loc,
+                    params.foot_size,
+                    params.stress_loc,
                     p_idx,
                 );
             } else {
-                apply_patterned_first(syllables, num_complete_feet, foot_size, stress_loc);
+                apply_patterned_first(
+                    syllables,
+                    num_complete_feet,
+                    params.foot_size,
+                    params.stress_loc,
+                );
             }
         }
         MainStress::Last => {
-            let remainder = num_syllables % foot_size;
-            if let Some(p_idx) = anchor_opt {
-                apply_patterned_main_stress_last_anchored(
-                    syllables,
+            let remainder = params.num_syllables % params.foot_size;
+            if let Some(p_idx) = params.anchor_opt {
+                let foot_params = FootParams {
                     num_complete_feet,
-                    foot_size,
-                    stress_loc,
+                    foot_size: params.foot_size,
+                    stress_loc: params.stress_loc,
                     remainder,
                     p_idx,
-                );
+                };
+                apply_patterned_main_stress_last_anchored(syllables, &foot_params);
             } else {
                 apply_patterned_last(
                     syllables,
                     num_complete_feet,
-                    foot_size,
-                    stress_loc,
+                    params.foot_size,
+                    params.stress_loc,
                     remainder,
                 );
             }
@@ -456,14 +443,14 @@ fn apply_patterned(
     if num_syllables < foot_size {
         apply_patterned_short_word(syllables, num_syllables, stress_loc, anchor_opt);
     } else {
-        apply_patterned_long_word(
-            syllables,
+        let long_word_params = LongWordParams {
             num_syllables,
             foot_size,
             stress_loc,
-            pat.main_stress,
+            main_stress: pat.main_stress,
             anchor_opt,
-        );
+        };
+        apply_patterned_long_word(syllables, &long_word_params);
     }
 }
 
@@ -525,19 +512,31 @@ fn sample_zipf_index<R: Rng + ?Sized>(num_choices: usize, a: f64, b: f64, rng: &
     if num_choices <= 1 {
         return 0;
     }
-    let mut sum = 0.0;
+    let mut sum = ZERO_F64;
     for i in 1..=num_choices {
-        sum += 1.0 / (i as f64 + b).powf(a);
+        sum += ONE_F64 / (i as f64 + b).powf(a);
     }
 
     let r = rng.random::<f64>() * sum;
-    let mut accum = 0.0;
+    let mut accum = ZERO_F64;
     for i in 1..=num_choices {
-        let w = 1.0 / (i as f64 + b).powf(a);
+        let w = ONE_F64 / (i as f64 + b).powf(a);
         accum += w;
         if accum >= r {
             return i - 1;
         }
     }
     num_choices - 1
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_default_no_fixed_stress_zipf() {
+        let conf = default_no_fixed_stress_zipf();
+        assert!((conf.a - 1.0).abs() < f64::EPSILON);
+        assert!((conf.b - 1.0).abs() < f64::EPSILON);
+    }
 }

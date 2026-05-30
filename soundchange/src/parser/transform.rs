@@ -3,37 +3,31 @@ use crate::ast::{
 };
 use crate::parser::Rule;
 use crate::parser::error::SoundChangeParseError;
-use crate::parser::pattern::{
-    convert_feature_descriptor, convert_reference_rule, convert_set_exclusion,
-    parse_transform_reference_symbol,
-};
+use crate::parser::pattern::parse_transform_reference_symbol;
 use ipa::IpaString;
 use pest::iterators::Pair;
 
 pub(crate) fn convert_transform_part(
     pair: Pair<'_, Rule>,
 ) -> Result<ParsedTransformPart, SoundChangeParseError> {
-    let inner = pair.into_inner().next().ok_or_else(|| {
-        SoundChangeParseError::ConversionError("Empty transform part".to_string())
-    })?;
-    match inner.as_rule() {
-        Rule::reference_rule => {
-            let name = convert_reference_rule(inner)?;
-            Ok(ParsedTransformPart::Reference(name))
-        }
-        Rule::transform_pattern => {
-            let pattern = convert_transform_pattern(inner)?;
-            Ok(ParsedTransformPart::Pattern(pattern))
-        }
-        Rule::empty_symbol => Ok(ParsedTransformPart::Empty),
-        _ => Err(SoundChangeParseError::ConversionError(format!(
-            "Invalid transform part rule: {:?}",
-            inner.as_rule()
-        ))),
+    if false {
+        #[expect(
+            clippy::let_underscore_must_use,
+            reason = "dummy block to keep function in scope"
+        )]
+        let _ = convert_transform_pattern(pair.clone());
     }
+    convert_part_ast!(
+        pair,
+        Rule::transform_pattern,
+        convert_transform_pattern,
+        ParsedTransformPart::Reference,
+        ParsedTransformPart::Pattern,
+        ParsedTransformPart::Empty
+    )
 }
 
-pub(crate) fn convert_transform_pattern(
+fn convert_transform_pattern(
     pair: Pair<'_, Rule>,
 ) -> Result<TransformPattern, SoundChangeParseError> {
     let mut elements = Vec::new();
@@ -70,28 +64,24 @@ fn convert_transform_element_inner(
     append_modifiers: Vec<String>,
 ) -> Result<TransformElement, SoundChangeParseError> {
     match inner.as_rule() {
-        Rule::feature_class => {
-            let (key_opt, feature_changes) = parse_transform_feature_class(inner)?;
-            let marker = key_opt.as_ref().and_then(|k| k.marker);
-            let class_key = key_opt.and_then(|k| k.key);
-            Ok(TransformElement::Ref {
-                marker,
-                class_key,
-                repeat: 1,
-                copy_modifiers: modifier_wildcard,
-                append_modifiers,
-                feature_changes,
-            })
-        }
-        Rule::reference_symbol => {
-            let (marker, class_key, repeat) = parse_transform_reference_symbol(inner)?;
+        Rule::feature_class | Rule::reference_symbol => {
+            let (marker, class_key, repeat, feature_changes) =
+                if inner.as_rule() == Rule::feature_class {
+                    let (key_opt, feature_changes) = parse_transform_feature_class(inner)?;
+                    let marker = key_opt.as_ref().and_then(|k| k.marker);
+                    let class_key = key_opt.and_then(|k| k.key);
+                    (marker, class_key, 1, feature_changes)
+                } else {
+                    let (marker, class_key, repeat) = parse_transform_reference_symbol(inner)?;
+                    (marker, class_key, repeat, Vec::new())
+                };
             Ok(TransformElement::Ref {
                 marker,
                 class_key,
                 repeat,
                 copy_modifiers: modifier_wildcard,
                 append_modifiers,
-                feature_changes: Vec::new(),
+                feature_changes,
             })
         }
         Rule::ipa_sequence => {
@@ -128,36 +118,5 @@ pub(crate) fn convert_transform_element(
 pub(crate) fn parse_transform_feature_class(
     pair: Pair<'_, Rule>,
 ) -> Result<(Option<FeatureClassKey>, Vec<FeatureDescriptor>), SoundChangeParseError> {
-    let mut key_opt = None;
-    let mut features = Vec::new();
-
-    for inner in pair.into_inner() {
-        match inner.as_rule() {
-            Rule::reference_symbol => {
-                let (marker, class_key, _repeat) = parse_transform_reference_symbol(inner)?;
-                key_opt = Some(FeatureClassKey {
-                    key: class_key,
-                    exclude: false,
-                    marker,
-                });
-            }
-            Rule::set_exclusion => {
-                if let crate::ast::MatchBase::SetExclusion { key, marker } =
-                    convert_set_exclusion(inner)?
-                {
-                    key_opt = Some(FeatureClassKey {
-                        key: Some(key),
-                        exclude: true,
-                        marker,
-                    });
-                }
-            }
-            Rule::feature_descriptor => {
-                features.push(convert_feature_descriptor(inner)?);
-            }
-            _ => {}
-        }
-    }
-
-    Ok((key_opt, features))
+    crate::parser::pattern::parse_feature_class_inner(pair)
 }

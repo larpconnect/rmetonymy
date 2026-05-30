@@ -19,14 +19,18 @@ fn when_parse_invalid_ipa_string(world: &mut SequenceWorld, s_param: String) {
     world.parsed = Some(PhonemeSequence::from_str(&s));
 }
 
+fn get_parsed_sequence(world: &SequenceWorld) -> Result<&PhonemeSequence, String> {
+    let parsed_opt = world.parsed.as_ref();
+    let res = parsed_opt.ok_or_else(|| "No parsed sequence found".to_string())?;
+    res.as_ref().map_err(std::string::ToString::to_string)
+}
+
 #[then(expr = "the parsed sequence should have {int} elements")]
 fn then_sequence_should_have_elements(
     world: &mut SequenceWorld,
     count: usize,
 ) -> Result<(), String> {
-    let parsed_opt = world.parsed.as_ref();
-    let res = parsed_opt.ok_or_else(|| "No parsed sequence found".to_string())?;
-    let seq = res.as_ref().map_err(std::string::ToString::to_string)?;
+    let seq = get_parsed_sequence(world)?;
     if seq.elements.len() != count {
         return Err(format!(
             "Expected {count} elements, got {}",
@@ -36,15 +40,16 @@ fn then_sequence_should_have_elements(
     Ok(())
 }
 
+fn get_element(seq: &PhonemeSequence, idx: usize) -> Result<&SequenceElement, String> {
+    seq.elements
+        .get(idx)
+        .ok_or_else(|| format!("Index {idx} out of bounds"))
+}
+
 #[then(expr = "the element at index {int} should be PrimaryStress")]
 fn then_element_primary_stress(world: &mut SequenceWorld, idx: usize) -> Result<(), String> {
-    let parsed_opt = world.parsed.as_ref();
-    let res = parsed_opt.ok_or_else(|| "No parsed sequence found".to_string())?;
-    let seq = res.as_ref().map_err(std::string::ToString::to_string)?;
-    let el = seq
-        .elements
-        .get(idx)
-        .ok_or_else(|| format!("Index {idx} out of bounds"))?;
+    let seq = get_parsed_sequence(world)?;
+    let el = get_element(seq, idx)?;
     if !matches!(el, SequenceElement::Prosody(ProsodyMarker::PrimaryStress)) {
         return Err(format!("Expected PrimaryStress, got {el:?}"));
     }
@@ -53,13 +58,8 @@ fn then_element_primary_stress(world: &mut SequenceWorld, idx: usize) -> Result<
 
 #[then(expr = "the element at index {int} should be SyllableBreak")]
 fn then_element_syllable_break(world: &mut SequenceWorld, idx: usize) -> Result<(), String> {
-    let parsed_opt = world.parsed.as_ref();
-    let res = parsed_opt.ok_or_else(|| "No parsed sequence found".to_string())?;
-    let seq = res.as_ref().map_err(std::string::ToString::to_string)?;
-    let el = seq
-        .elements
-        .get(idx)
-        .ok_or_else(|| format!("Index {idx} out of bounds"))?;
+    let seq = get_parsed_sequence(world)?;
+    let el = get_element(seq, idx)?;
     if !matches!(el, SequenceElement::SyllableBreak) {
         return Err(format!("Expected SyllableBreak, got {el:?}"));
     }
@@ -75,13 +75,8 @@ fn then_phoneme_has_base_modifiers(
 ) -> Result<(), String> {
     let base = base_param;
     let modifiers_str = modifiers_str_param;
-    let parsed_opt = world.parsed.as_ref();
-    let res = parsed_opt.ok_or_else(|| "No parsed sequence found".to_string())?;
-    let seq = res.as_ref().map_err(std::string::ToString::to_string)?;
-    let el = seq
-        .elements
-        .get(idx)
-        .ok_or_else(|| format!("Index {idx} out of bounds"))?;
+    let seq = get_parsed_sequence(world)?;
+    let el = get_element(seq, idx)?;
     let SequenceElement::Phoneme(p) = el else {
         return Err(format!("Element at index {idx} is not a Phoneme"));
     };
@@ -120,7 +115,18 @@ fn then_parsing_should_fail(
 }
 
 #[tokio::main]
+#[expect(unused_must_use, reason = "dummy block to keep functions in scope")]
 async fn main() {
+    if false {
+        let mut world = SequenceWorld::default();
+        when_parse_ipa_string(&mut world, String::new());
+        when_parse_invalid_ipa_string(&mut world, String::new());
+        then_sequence_should_have_elements(&mut world, 0);
+        then_element_primary_stress(&mut world, 0);
+        then_element_syllable_break(&mut world, 0);
+        then_phoneme_has_base_modifiers(&mut world, 0, String::new(), String::new());
+        then_parsing_should_fail(&mut world, String::new());
+    }
     SequenceWorld::cucumber()
         .run_and_exit("tests/features/sequence.feature")
         .await;

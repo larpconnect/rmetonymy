@@ -3,7 +3,8 @@ use crate::ast::{
 };
 use crate::parser::Rule;
 use crate::parser::error::SoundChangeParseError;
-use crate::parser::pattern::{convert_base_element, convert_quantifier, convert_reference_rule};
+use crate::parser::pattern::{convert_base_element, convert_reference_rule};
+use crate::parser::quantifier::convert_quantifier;
 use pest::iterators::Pair;
 
 fn parse_condition_op(op_str: &str) -> Result<ConditionOp, SoundChangeParseError> {

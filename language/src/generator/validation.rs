@@ -1,10 +1,16 @@
 //! Validation system for the word generator configurations.
 
-use crate::config::SoundClass;
+pub mod cycles;
+pub use cycles::{validate_generator_cycles, validate_sound_class_cycles};
+
 use crate::generator::{WordGenerator, WordPattern, WordPatternElement};
 use crate::sound_class::SoundClassKey;
 use std::collections::{BTreeMap, HashSet};
 use thiserror::Error;
+
+const MAX_SECONDARY_TYPE_LEN: usize = 32;
+const MIN_DERIVATION_NAME_LEN: usize = 3;
+const MAX_DERIVATION_NAME_LEN: usize = 31;
 
 /// Validation errors that may occur when loading configuration.
 #[derive(Debug, Error, PartialEq, Clone)]
@@ -102,7 +108,7 @@ fn validate_key_format(key: &str) -> Result<(), ValidationError> {
     }
 
     if let Some(sec) = secondary {
-        if sec.is_empty() || sec.len() > 32 {
+        if sec.is_empty() || sec.len() > MAX_SECONDARY_TYPE_LEN {
             return Err(ValidationError::InvalidSecondaryType(sec.to_string()));
         }
         if !sec
@@ -205,129 +211,10 @@ pub fn validate_pattern_sound_classes<S: std::hash::BuildHasher>(
     Ok(())
 }
 
-/// Validates that there are no circular containment relationships in sound classes.
-///
-/// # Errors
-/// Returns `Err` if any containment cycle is detected.
-pub fn validate_sound_class_cycles(
-    sound_classes: &BTreeMap<SoundClassKey, SoundClass>,
-) -> Result<(), ValidationError> {
-    let mut graph = BTreeMap::new();
-    for (key, sc) in sound_classes {
-        let mut deps = Vec::new();
-        for val in &sc.values {
-            if let Some(nested_key) = val
-                .parse::<SoundClassKey>()
-                .ok()
-                .filter(|k| sound_classes.contains_key(k))
-            {
-                deps.push(nested_key);
-            }
-        }
-        graph.insert(key.clone(), deps);
-    }
-
-    let mut visiting = HashSet::new();
-    let mut visited = HashSet::new();
-
-    for key in graph.keys() {
-        if !visited.contains(key) {
-            check_sound_class_cycle(key, &graph, &mut visiting, &mut visited)?;
-        }
-    }
-
-    Ok(())
-}
-
-fn check_sound_class_cycle(
-    node: &SoundClassKey,
-    graph: &BTreeMap<SoundClassKey, Vec<SoundClassKey>>,
-    visiting: &mut HashSet<SoundClassKey>,
-    visited: &mut HashSet<SoundClassKey>,
-) -> Result<(), ValidationError> {
-    visiting.insert(node.clone());
-
-    if let Some(deps) = graph.get(node) {
-        for dep in deps {
-            if visiting.contains(dep) {
-                return Err(ValidationError::CircularSoundClassContainment(
-                    node.to_string(),
-                ));
-            }
-            if !visited.contains(dep) {
-                check_sound_class_cycle(dep, graph, visiting, visited)?;
-            }
-        }
-    }
-
-    visiting.remove(node);
-    visited.insert(node.clone());
-    Ok(())
-}
-
-/// Validates that there are no circular generation dependencies.
-///
-/// # Errors
-/// Returns `Err` if any pattern reference cycle is detected.
-pub fn validate_generator_cycles(
-    generators: &BTreeMap<String, WordGenerator>,
-) -> Result<(), ValidationError> {
-    let mut graph = BTreeMap::new();
-    for (key, generator) in generators {
-        let mut deps = HashSet::new();
-        for pattern in &generator.patterns {
-            let mut sound_classes = Vec::new();
-            let mut grammar_refs = Vec::new();
-            collect_pattern_references(pattern, &mut sound_classes, &mut grammar_refs);
-
-            for r in grammar_refs {
-                let resolved = resolve_generator_key(&r, generators)?;
-                deps.insert(resolved);
-            }
-        }
-        graph.insert(key.clone(), deps);
-    }
-
-    let mut visiting = HashSet::new();
-    let mut visited = HashSet::new();
-
-    for key in graph.keys() {
-        if !visited.contains(key) {
-            check_generator_cycle(key, &graph, &mut visiting, &mut visited)?;
-        }
-    }
-
-    Ok(())
-}
-
-fn check_generator_cycle(
-    node: &str,
-    graph: &BTreeMap<String, HashSet<String>>,
-    visiting: &mut HashSet<String>,
-    visited: &mut HashSet<String>,
-) -> Result<(), ValidationError> {
-    visiting.insert(node.to_string());
-
-    if let Some(deps) = graph.get(node) {
-        for dep in deps {
-            if visiting.contains(dep) {
-                return Err(ValidationError::CircularPatternReferences(node.to_string()));
-            }
-            if !visited.contains(dep) {
-                check_generator_cycle(dep, graph, visiting, visited)?;
-            }
-        }
-    }
-
-    visiting.remove(node);
-    visited.insert(node.to_string());
-    Ok(())
-}
-
 /// Helper to validate if derivation name fits the required character set and length constraints.
 #[must_use]
 pub fn is_valid_derivation_name(name: &str) -> bool {
-    if name.len() < 3 || name.len() > 31 {
+    if name.len() < MIN_DERIVATION_NAME_LEN || name.len() > MAX_DERIVATION_NAME_LEN {
         return false;
     }
     name.chars()
@@ -338,7 +225,7 @@ pub fn is_valid_derivation_name(name: &str) -> bool {
 ///
 /// # Errors
 /// Returns `Err` if any derivation has an invalid name or duplicate name.
-pub fn validate_derivations(
+fn validate_derivation_names_op(
     derivations: &[crate::config::Derivation],
 ) -> Result<(), ValidationError> {
     for deriv in derivations {
@@ -346,8 +233,10 @@ pub fn validate_derivations(
             return Err(ValidationError::InvalidDerivationName(deriv.name.clone()));
         }
     }
+    Ok(())
+}
 
-    // Collect all full types mentioned in the derivations
+fn collect_all_types_op(derivations: &[crate::config::Derivation]) -> HashSet<String> {
     let mut all_types = HashSet::new();
     for deriv in derivations {
         if let Some(ref from_t) = deriv.from_type {
@@ -357,39 +246,64 @@ pub fn validate_derivations(
             }
         }
     }
+    all_types
+}
 
-    // If there are no types, we still check empty type derivations themselves
-    if all_types.is_empty() {
-        let mut names = HashSet::new();
-        for deriv in derivations {
-            if !names.insert(&deriv.name) {
-                return Err(ValidationError::DuplicateDerivationName(deriv.name.clone()));
+fn validate_no_type_duplicates_op(
+    derivations: &[crate::config::Derivation],
+) -> Result<(), ValidationError> {
+    let mut names = HashSet::new();
+    for deriv in derivations {
+        if !names.insert(&deriv.name) {
+            return Err(ValidationError::DuplicateDerivationName(deriv.name.clone()));
+        }
+    }
+    Ok(())
+}
+
+fn derivation_applies_to_type_op(from_type: Option<&str>, target_type: &str) -> bool {
+    match from_type {
+        None => true,
+        Some(from_t) => {
+            if from_t == target_type {
+                true
+            } else if let Some((t_base, _)) = target_type.split_once('.') {
+                from_t == t_base
+            } else {
+                false
             }
         }
-        return Ok(());
     }
+}
 
-    // For each type, check that all derivations that can apply to it have unique names
-    for t in &all_types {
+fn validate_type_specific_duplicates_op(
+    derivations: &[crate::config::Derivation],
+    all_types: &HashSet<String>,
+) -> Result<(), ValidationError> {
+    for t in all_types {
         let mut names = HashSet::new();
         for deriv in derivations {
-            let applies = match &deriv.from_type {
-                None => true,
-                Some(from_t) => {
-                    if from_t == t {
-                        true
-                    } else if let Some((t_base, _)) = t.split_once('.') {
-                        from_t == t_base
-                    } else {
-                        false
-                    }
-                }
-            };
+            let applies = derivation_applies_to_type_op(deriv.from_type.as_deref(), t);
             if applies && !names.insert(&deriv.name) {
                 return Err(ValidationError::DuplicateDerivationName(deriv.name.clone()));
             }
         }
     }
-
     Ok(())
+}
+
+/// Validates the derivations config.
+///
+/// # Errors
+/// Returns `Err` if derivation names are duplicate or invalid.
+pub fn validate_derivations(
+    derivations: &[crate::config::Derivation],
+) -> Result<(), ValidationError> {
+    validate_derivation_names_op(derivations)?;
+    let all_types = collect_all_types_op(derivations);
+    if all_types.is_empty() {
+        validate_no_type_duplicates_op(derivations)
+    } else {
+        validate_type_specific_duplicates_op(derivations, &all_types)
+    }
 }

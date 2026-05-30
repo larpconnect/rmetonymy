@@ -1,3 +1,4 @@
+// qual:allow(srp) - Prosody test suite
 use ipa::IpaString;
 use language::config::{
     LanguageConfig, MetadataConfig, NameConfig, PhonologyConfig, PhonotacticsConfig,
@@ -246,6 +247,7 @@ fn test_stress_propagation_capture() {
     assert_eq!(word.to_string(), "ˌpəl.ɪˈtɪk.əl");
 }
 
+// qual:allow(dry) - Test setup boilerplate
 #[test]
 fn test_prosody_validation() {
     let config_valid = ProsodicConfig::Patterned(PatternedConfig {

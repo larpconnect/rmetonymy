@@ -140,44 +140,22 @@ fn apply_ortho_transparent_change(
     is_single: bool,
     ctx: &EvalContext<'_>,
 ) {
-    let mut scan_idx = if is_leftward { word.phonemes.len() } else { 0 };
-
-    loop {
-        if is_leftward && scan_idx > word.phonemes.len() {
-            scan_idx = word.phonemes.len();
-        }
-
-        let match_opt = crate::evaluator::engine::find_next_match(
-            word,
-            &rule.match_part,
-            rule.condition.as_ref(),
-            scan_idx,
-            is_leftward,
-            ctx,
-        );
-        let Some((range, state)) = match_opt else {
-            break;
-        };
-
-        // Clone range because splice takes ownership of range in next step
-        let orig_range = range.clone();
-        let new_range = replace_ortho_range(word, orig_range, &state, &rule.transform_part);
-
-        if is_single {
-            break;
-        }
-
-        if is_leftward {
-            if range.start == 0 {
-                break;
-            }
-            scan_idx = range.start;
-        } else {
-            scan_idx = new_range.end;
-            if scan_idx > word.phonemes.len() {
-                break;
-            }
-        }
+    let params = crate::evaluator::engine::TransparentLoopParams {
+        match_part: &rule.match_part,
+        condition: rule.condition.as_ref(),
+        is_leftward,
+        is_single,
+        ctx,
+    };
+    let res: Result<(), std::convert::Infallible> =
+        crate::evaluator::engine::evaluate_transparent_loop(word, &params, |word, range, state| {
+            let orig_range = range.clone();
+            let new_range = replace_ortho_range(word, orig_range, state, &rule.transform_part);
+            Ok(new_range)
+        });
+    match res {
+        Ok(()) => {}
+        Err(e) => match e {},
     }
 }
 
@@ -198,15 +176,13 @@ fn replace_ortho_range(
     word.tags.splice(range, new_tags);
 
     let original_len = end - start;
-    let mut updated_boundaries = BTreeSet::new();
-    for &b in &word.syllable_boundaries {
-        if b < start {
-            updated_boundaries.insert(b);
-        } else if b >= end {
-            updated_boundaries.insert(b - original_len + new_len);
-        }
-    }
-    word.syllable_boundaries = updated_boundaries;
+    crate::evaluator::boundary_adjust::adjust_boundaries_op(
+        word,
+        start,
+        end,
+        original_len,
+        new_len,
+    );
 
     start..start + new_len
 }

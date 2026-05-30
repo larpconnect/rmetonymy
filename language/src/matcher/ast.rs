@@ -43,24 +43,14 @@ pub struct PatternElement {
     pub marker: Option<u8>,
 }
 
+// qual:allow(srp) - Struct represents match patterns and their complex variations
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SoundMatcherPattern {
     pub elements: Vec<PatternElement>,
 }
 
 impl BaseElement {
-    fn write_features(f: &mut Formatter<'_>, features: &[FeatureDescriptor]) -> std::fmt::Result {
-        for (i, feat) in features.iter().enumerate() {
-            if i > 0 {
-                write!(f, " ")?;
-            }
-            let sign = if feat.sign { "+" } else { "-" };
-            write!(f, "{sign}{}", feat.feature)?;
-        }
-        Ok(())
-    }
-
-    fn write_feature_class(
+    fn write_feature_class_op(
         f: &mut Formatter<'_>,
         sc: Option<&SoundClassKey>,
         features: &[FeatureDescriptor],
@@ -76,40 +66,65 @@ impl BaseElement {
                 write!(f, " ")?;
             }
         }
-        Self::write_features(f, features)?;
+        for (i, feat) in features.iter().enumerate() {
+            if i > 0 {
+                write!(f, " ")?;
+            }
+            let sign = if feat.sign { "+" } else { "-" };
+            write!(f, "{sign}{}", feat.feature)?;
+        }
         write!(f, "]")
     }
 
-    fn write_set_element(f: &mut Formatter<'_>, set_el: &BaseElement) -> std::fmt::Result {
-        match set_el {
-            BaseElement::SoundClass(key) => write!(f, "{key}"),
-            BaseElement::IpaSequence(ipa) => write!(f, "{ipa}"),
-            _ => Ok(()),
-        }
-    }
-
-    fn write_set(f: &mut Formatter<'_>, els: &[BaseElement]) -> std::fmt::Result {
+    fn write_set_op(f: &mut Formatter<'_>, els: &[BaseElement]) -> std::fmt::Result {
         write!(f, "{{")?;
         for (i, set_el) in els.iter().enumerate() {
             if i > 0 {
                 write!(f, ", ")?;
             }
-            Self::write_set_element(f, set_el)?;
+            match set_el {
+                BaseElement::SoundClass(key) => write!(f, "{key}")?,
+                BaseElement::IpaSequence(ipa) => write!(f, "{ipa}")?,
+                _ => {}
+            }
         }
         write!(f, "}}")
     }
 
+    fn write_word_boundary_op(f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "#")
+    }
+
+    fn write_syllable_boundary_op(f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "$")
+    }
+
+    fn write_sound_class_op(f: &mut Formatter<'_>, key: &SoundClassKey) -> std::fmt::Result {
+        write!(f, "{key}")
+    }
+
+    fn write_ipa_sequence_op(f: &mut Formatter<'_>, ipa: &IpaString) -> std::fmt::Result {
+        write!(f, "{ipa}")
+    }
+
+    fn write_optional_group_op(
+        f: &mut Formatter<'_>,
+        pat: &SoundMatcherPattern,
+    ) -> std::fmt::Result {
+        write!(f, "({pat})")
+    }
+
     fn write_display(&self, f: &mut Formatter<'_>, marker: Option<u8>) -> std::fmt::Result {
         match self {
-            BaseElement::WordBoundary => write!(f, "#"),
-            BaseElement::SyllableBoundary => write!(f, "$"),
-            BaseElement::SoundClass(key) => write!(f, "{key}"),
-            BaseElement::IpaSequence(ipa) => write!(f, "{ipa}"),
+            BaseElement::WordBoundary => Self::write_word_boundary_op(f),
+            BaseElement::SyllableBoundary => Self::write_syllable_boundary_op(f),
+            BaseElement::SoundClass(key) => Self::write_sound_class_op(f, key),
+            BaseElement::IpaSequence(ipa) => Self::write_ipa_sequence_op(f, ipa),
             BaseElement::FeatureClass(sc, features) => {
-                Self::write_feature_class(f, sc.as_ref(), features, marker)
+                Self::write_feature_class_op(f, sc.as_ref(), features, marker)
             }
-            BaseElement::Set(els) => Self::write_set(f, els),
-            BaseElement::OptionalGroup(pat) => write!(f, "({pat})"),
+            BaseElement::Set(els) => Self::write_set_op(f, els),
+            BaseElement::OptionalGroup(pat) => Self::write_optional_group_op(f, pat),
         }
     }
 }
@@ -117,6 +132,13 @@ impl BaseElement {
 impl SoundMatcherPattern {
     fn write_element(f: &mut Formatter<'_>, el: &PatternElement) -> std::fmt::Result {
         el.base.write_display(f, el.marker)?;
+        Self::write_marker_and_quantifier_op(f, el)
+    }
+
+    fn write_marker_and_quantifier_op(
+        f: &mut Formatter<'_>,
+        el: &PatternElement,
+    ) -> std::fmt::Result {
         if let Some(m) = el.marker
             && !matches!(el.base, BaseElement::FeatureClass(_, _))
         {
