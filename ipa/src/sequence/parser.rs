@@ -6,6 +6,7 @@ pub struct PhonemeSegmentContext<'a> {
     pub s: &'a str,
 }
 
+#[must_use]
 #[inline]
 pub fn is_modifier(c: char) -> bool {
     check_is_modifier(c)

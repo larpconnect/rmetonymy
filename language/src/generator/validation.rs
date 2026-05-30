@@ -292,6 +292,10 @@ fn validate_type_specific_duplicates_op(
     Ok(())
 }
 
+/// Validates the derivations config.
+///
+/// # Errors
+/// Returns `Err` if derivation names are duplicate or invalid.
 pub fn validate_derivations(
     derivations: &[crate::config::Derivation],
 ) -> Result<(), ValidationError> {

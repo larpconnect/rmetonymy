@@ -49,22 +49,16 @@ fn process_stack_op<T: Ord + std::hash::Hash + Clone>(
     let mut stack = vec![(start.clone(), 0)];
     visiting.insert(start.clone());
     while let Some((node, idx)) = stack.last_mut() {
-        let popped = match graph.get(node) {
-            Some(deps) if *idx < deps.len() => {
-                let dep = &deps[*idx];
-                *idx += 1;
-                if visiting.contains(dep) {
-                    return Some(node.clone());
-                }
-                if !visited.contains(dep) {
-                    visiting.insert(dep.clone());
-                    stack.push((dep.clone(), 0));
-                }
-                None
+        if let Some(dep) = graph.get(node).and_then(|deps| deps.get(*idx)) {
+            *idx += 1;
+            if visiting.contains(dep) {
+                return Some(node.clone());
             }
-            _ => stack.pop(),
-        };
-        if let Some((p, _)) = popped {
+            if !visited.contains(dep) {
+                visiting.insert(dep.clone());
+                stack.push((dep.clone(), 0));
+            }
+        } else if let Some((p, _)) = stack.pop() {
             visiting.remove(&p);
             visited.insert(p);
         }
