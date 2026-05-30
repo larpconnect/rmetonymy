@@ -1,8 +1,6 @@
 // qual:allow(srp) - Base engine implementation
 use crate::config::SoundClass;
-use crate::matcher::ast::{
-    BaseElement, FeatureDescriptor, SoundMatcherPattern, Token,
-};
+use crate::matcher::ast::{BaseElement, FeatureDescriptor, SoundMatcherPattern, Token};
 use crate::sound_class::SoundClassKey;
 use data::IpaEntry;
 use ipa::{get_entry, get_phoneme_data};
@@ -291,11 +289,7 @@ impl SoundMatcherPattern {
 
     #[inline]
     fn get_phoneme_data_op(in_class: bool, p: &str) -> Option<&data::PhonemeData> {
-        if in_class {
-            get_phoneme_data(p)
-        } else {
-            None
-        }
+        if in_class { get_phoneme_data(p) } else { None }
     }
 
     fn match_features_from_data_integration(
@@ -341,9 +335,7 @@ impl SoundMatcherPattern {
         sc_opt: Option<&SoundClassKey>,
         classes: &BTreeMap<SoundClassKey, SoundClass>,
     ) -> bool {
-        Self::match_sc_opt_dispatch_op(sc_opt, |sc| {
-            Self::phoneme_in_class(p, sc, classes)
-        })
+        Self::match_sc_opt_dispatch_op(sc_opt, |sc| Self::phoneme_in_class(p, sc, classes))
     }
 
     fn match_sc_opt_dispatch_op<F>(sc_opt: Option<&SoundClassKey>, mut check_fn: F) -> bool
@@ -363,9 +355,7 @@ impl SoundMatcherPattern {
         classes: &BTreeMap<SoundClassKey, SoundClass>,
         bindings: &mut BTreeMap<u8, Vec<Token>>,
     ) -> Option<usize> {
-        Self::match_set_op(els, |el| {
-            self.match_base(el, tokens, classes, bindings)
-        })
+        Self::match_set_op(els, |el| self.match_base(el, tokens, classes, bindings))
     }
 
     fn match_set_op<F>(els: &[BaseElement], mut match_fn: F) -> Option<usize>

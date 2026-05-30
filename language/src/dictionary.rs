@@ -16,7 +16,6 @@ pub fn generate_base62_uuid() -> String {
     base62::encode(uuid.as_u128())
 }
 
-
 /// Validate a JSON value against the dictionary schema.
 ///
 /// # Errors

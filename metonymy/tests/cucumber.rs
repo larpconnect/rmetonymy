@@ -144,7 +144,10 @@ mod steps_impl {
     }
 
     #[then(expr = "the output should contain escape-colored {string}")]
-    #[expect(clippy::needless_pass_by_value, reason = "cucumber signature requirement")]
+    #[expect(
+        clippy::needless_pass_by_value,
+        reason = "cucumber signature requirement"
+    )]
     fn the_output_should_contain_escape_colored(world: &mut MetonymyWorld, pattern: String) {
         let expected = pattern
             .replace("<RED>", "\x1b[31m")
@@ -160,7 +163,10 @@ mod steps_impl {
         );
     }
 
-    #[expect(clippy::let_underscore_must_use, reason = "dummy block to keep functions in scope")]
+    #[expect(
+        clippy::let_underscore_must_use,
+        reason = "dummy block to keep functions in scope"
+    )]
     pub(crate) fn register_steps() {
         if false {
             let mut world = MetonymyWorld::default();

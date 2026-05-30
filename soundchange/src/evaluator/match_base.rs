@@ -1,12 +1,11 @@
-use crate::ast::{
-    FeatureClassKey, FeatureDescriptor, MatchBase, MatchPattern,
-};
+use crate::ast::{FeatureClassKey, FeatureDescriptor, MatchBase, MatchPattern};
 use crate::evaluator::engine::evaluate_match;
 use crate::evaluator::{EvalContext, MatchState, WorkingWord};
 use ipa::IpaSequence;
 use ipa::sequence::Phoneme;
 
-pub type MatchRepeatedContext<'a, 'b, 'c> = crate::evaluator::repeated::RepeatedMatchContext<'a, 'b, 'c>;
+pub type MatchRepeatedContext<'a, 'b, 'c> =
+    crate::evaluator::repeated::RepeatedMatchContext<'a, 'b, 'c>;
 pub type RepeatedState = crate::evaluator::repeated::RepeatedState;
 
 pub(crate) struct MatchParams<'a, 'b> {
@@ -41,19 +40,17 @@ pub(crate) fn match_base(
         MatchBase::IpaSequence(ipa) => {
             match_ipa_sequence_element(ipa, params.wildcard, params.word, word_idx, state)
         }
-        MatchBase::FeatureClass { key_opt, features } => match_feature_class(
-            key_opt.as_ref(),
-            features,
-            params,
-            word_idx,
-            state,
-        ),
+        MatchBase::FeatureClass { key_opt, features } => {
+            match_feature_class(key_opt.as_ref(), features, params, word_idx, state)
+        }
         MatchBase::Set(bases) => match_set_element(bases, params, word_idx, state),
-        MatchBase::OptionalGroup(pat) => match_optional_group(pat, params.word, word_idx, state, params.ctx),
+        MatchBase::OptionalGroup(pat) => {
+            match_optional_group(pat, params.word, word_idx, state, params.ctx)
+        }
     }
 }
 
-use super::boundary::{match_word_boundary, match_syllable_boundary};
+use super::boundary::{match_syllable_boundary, match_word_boundary};
 
 fn match_class_logic(
     key_and_marker: (&language::sound_class::SoundClassKey, Option<u8>),
@@ -140,7 +137,13 @@ pub(crate) fn match_feature_class(
             &mut next_state,
         );
     }
-    if evaluate_feature_descriptors(features, p, word_idx, params.word.stress_index, &mut next_state) {
+    if evaluate_feature_descriptors(
+        features,
+        p,
+        word_idx,
+        params.word.stress_index,
+        &mut next_state,
+    ) {
         vec![(1, next_state)]
     } else {
         vec![]

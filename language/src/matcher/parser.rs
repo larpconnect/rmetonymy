@@ -44,6 +44,44 @@ fn parse_pattern(
     Ok(SoundMatcherPattern { elements })
 }
 
+fn map_rule_to_quantifier_op(rule: Rule) -> Option<Quantifier> {
+    match rule {
+        Rule::zero_or_more => Some(Quantifier::ZeroOrMore),
+        Rule::one_or_more => Some(Quantifier::OneOrMore),
+        _ => None,
+    }
+}
+
+fn map_rule_to_element_op(
+    inner: pest::iterators::Pair<'_, Rule>,
+) -> Result<Option<(BaseElement, Option<u8>)>, SoundMatcherError> {
+    match inner.as_rule() {
+        Rule::word_boundary => Ok(Some((BaseElement::WordBoundary, None))),
+        Rule::syllable_boundary => Ok(Some((BaseElement::SyllableBoundary, None))),
+        Rule::marked_sound_class => {
+            let (sc, m) = parse_marked_sound_class(inner)?;
+            Ok(Some((sc, m)))
+        }
+        Rule::feature_class => {
+            let (fc, m) = parse_feature_class(inner)?;
+            Ok(Some((fc, m)))
+        }
+        Rule::ipa_sequence => {
+            let seq = parse_ipa_sequence(&inner)?;
+            Ok(Some((seq, None)))
+        }
+        Rule::set => {
+            let set = parse_set(inner)?;
+            Ok(Some((set, None)))
+        }
+        Rule::optional_group => {
+            let opt = parse_optional_group(inner)?;
+            Ok(Some((opt, None)))
+        }
+        _ => Ok(None),
+    }
+}
+
 fn parse_pattern_element(
     pair: pest::iterators::Pair<Rule>,
 ) -> Result<PatternElement, SoundMatcherError> {
@@ -52,25 +90,11 @@ fn parse_pattern_element(
     let mut marker = None;
 
     for inner in pair.into_inner() {
-        match inner.as_rule() {
-            Rule::zero_or_more => quantifier = Quantifier::ZeroOrMore,
-            Rule::one_or_more => quantifier = Quantifier::OneOrMore,
-            Rule::word_boundary => base_element = Some(BaseElement::WordBoundary),
-            Rule::syllable_boundary => base_element = Some(BaseElement::SyllableBoundary),
-            Rule::marked_sound_class => {
-                let (sc, m) = parse_marked_sound_class(inner)?;
-                base_element = Some(sc);
-                marker = m;
-            }
-            Rule::feature_class => {
-                let (fc, m) = parse_feature_class(inner)?;
-                base_element = Some(fc);
-                marker = m;
-            }
-            Rule::ipa_sequence => base_element = Some(parse_ipa_sequence(&inner)?),
-            Rule::set => base_element = Some(parse_set(inner)?),
-            Rule::optional_group => base_element = Some(parse_optional_group(inner)?),
-            _ => {}
+        if let Some(q) = map_rule_to_quantifier_op(inner.as_rule()) {
+            quantifier = q;
+        } else if let Some((base, m)) = map_rule_to_element_op(inner)? {
+            base_element = Some(base);
+            marker = m;
         }
     }
 
@@ -143,6 +167,23 @@ fn parse_optional_group(
     ))
 }
 
+fn parse_feature_descriptor_op(
+    pair: pest::iterators::Pair<Rule>,
+) -> Result<FeatureDescriptor, SoundMatcherError> {
+    let mut sign = true;
+    let mut feature_name = "";
+    for fd_inner in pair.into_inner() {
+        if fd_inner.as_rule() == Rule::feature_sign {
+            sign = fd_inner.as_str() == "+";
+        } else if fd_inner.as_rule() == Rule::feature_name {
+            feature_name = fd_inner.as_str();
+        }
+    }
+    let feature = Feature::from_str(feature_name)
+        .map_err(|_e| SoundMatcherError::ParseError(format!("Unknown feature: {feature_name}")))?;
+    Ok(FeatureDescriptor { sign, feature })
+}
+
 fn parse_feature_class(
     pair: pest::iterators::Pair<Rule>,
 ) -> Result<(BaseElement, Option<u8>), SoundMatcherError> {
@@ -159,19 +200,8 @@ fn parse_feature_class(
                 marker = m;
             }
             Rule::feature_descriptor => {
-                let mut sign = true;
-                let mut feature_name = "";
-                for fd_inner in fc_inner.into_inner() {
-                    if fd_inner.as_rule() == Rule::feature_sign {
-                        sign = fd_inner.as_str() == "+";
-                    } else if fd_inner.as_rule() == Rule::feature_name {
-                        feature_name = fd_inner.as_str();
-                    }
-                }
-                let feature = Feature::from_str(feature_name).map_err(|_e| {
-                    SoundMatcherError::ParseError(format!("Unknown feature: {feature_name}"))
-                })?;
-                features.push(FeatureDescriptor { sign, feature });
+                let descriptor = parse_feature_descriptor_op(fc_inner)?;
+                features.push(descriptor);
             }
             _ => {}
         }

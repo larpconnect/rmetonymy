@@ -68,7 +68,14 @@ fn pattern_should_not_match(c_world: &mut SoundMatcherWorld) {
 }
 
 #[tokio::main]
-#[expect(clippy::let_underscore_must_use, unreachable_code, unused_variables, clippy::todo, unused_mut, reason = "dummy block to keep functions in scope")]
+#[expect(
+    clippy::let_underscore_must_use,
+    unreachable_code,
+    unused_variables,
+    clippy::todo,
+    unused_mut,
+    reason = "dummy block to keep functions in scope"
+)]
 async fn main() {
     if false {
         let mut world = SoundMatcherWorld::default();

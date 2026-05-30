@@ -298,10 +298,11 @@ fn sample_sound_class_op<R: Rng + ?Sized>(
         .as_ref()
         .unwrap_or(&GeneratorConfig::Equiprobable);
     let idx = sample_index(sc.values.len(), gen_config, rng);
-    let selected = sc
-        .values
-        .get(idx)
-        .ok_or_else(|| GenerationError::UndefinedSoundClass(format!("Value index {idx} out of bounds for class {sc_key}")))?;
+    let selected = sc.values.get(idx).ok_or_else(|| {
+        GenerationError::UndefinedSoundClass(format!(
+            "Value index {idx} out of bounds for class {sc_key}"
+        ))
+    })?;
     Ok(selected.clone())
 }
 

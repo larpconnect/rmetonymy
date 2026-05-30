@@ -22,10 +22,10 @@ fail_on_warnings = false
 
 [complexity]
 enabled = true
-max_cognitive = 40           # current max: 33
-max_cyclomatic = 18          # current max: 15
-max_nesting_depth = 6            # current max: 5
-max_function_lines = 72         # current max: 60
+max_cognitive = 12       
+max_cyclomatic = 8         
+max_nesting_depth = 6           
+max_function_lines = 50         
 include_nesting_penalty = true
 detect_magic_numbers = true
 detect_unsafe = true

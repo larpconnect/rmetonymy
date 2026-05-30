@@ -1,8 +1,8 @@
 pub mod config;
 pub mod dictionary;
-pub mod parser_utils;
 pub mod generator;
 pub mod matcher;
+pub mod parser_utils;
 pub mod phonology;
 pub mod phonotactics;
 pub mod prosody;
@@ -16,5 +16,3 @@ pub use prosody::{
     AlternatingConfig, FootSize, MainStress, PatternedConfig, ProsodicConfig, StressLocation,
 };
 pub use syllable::{IpaWord, SyllabificationError, Syllable, SyllableStress, SyllableStructure};
-
-

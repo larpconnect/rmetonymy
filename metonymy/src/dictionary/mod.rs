@@ -97,9 +97,7 @@ fn handle_init(dict_path: &Path, language: Option<&PathBuf>) -> anyhow::Result<(
     ops::handle_dict_init(dict_path, language.map(PathBuf::as_path))
 }
 
-fn handle_add(
-    params: ops::DictAddParams<'_>,
-) -> anyhow::Result<()> {
+fn handle_add(params: ops::DictAddParams<'_>) -> anyhow::Result<()> {
     ops::handle_dict_add_cmd(params)
 }
 

@@ -1,9 +1,9 @@
+use super::pattern::convert_pattern;
 use crate::ast::MatchBase;
 use crate::parser::Rule;
 use crate::parser::error::SoundChangeParseError;
 use ipa::IpaString;
 use pest::iterators::Pair;
-use super::pattern::convert_pattern;
 
 pub(crate) fn convert_set(pair: Pair<'_, Rule>) -> Result<MatchBase, SoundChangeParseError> {
     let mut elements = Vec::new();

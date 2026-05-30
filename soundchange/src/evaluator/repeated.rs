@@ -1,5 +1,5 @@
 use crate::ast::{MatchBase, MatchQuantifier};
-use crate::evaluator::match_base::{match_base, MatchParams};
+use crate::evaluator::match_base::{MatchParams, match_base};
 use crate::evaluator::{EvalContext, MatchState, WorkingWord};
 
 pub fn get_bounds_op(quantifier: &MatchQuantifier) -> Option<(usize, usize)> {

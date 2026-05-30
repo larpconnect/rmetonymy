@@ -1,6 +1,8 @@
 use crate::ast::{ConditionBase, ConditionElement, MatchBase};
-use crate::evaluator::match_base::{match_base, MatchParams};
-use crate::evaluator::repeated::{RepeatedMatchContext, RepeatedState, match_repeated, get_bounds_op};
+use crate::evaluator::match_base::{MatchParams, match_base};
+use crate::evaluator::repeated::{
+    RepeatedMatchContext, RepeatedState, get_bounds_op, match_repeated,
+};
 use crate::evaluator::{EvalContext, MatchState, WorkingWord};
 
 pub(crate) fn evaluate_match_pattern_condition(

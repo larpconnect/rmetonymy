@@ -1,6 +1,4 @@
-use crate::ast::{
-    ConditionExpr, ConditionOp, PreambleItem, PreambleType,
-};
+use crate::ast::{ConditionExpr, ConditionOp, PreambleItem, PreambleType};
 use crate::compiler::CompiledConditionExpr;
 use crate::compiler::resolver::get_preamble_value_op;
 use crate::parser::{SoundChangeParseError, parse_rule_string};

@@ -1,5 +1,5 @@
 use crate::ast::{FeatureDescriptor, TransformElement, TransformPattern};
-use crate::evaluator::{CapturedAlpha, EvalContext, MatchState, StressUpdate, WorkingWord};
+use crate::evaluator::{EvalContext, MatchState, StressUpdate, WorkingWord};
 use data::feature::Feature;
 use ipa::IpaSequence;
 use ipa::sequence::{Phoneme, PhonemeSequence};
@@ -18,11 +18,7 @@ pub(crate) fn replace_range(
     transform: &TransformPattern,
     ctx: &EvalContext<'_>,
 ) -> Result<std::ops::Range<usize>, String> {
-    let tctx = TransformContext {
-        word,
-        state,
-        ctx,
-    };
+    let tctx = TransformContext { word, state, ctx };
     let (new_phonemes, new_stress_index, has_new_stress) =
         build_transform_phonemes(transform, &range, &tctx)?;
 
@@ -71,13 +67,8 @@ pub(crate) fn build_transform_phonemes(
                 copy_modifiers,
                 append_modifiers,
             } => {
-                let phonemes = eval_transform_literal(
-                    ipa,
-                    *copy_modifiers,
-                    append_modifiers,
-                    el_idx,
-                    tctx,
-                )?;
+                let phonemes =
+                    eval_transform_literal(ipa, *copy_modifiers, append_modifiers, el_idx, tctx)?;
                 new_phonemes.extend(phonemes);
             }
             TransformElement::Ref { .. } => {
@@ -114,8 +105,9 @@ pub(crate) fn eval_transform_literal(
     for seq_el in parsed_seq.phonemes() {
         let mut p = seq_el.clone();
         if copy_modifiers {
-            p.modifiers
-                .extend(get_captured_modifiers_for_element(tctx.state, el_idx, tctx.word));
+            p.modifiers.extend(get_captured_modifiers_for_element(
+                tctx.state, el_idx, tctx.word,
+            ));
         }
         p.modifiers.extend(append_modifiers.iter().cloned());
         phonemes.push(p);
@@ -197,10 +189,20 @@ pub(crate) fn eval_transform_ref(
         return Err("Expected TransformElement::Ref".to_string());
     };
 
-    let source_phonemes =
-        get_referenced_phonemes(tctx.word, *marker, class_key.as_ref(), tctx.state, match_range);
-    let source_phoneme_indices =
-        get_referenced_phoneme_indices(tctx.word, *marker, class_key.as_ref(), tctx.state, match_range);
+    let source_phonemes = get_referenced_phonemes(
+        tctx.word,
+        *marker,
+        class_key.as_ref(),
+        tctx.state,
+        match_range,
+    );
+    let source_phoneme_indices = get_referenced_phoneme_indices(
+        tctx.word,
+        *marker,
+        class_key.as_ref(),
+        tctx.state,
+        match_range,
+    );
     let mut phonemes = Vec::new();
     let mut stress_update = StressUpdate::Keep;
 
@@ -208,8 +210,7 @@ pub(crate) fn eval_transform_ref(
         for (i, sp) in source_phonemes.iter().enumerate() {
             let orig_idx = source_phoneme_indices.get(i).copied();
             let current_pos = current_phonemes_len + phonemes.len();
-            let (p, su) =
-                transform_single_source_phoneme(sp, orig_idx, el, current_pos, tctx)?;
+            let (p, su) = transform_single_source_phoneme(sp, orig_idx, el, current_pos, tctx)?;
             match su {
                 StressUpdate::Set(stress_idx) => {
                     stress_update = StressUpdate::Set(stress_idx);
@@ -225,6 +226,10 @@ pub(crate) fn eval_transform_ref(
     Ok((phonemes, stress_update))
 }
 
+fn eval_stress_sign_op(fd: &FeatureDescriptor, state: &MatchState) -> bool {
+    super::descriptor::evaluate_descriptor_sign_op(fd, state)
+}
+
 pub(crate) fn eval_feature_changes_stress(
     feature_changes: &[FeatureDescriptor],
     state: &MatchState,
@@ -235,20 +240,7 @@ pub(crate) fn eval_feature_changes_stress(
     let mut update = StressUpdate::Keep;
     for fd in feature_changes {
         if fd.feature == Feature::Stress {
-            let sign = if let Some(ref alpha) = fd.alpha {
-                match state.alpha.get(&alpha.name) {
-                    Some(CapturedAlpha::Sign(s)) => {
-                        if alpha.sign {
-                            !s
-                        } else {
-                            *s
-                        }
-                    }
-                    _ => false,
-                }
-            } else {
-                fd.sign
-            };
+            let sign = eval_stress_sign_op(fd, state);
             if sign {
                 update = StressUpdate::Set(phoneme_pos);
             } else if orig_idx.is_some() && orig_idx == word_stress_index {

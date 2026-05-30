@@ -1,6 +1,6 @@
 use crate::ast::FeatureDescriptor;
-use crate::evaluator::{CapturedAlpha, MatchState};
 use crate::evaluator::features::get_phoneme_features_map;
+use crate::evaluator::{CapturedAlpha, MatchState};
 use data::feature::Feature;
 use ipa::sequence::Phoneme;
 use std::collections::HashMap;
@@ -27,12 +27,65 @@ pub(crate) fn evaluate_place_manner_descriptor(
     match state.alpha.get(&alpha.name) {
         Some(CapturedAlpha::Strings(s)) => phoneme_strings == s.as_slice(),
         None => {
-            state
-                .alpha
-                .insert(alpha.name.clone(), CapturedAlpha::Strings(phoneme_strings.to_vec()));
+            state.alpha.insert(
+                alpha.name.clone(),
+                CapturedAlpha::Strings(phoneme_strings.to_vec()),
+            );
             true
         }
         _ => false,
+    }
+}
+
+pub(crate) fn evaluate_descriptor_sign_op(fd: &FeatureDescriptor, state: &MatchState) -> bool {
+    if let Some(ref alpha) = fd.alpha {
+        match state.alpha.get(&alpha.name) {
+            Some(CapturedAlpha::Sign(s)) => {
+                if alpha.sign {
+                    !s
+                } else {
+                    *s
+                }
+            }
+            _ => false,
+        }
+    } else {
+        fd.sign
+    }
+}
+
+fn get_alpha_target_sign_op(
+    fd: &FeatureDescriptor,
+    word_idx: usize,
+    stress_idx: Option<usize>,
+    p_features: &HashMap<Feature, bool>,
+    state: &mut MatchState,
+) -> Option<bool> {
+    let alpha = fd.alpha.as_ref()?;
+    match state.alpha.get(&alpha.name) {
+        Some(CapturedAlpha::Sign(s)) => {
+            if alpha.sign {
+                Some(!s)
+            } else {
+                Some(*s)
+            }
+        }
+        None => {
+            let captured_val = if fd.feature == Feature::Stress {
+                stress_idx == Some(word_idx)
+            } else {
+                *p_features.get(&fd.feature).unwrap_or(&false)
+            };
+            state
+                .alpha
+                .insert(alpha.name.clone(), CapturedAlpha::Sign(captured_val));
+            if alpha.sign {
+                Some(!captured_val)
+            } else {
+                Some(captured_val)
+            }
+        }
+        _ => None,
     }
 }
 
@@ -43,32 +96,11 @@ pub(crate) fn evaluate_standard_descriptor(
     p_features: &HashMap<Feature, bool>,
     state: &mut MatchState,
 ) -> bool {
-    let target_sign = if let Some(ref alpha) = fd.alpha {
-        match state.alpha.get(&alpha.name) {
-            Some(CapturedAlpha::Sign(s)) => {
-                if alpha.sign {
-                    !s
-                } else {
-                    *s
-                }
-            }
-            None => {
-                let captured_val = if fd.feature == Feature::Stress {
-                    stress_idx == Some(word_idx)
-                } else {
-                    *p_features.get(&fd.feature).unwrap_or(&false)
-                };
-                state
-                    .alpha
-                    .insert(alpha.name.clone(), CapturedAlpha::Sign(captured_val));
-                if alpha.sign {
-                    !captured_val
-                } else {
-                    captured_val
-                }
-            }
-            _ => return false,
-        }
+    let target_sign = if fd.alpha.is_some() {
+        let Some(ts) = get_alpha_target_sign_op(fd, word_idx, stress_idx, p_features, state) else {
+            return false;
+        };
+        ts
     } else {
         fd.sign
     };

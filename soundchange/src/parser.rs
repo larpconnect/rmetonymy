@@ -6,10 +6,10 @@ pub mod condition;
 pub mod error;
 #[macro_use]
 pub mod pattern;
-pub mod transform;
 pub mod alpha;
-pub mod set_group;
 pub mod quantifier;
+pub mod set_group;
+pub mod transform;
 
 pub use error::SoundChangeParseError;
 
@@ -53,7 +53,6 @@ pub(crate) fn parse_input_to_inner_op(
         .ok_or_else(|| SoundChangeParseError::ConversionError("No rules found".to_string()))?;
     Ok(inner)
 }
-
 
 fn convert_sound_change(
     pair: pest::iterators::Pair<'_, Rule>,
@@ -112,7 +111,6 @@ where
     }
 }
 
-
 struct StandardRuleBuilder {
     match_part: Option<crate::ast::ParsedMatchPart>,
     operator: Operator,
@@ -142,9 +140,7 @@ fn for_each_pair_integration(
     mut pairs: pest::iterators::Pairs<'_, Rule>,
     builder: &mut StandardRuleBuilder,
 ) -> Result<(), SoundChangeParseError> {
-    pairs.try_for_each(|inner| {
-        dispatch_rule_pair_integration(inner, builder)
-    })
+    pairs.try_for_each(|inner| dispatch_rule_pair_integration(inner, builder))
 }
 
 fn dispatch_rule_pair_integration(
@@ -182,7 +178,6 @@ where
 {
     action_fn(rule, inner)
 }
-
 
 pub(crate) fn parse_operator(s: &str) -> Result<Operator, SoundChangeParseError> {
     match s {

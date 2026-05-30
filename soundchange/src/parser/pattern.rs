@@ -1,6 +1,6 @@
 use crate::ast::{
-    FeatureClassKey, FeatureDescriptor, MatchBase, MatchElement, MatchPattern,
-    MatchQuantifier, ParsedMatchPart,
+    FeatureClassKey, FeatureDescriptor, MatchBase, MatchElement, MatchPattern, MatchQuantifier,
+    ParsedMatchPart,
 };
 use crate::parser::Rule;
 use crate::parser::error::SoundChangeParseError;
@@ -24,10 +24,12 @@ macro_rules! convert_part_ast {
                 Ok($pat_variant(pattern))
             }
             $crate::parser::Rule::empty_symbol => Ok($empty_val),
-            _ => Err($crate::parser::error::SoundChangeParseError::ConversionError(format!(
-                "Invalid part rule: {:?}",
-                inner.as_rule()
-            ))),
+            _ => Err(
+                $crate::parser::error::SoundChangeParseError::ConversionError(format!(
+                    "Invalid part rule: {:?}",
+                    inner.as_rule()
+                )),
+            ),
         }
     }};
 }
@@ -45,7 +47,9 @@ where
         |inner| convert_pattern_generic(inner, &mut convert_base_fn),
         ParsedMatchPart::Reference,
         ParsedMatchPart::Pattern,
-        ParsedMatchPart::Pattern(MatchPattern { elements: Vec::new() })
+        ParsedMatchPart::Pattern(MatchPattern {
+            elements: Vec::new()
+        })
     )
 }
 
@@ -75,7 +79,10 @@ where
     let mut elements = Vec::new();
     for inner in pair.into_inner() {
         if inner.as_rule() == Rule::pattern_element {
-            elements.push(convert_pattern_element_generic(inner, &mut convert_base_fn)?);
+            elements.push(convert_pattern_element_generic(
+                inner,
+                &mut convert_base_fn,
+            )?);
         }
     }
     Ok(MatchPattern { elements })
@@ -120,7 +127,6 @@ where
         quantifier,
     })
 }
-
 
 use super::quantifier::convert_quantifier;
 
@@ -178,9 +184,7 @@ fn parse_sound_class_and_marker(
         }
     }
 
-    let key = key.ok_or_else(|| {
-        SoundChangeParseError::ConversionError(error_msg.to_string())
-    })?;
+    let key = key.ok_or_else(|| SoundChangeParseError::ConversionError(error_msg.to_string()))?;
 
     Ok((key, marker))
 }
@@ -274,7 +278,7 @@ pub(crate) fn convert_feature_descriptor(
 
 use super::alpha::convert_alpha_variable;
 
-use super::set_group::{convert_set, convert_optional_group};
+use super::set_group::{convert_optional_group, convert_set};
 
 pub(crate) fn parse_transform_reference_symbol(
     pair: Pair<'_, Rule>,

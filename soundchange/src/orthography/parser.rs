@@ -1,9 +1,8 @@
 use crate::ast::{MatchPattern, Operator, ParsedMatchPart};
-use crate::parser::error::SoundChangeParseError;
 use crate::parser::Rule;
+use crate::parser::error::SoundChangeParseError;
 use ipa::sequence::Phoneme;
 use language::sound_class::SoundClassKey;
-
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum OrthoTransformElement {
@@ -41,7 +40,6 @@ pub fn parse_ortho_rule(s: &str) -> Result<ParsedOrthoRule, SoundChangeParseErro
     convert_ortho_rule_dispatch_integration(inner, &s_trimmed)
 }
 
-
 fn convert_ortho_rule_dispatch_integration(
     inner: pest::iterators::Pair<'_, Rule>,
     s_trimmed: &str,
@@ -71,7 +69,6 @@ fn get_ortho_rule_type_op(
         ))),
     }
 }
-
 
 fn convert_standard_ortho_rule(
     pair: pest::iterators::Pair<'_, Rule>,

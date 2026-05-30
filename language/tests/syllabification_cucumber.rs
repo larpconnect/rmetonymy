@@ -77,7 +77,12 @@ fn syllables_should_format(c_world: &mut SyllabificationWorld, expected: String)
 }
 
 #[tokio::main]
-#[expect(unreachable_code, unused_variables, clippy::todo, reason = "dummy block to keep functions in scope")]
+#[expect(
+    unreachable_code,
+    unused_variables,
+    clippy::todo,
+    reason = "dummy block to keep functions in scope"
+)]
 async fn main() {
     if false {
         let mut world = SyllabificationWorld::default();

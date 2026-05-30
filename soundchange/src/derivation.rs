@@ -111,12 +111,7 @@ pub fn apply_derivations(
             current_era: &mut current_era,
         };
 
-        apply_single_derivation(
-            &mut state,
-            idx + 1,
-            deriv_name,
-            config,
-        )?;
+        apply_single_derivation(&mut state, idx + 1, deriv_name, config)?;
     }
 
     let final_word = IpaWord::try_from_sequence(&seq, config)
@@ -266,7 +261,13 @@ fn check_era_and_apply_changes(
         ));
     }
     if era_val > *state.current_era {
-        apply_intermediate_sound_changes(state.seq, state.tags, *state.current_era, era_val, config)?;
+        apply_intermediate_sound_changes(
+            state.seq,
+            state.tags,
+            *state.current_era,
+            era_val,
+            config,
+        )?;
         *state.current_era = era_val;
     }
     Ok(())
@@ -396,4 +397,3 @@ fn apply_derivation_transform(
         apply_sound_change_transform(seq, tags, transform, deriv_idx, config)
     }
 }
-

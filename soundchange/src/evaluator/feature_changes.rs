@@ -1,8 +1,34 @@
 use crate::ast::FeatureDescriptor;
-use crate::evaluator::{CapturedAlpha, EvalContext, MatchState};
 use crate::evaluator::features::get_phoneme_features_map;
+use crate::evaluator::{CapturedAlpha, EvalContext, MatchState};
 use data::feature::Feature;
 use ipa::sequence::Phoneme;
+
+fn apply_place_manner_change_op<'a>(
+    fd: &FeatureDescriptor,
+    state: &'a MatchState,
+    current_place: &'a [String],
+    current_manner: &'a [String],
+) -> (&'a [String], &'a [String]) {
+    let mut place = current_place;
+    let mut manner = current_manner;
+    if let Some(CapturedAlpha::Strings(s)) = fd
+        .alpha
+        .as_ref()
+        .and_then(|alpha| state.alpha.get(&alpha.name))
+    {
+        if fd.feature == Feature::Place {
+            place = s.as_slice();
+        } else {
+            manner = s.as_slice();
+        }
+    }
+    (place, manner)
+}
+
+fn evaluate_feature_change_sign_op(fd: &FeatureDescriptor, state: &MatchState) -> bool {
+    super::descriptor::evaluate_descriptor_sign_op(fd, state)
+}
 
 pub(crate) fn apply_feature_changes(
     p: &Phoneme,
@@ -27,33 +53,12 @@ pub(crate) fn apply_feature_changes(
             continue;
         }
         if fd.feature == Feature::Place || fd.feature == Feature::Manner {
-            if let Some(CapturedAlpha::Strings(s)) = fd
-                .alpha
-                .as_ref()
-                .and_then(|alpha| state.alpha.get(&alpha.name))
-            {
-                if fd.feature == Feature::Place {
-                    target_place = s.as_slice();
-                } else {
-                    target_manner = s.as_slice();
-                }
-            }
+            let (p, m) = apply_place_manner_change_op(fd, state, target_place, target_manner);
+            target_place = p;
+            target_manner = m;
             continue;
         }
-        let sign = if let Some(ref alpha) = fd.alpha {
-            match state.alpha.get(&alpha.name) {
-                Some(CapturedAlpha::Sign(s)) => {
-                    if alpha.sign {
-                        !s
-                    } else {
-                        *s
-                    }
-                }
-                _ => false,
-            }
-        } else {
-            fd.sign
-        };
+        let sign = evaluate_feature_change_sign_op(fd, state);
         map.insert(fd.feature, sign);
     }
 

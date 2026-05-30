@@ -18,8 +18,6 @@ fn load_language_config(
 
 use super::parse::parse_lookup_string;
 
-
-
 fn print_lookup_without_derivations(
     ipa_word: &language::syllable::IpaWord,
     era: u32,
@@ -140,9 +138,7 @@ struct LookupDerivationsParams<'a> {
     config: &'a language::config::LanguageConfig,
 }
 
-fn print_lookup_with_derivations(
-    params: LookupDerivationsParams<'_>,
-) -> anyhow::Result<()> {
+fn print_lookup_with_derivations(params: LookupDerivationsParams<'_>) -> anyhow::Result<()> {
     let res = soundchange::apply_derivations(
         params.ipa_word,
         params.entry_type,
@@ -163,7 +159,11 @@ fn print_lookup_with_derivations(
 
     let colored_derived = format_colored_word(&res.word, &res.tags);
     let colored_sc = format_colored_word(&final_sc_word, &sc_tags);
-    let colored_line = format_colored_lookup_line(params.base_meaning, params.derivation_names, &res.step_types);
+    let colored_line = format_colored_lookup_line(
+        params.base_meaning,
+        params.derivation_names,
+        &res.step_types,
+    );
 
     println!("{colored_line}");
     println!("{colored_derived}");

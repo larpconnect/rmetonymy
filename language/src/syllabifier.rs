@@ -18,19 +18,18 @@ struct NucleusRange {
 ///
 /// # Errors
 /// Returns `Err` if syllable breaks are at boundaries, double, or adjacent to prosody.
-pub fn validate_sequence(seq: &PhonemeSequence) -> Result<(), SyllabificationError> {
-    if seq.elements.is_empty() {
-        return Ok(());
-    }
-
-    if let Some(SequenceElement::SyllableBreak) = seq.elements.first() {
+fn check_boundaries_op(elements: &[SequenceElement]) -> Result<(), SyllabificationError> {
+    if let Some(SequenceElement::SyllableBreak) = elements.first() {
         return Err(SyllabificationError::BoundarySyllableBreak);
     }
-    if let Some(SequenceElement::SyllableBreak) = seq.elements.last() {
+    if let Some(SequenceElement::SyllableBreak) = elements.last() {
         return Err(SyllabificationError::BoundarySyllableBreak);
     }
+    Ok(())
+}
 
-    for window in seq.elements.windows(2) {
+fn check_adjacent_op(elements: &[SequenceElement]) -> Result<(), SyllabificationError> {
+    for window in elements.windows(2) {
         if let [el1, el2] = window {
             match (el1, el2) {
                 (SequenceElement::SyllableBreak, SequenceElement::SyllableBreak) => {
@@ -47,7 +46,19 @@ pub fn validate_sequence(seq: &PhonemeSequence) -> Result<(), SyllabificationErr
             }
         }
     }
+    Ok(())
+}
 
+/// Validate sequence bounds and adjacent elements.
+///
+/// # Errors
+/// Returns `Err` if syllable breaks are at boundaries, double, or adjacent to prosody.
+pub fn validate_sequence(seq: &PhonemeSequence) -> Result<(), SyllabificationError> {
+    if seq.elements.is_empty() {
+        return Ok(());
+    }
+    check_boundaries_op(&seq.elements)?;
+    check_adjacent_op(&seq.elements)?;
     Ok(())
 }
 

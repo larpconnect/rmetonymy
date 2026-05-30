@@ -28,6 +28,13 @@ pub enum SyllableStructure {
     Arbitrary(PhonemeSequence),
 }
 
+fn extract_phonemes_op(seq: &PhonemeSequence) -> impl Iterator<Item = SequenceElement> + '_ {
+    seq.elements.iter().filter_map(|el| match el {
+        SequenceElement::Phoneme(p) => Some(SequenceElement::Phoneme(p.clone())),
+        _ => None,
+    })
+}
+
 impl SyllableStructure {
     /// Retrieve flat elements for the syllable structure.
     #[must_use]
@@ -40,32 +47,16 @@ impl SyllableStructure {
             } => {
                 let mut elems = Vec::new();
                 if let Some(onset_seq) = onset {
-                    elems.extend(onset_seq.elements.iter().filter_map(|el| match el {
-                        SequenceElement::Phoneme(p) => Some(SequenceElement::Phoneme(p.clone())),
-                        _ => None,
-                    }));
+                    elems.extend(extract_phonemes_op(onset_seq));
                 }
-                elems.extend(nucleus.elements.iter().filter_map(|el| match el {
-                    SequenceElement::Phoneme(p) => Some(SequenceElement::Phoneme(p.clone())),
-                    _ => None,
-                }));
+                elems.extend(extract_phonemes_op(nucleus));
                 if let Some(coda_seq) = coda {
-                    elems.extend(coda_seq.elements.iter().filter_map(|el| match el {
-                        SequenceElement::Phoneme(p) => Some(SequenceElement::Phoneme(p.clone())),
-                        _ => None,
-                    }));
+                    elems.extend(extract_phonemes_op(coda_seq));
                 }
                 elems
             }
             Self::Root(p) => vec![SequenceElement::Phoneme(p.clone())],
-            Self::Arbitrary(seq) => seq
-                .elements
-                .iter()
-                .filter_map(|el| match el {
-                    SequenceElement::Phoneme(p) => Some(SequenceElement::Phoneme(p.clone())),
-                    _ => None,
-                })
-                .collect(),
+            Self::Arbitrary(seq) => extract_phonemes_op(seq).collect(),
         }
     }
 }

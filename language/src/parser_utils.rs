@@ -14,9 +14,7 @@ pub fn extract_pattern_pair_op<Rule>(
 where
     Rule: RuleType,
 {
-    let main_pair = pairs
-        .next()
-        .ok_or_else(|| "Empty input".to_string())?;
+    let main_pair = pairs.next().ok_or_else(|| "Empty input".to_string())?;
 
     let mut pattern_pair = None;
     for pair in main_pair.into_inner() {

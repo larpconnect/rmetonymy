@@ -1,8 +1,7 @@
 //! Validation system for the word generator configurations.
 
 pub mod cycles;
-pub use cycles::{validate_sound_class_cycles, validate_generator_cycles};
-
+pub use cycles::{validate_generator_cycles, validate_sound_class_cycles};
 
 use crate::generator::{WordGenerator, WordPattern, WordPatternElement};
 use crate::sound_class::SoundClassKey;
@@ -212,7 +211,6 @@ pub fn validate_pattern_sound_classes<S: std::hash::BuildHasher>(
     Ok(())
 }
 
-
 /// Helper to validate if derivation name fits the required character set and length constraints.
 #[must_use]
 pub fn is_valid_derivation_name(name: &str) -> bool {
@@ -227,7 +225,7 @@ pub fn is_valid_derivation_name(name: &str) -> bool {
 ///
 /// # Errors
 /// Returns `Err` if any derivation has an invalid name or duplicate name.
-pub fn validate_derivations(
+fn validate_derivation_names_op(
     derivations: &[crate::config::Derivation],
 ) -> Result<(), ValidationError> {
     for deriv in derivations {
@@ -235,8 +233,10 @@ pub fn validate_derivations(
             return Err(ValidationError::InvalidDerivationName(deriv.name.clone()));
         }
     }
+    Ok(())
+}
 
-    // Collect all full types mentioned in the derivations
+fn collect_all_types_op(derivations: &[crate::config::Derivation]) -> HashSet<String> {
     let mut all_types = HashSet::new();
     for deriv in derivations {
         if let Some(ref from_t) = deriv.from_type {
@@ -246,39 +246,60 @@ pub fn validate_derivations(
             }
         }
     }
+    all_types
+}
 
-    // If there are no types, we still check empty type derivations themselves
-    if all_types.is_empty() {
-        let mut names = HashSet::new();
-        for deriv in derivations {
-            if !names.insert(&deriv.name) {
-                return Err(ValidationError::DuplicateDerivationName(deriv.name.clone()));
+fn validate_no_type_duplicates_op(
+    derivations: &[crate::config::Derivation],
+) -> Result<(), ValidationError> {
+    let mut names = HashSet::new();
+    for deriv in derivations {
+        if !names.insert(&deriv.name) {
+            return Err(ValidationError::DuplicateDerivationName(deriv.name.clone()));
+        }
+    }
+    Ok(())
+}
+
+fn derivation_applies_to_type_op(from_type: Option<&str>, target_type: &str) -> bool {
+    match from_type {
+        None => true,
+        Some(from_t) => {
+            if from_t == target_type {
+                true
+            } else if let Some((t_base, _)) = target_type.split_once('.') {
+                from_t == t_base
+            } else {
+                false
             }
         }
-        return Ok(());
     }
+}
 
-    // For each type, check that all derivations that can apply to it have unique names
-    for t in &all_types {
+fn validate_type_specific_duplicates_op(
+    derivations: &[crate::config::Derivation],
+    all_types: &HashSet<String>,
+) -> Result<(), ValidationError> {
+    for t in all_types {
         let mut names = HashSet::new();
         for deriv in derivations {
-            let applies = match &deriv.from_type {
-                None => true,
-                Some(from_t) => {
-                    if from_t == t {
-                        true
-                    } else if let Some((t_base, _)) = t.split_once('.') {
-                        from_t == t_base
-                    } else {
-                        false
-                    }
-                }
-            };
+            let applies = derivation_applies_to_type_op(deriv.from_type.as_deref(), t);
             if applies && !names.insert(&deriv.name) {
                 return Err(ValidationError::DuplicateDerivationName(deriv.name.clone()));
             }
         }
     }
-
     Ok(())
+}
+
+pub fn validate_derivations(
+    derivations: &[crate::config::Derivation],
+) -> Result<(), ValidationError> {
+    validate_derivation_names_op(derivations)?;
+    let all_types = collect_all_types_op(derivations);
+    if all_types.is_empty() {
+        validate_no_type_duplicates_op(derivations)
+    } else {
+        validate_type_specific_duplicates_op(derivations, &all_types)
+    }
 }

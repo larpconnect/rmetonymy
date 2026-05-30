@@ -88,8 +88,7 @@ fn when_apply_sound_change_rule(world: &mut SoundChangeWorld, rule: String, inpu
         .expect("LanguageConfig should be initialized");
     let res = (|| {
         let parsed_word = PhonemeSequence::from_str(&input).map_err(fmt_debug)?;
-        let ipa_word =
-            IpaWord::try_from_sequence(&parsed_word, config).map_err(fmt_debug)?;
+        let ipa_word = IpaWord::try_from_sequence(&parsed_word, config).map_err(fmt_debug)?;
 
         let sc = SoundChanges {
             preamble: Vec::new(),
@@ -128,8 +127,7 @@ fn when_apply_sound_change_rule_showing_boundaries(
         .expect("LanguageConfig should be initialized");
     let res = (|| {
         let parsed_word = PhonemeSequence::from_str(&input).map_err(fmt_debug)?;
-        let ipa_word =
-            IpaWord::try_from_sequence(&parsed_word, config).map_err(fmt_debug)?;
+        let ipa_word = IpaWord::try_from_sequence(&parsed_word, config).map_err(fmt_debug)?;
 
         let sc = SoundChanges {
             preamble: Vec::new(),
@@ -188,10 +186,7 @@ fn get_compilation_result<'a>(
     world: &'a SoundChangeWorld,
     no_comp_msg: &str,
 ) -> Result<&'a Result<String, String>, String> {
-    world
-        .result
-        .as_ref()
-        .ok_or_else(|| no_comp_msg.to_string())
+    world.result.as_ref().ok_or_else(|| no_comp_msg.to_string())
 }
 
 fn check_failure_outcome(
@@ -238,8 +233,7 @@ fn when_apply_orthography_rule(world: &mut SoundChangeWorld, rule: String, input
         .expect("LanguageConfig should be initialized");
     let res = (|| {
         let parsed_word = PhonemeSequence::from_str(&input).map_err(fmt_debug)?;
-        let ipa_word =
-            IpaWord::try_from_sequence(&parsed_word, config).map_err(fmt_debug)?;
+        let ipa_word = IpaWord::try_from_sequence(&parsed_word, config).map_err(fmt_debug)?;
 
         let compiled_ortho =
             soundchange::compile_ortho_rules(&[rule]).map_err(|e| e.to_string())?;
@@ -264,8 +258,7 @@ fn when_apply_orthography_rules_two(
         .expect("LanguageConfig should be initialized");
     let res = (|| {
         let parsed_word = PhonemeSequence::from_str(&input).map_err(fmt_debug)?;
-        let ipa_word =
-            IpaWord::try_from_sequence(&parsed_word, config).map_err(fmt_debug)?;
+        let ipa_word = IpaWord::try_from_sequence(&parsed_word, config).map_err(fmt_debug)?;
 
         let compiled_ortho =
             soundchange::compile_ortho_rules(&[rule1, rule2]).map_err(|e| e.to_string())?;
@@ -285,8 +278,7 @@ fn when_apply_empty_orthography(world: &mut SoundChangeWorld, input: String) {
         .expect("LanguageConfig should be initialized");
     let res = (|| {
         let parsed_word = PhonemeSequence::from_str(&input).map_err(fmt_debug)?;
-        let ipa_word =
-            IpaWord::try_from_sequence(&parsed_word, config).map_err(fmt_debug)?;
+        let ipa_word = IpaWord::try_from_sequence(&parsed_word, config).map_err(fmt_debug)?;
 
         let compiled_ortho = Vec::new();
         let (ortho_res, _) =
@@ -350,7 +342,10 @@ fn then_it_should_fail_orthography_validation_with_message(
 }
 
 #[tokio::main]
-#[expect(clippy::let_underscore_must_use, reason = "dummy block to keep functions in scope")]
+#[expect(
+    clippy::let_underscore_must_use,
+    reason = "dummy block to keep functions in scope"
+)]
 async fn main() {
     if false {
         let mut world = SoundChangeWorld::default();

@@ -11,7 +11,10 @@ pub(crate) fn convert_transform_part(
     pair: Pair<'_, Rule>,
 ) -> Result<ParsedTransformPart, SoundChangeParseError> {
     if false {
-        #[expect(clippy::let_underscore_must_use, reason = "dummy block to keep function in scope")]
+        #[expect(
+            clippy::let_underscore_must_use,
+            reason = "dummy block to keep function in scope"
+        )]
         let _ = convert_transform_pattern(pair.clone());
     }
     convert_part_ast!(
@@ -62,15 +65,16 @@ fn convert_transform_element_inner(
 ) -> Result<TransformElement, SoundChangeParseError> {
     match inner.as_rule() {
         Rule::feature_class | Rule::reference_symbol => {
-            let (marker, class_key, repeat, feature_changes) = if inner.as_rule() == Rule::feature_class {
-                let (key_opt, feature_changes) = parse_transform_feature_class(inner)?;
-                let marker = key_opt.as_ref().and_then(|k| k.marker);
-                let class_key = key_opt.and_then(|k| k.key);
-                (marker, class_key, 1, feature_changes)
-            } else {
-                let (marker, class_key, repeat) = parse_transform_reference_symbol(inner)?;
-                (marker, class_key, repeat, Vec::new())
-            };
+            let (marker, class_key, repeat, feature_changes) =
+                if inner.as_rule() == Rule::feature_class {
+                    let (key_opt, feature_changes) = parse_transform_feature_class(inner)?;
+                    let marker = key_opt.as_ref().and_then(|k| k.marker);
+                    let class_key = key_opt.and_then(|k| k.key);
+                    (marker, class_key, 1, feature_changes)
+                } else {
+                    let (marker, class_key, repeat) = parse_transform_reference_symbol(inner)?;
+                    (marker, class_key, repeat, Vec::new())
+                };
             Ok(TransformElement::Ref {
                 marker,
                 class_key,

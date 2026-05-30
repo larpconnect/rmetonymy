@@ -64,11 +64,17 @@ fn collect_base_markers_op(base: &MatchBase) -> HashSet<u8> {
     let mut stack = vec![base];
     while let Some(current) = stack.pop() {
         match current {
-            MatchBase::SoundClass { marker: Some(m), .. }
-            | MatchBase::SetExclusion { marker: Some(m), .. } => {
+            MatchBase::SoundClass {
+                marker: Some(m), ..
+            }
+            | MatchBase::SetExclusion {
+                marker: Some(m), ..
+            } => {
                 markers.insert(*m);
             }
-            MatchBase::FeatureClass { key_opt: Some(key), .. } => {
+            MatchBase::FeatureClass {
+                key_opt: Some(key), ..
+            } => {
                 if let Some(m) = key.marker {
                     markers.insert(m);
                 }
@@ -157,6 +163,49 @@ enum AlphaNode<'a> {
     Condition(&'a CompiledConditionExpr),
 }
 
+fn process_alpha_base_op<'a>(
+    base: &'a MatchBase,
+    stack: &mut Vec<AlphaNode<'a>>,
+    alphas: &mut HashSet<String>,
+) {
+    match base {
+        MatchBase::FeatureClass { features, .. } => {
+            for f in features {
+                if let Some(ref alpha) = f.alpha {
+                    alphas.insert(alpha.name.clone());
+                }
+            }
+        }
+        MatchBase::Set(elements) => {
+            for el in elements {
+                stack.push(AlphaNode::Base(el));
+            }
+        }
+        MatchBase::OptionalGroup(pattern) => {
+            for el in &pattern.elements {
+                stack.push(AlphaNode::Base(&el.base));
+            }
+        }
+        _ => {}
+    }
+}
+
+fn process_alpha_condition_op<'a>(cond: &'a CompiledConditionExpr, stack: &mut Vec<AlphaNode<'a>>) {
+    match cond {
+        CompiledConditionExpr::Term { pattern, .. } => {
+            for el in &pattern.elements {
+                if let ConditionBase::Element(ref base) = el.base {
+                    stack.push(AlphaNode::Base(base));
+                }
+            }
+        }
+        CompiledConditionExpr::Binary { left, right, .. } => {
+            stack.push(AlphaNode::Condition(left));
+            stack.push(AlphaNode::Condition(right));
+        }
+    }
+}
+
 fn collect_alphas_op(rule: &CompiledRuleChange) -> HashSet<String> {
     let mut alphas = HashSet::new();
     let mut stack = Vec::new();
@@ -170,39 +219,8 @@ fn collect_alphas_op(rule: &CompiledRuleChange) -> HashSet<String> {
 
     while let Some(node) = stack.pop() {
         match node {
-            AlphaNode::Base(base) => match base {
-                MatchBase::FeatureClass { features, .. } => {
-                    for f in features {
-                        if let Some(ref alpha) = f.alpha {
-                            alphas.insert(alpha.name.clone());
-                        }
-                    }
-                }
-                MatchBase::Set(elements) => {
-                    for el in elements {
-                        stack.push(AlphaNode::Base(el));
-                    }
-                }
-                MatchBase::OptionalGroup(pattern) => {
-                    for el in &pattern.elements {
-                        stack.push(AlphaNode::Base(&el.base));
-                    }
-                }
-                _ => {}
-            },
-            AlphaNode::Condition(cond) => match cond {
-                CompiledConditionExpr::Term { pattern, .. } => {
-                    for el in &pattern.elements {
-                        if let ConditionBase::Element(ref base) = el.base {
-                            stack.push(AlphaNode::Base(base));
-                        }
-                    }
-                }
-                CompiledConditionExpr::Binary { left, right, .. } => {
-                    stack.push(AlphaNode::Condition(left));
-                    stack.push(AlphaNode::Condition(right));
-                }
-            },
+            AlphaNode::Base(base) => process_alpha_base_op(base, &mut stack, &mut alphas),
+            AlphaNode::Condition(cond) => process_alpha_condition_op(cond, &mut stack),
         }
     }
     alphas

@@ -199,16 +199,17 @@ pub struct DictAddParams<'a> {
     pub usage_notes: String,
 }
 
-pub(crate) fn handle_dict_add_cmd(
-    params: DictAddParams<'_>,
-) -> anyhow::Result<()> {
-    let ipa_meaning = params.meaning
+pub(crate) fn handle_dict_add_cmd(params: DictAddParams<'_>) -> anyhow::Result<()> {
+    let ipa_meaning = params
+        .meaning
         .parse::<ipa::IpaString>()
         .context("Failed to parse meaning as a valid IPA string")?;
     let mut ipa_definition = if params.generate {
         generate_conlang_word(params.language_path, &params.r#type)?
     } else {
-        let def_str = params.definition.context("Definition must be provided when not generating")?;
+        let def_str = params
+            .definition
+            .context("Definition must be provided when not generating")?;
         def_str
             .parse::<ipa::IpaString>()
             .context("Failed to parse definition as a valid IPA string")?

@@ -1,10 +1,8 @@
-pub(crate) mod validation;
-pub(crate) mod resolver;
 pub(crate) mod cond_resolver;
+pub(crate) mod resolver;
+pub(crate) mod validation;
 
-use crate::ast::{
-    PreambleItem, SoundChangeRule, SoundChanges,
-};
+use crate::ast::{PreambleItem, SoundChangeRule, SoundChanges};
 use crate::parser::{SoundChangeParseError, parse_rule_string};
 use data::feature::Feature;
 use std::collections::HashMap;
@@ -79,8 +77,7 @@ pub fn compile_single_rule_from_str(
 fn build_preamble_for_single_rule(
     sound_changes: Option<&SoundChanges>,
 ) -> Result<HashMap<String, PreambleItem>, SoundChangeParseError> {
-    sound_changes
-        .map_or_else(|| Ok(HashMap::new()), build_preamble_map)
+    sound_changes.map_or_else(|| Ok(HashMap::new()), build_preamble_map)
 }
 
 fn make_single_rule_op(rule_str: &str) -> SoundChangeRule {
@@ -132,7 +129,10 @@ fn validate_rule_name(rule: &SoundChangeRule) -> Result<(), SoundChangeParseErro
     validate_rule_name_op(rule, is_distinctive_feature_name)
 }
 
-fn validate_rule_name_op<F>(rule: &SoundChangeRule, mut check_fn: F) -> Result<(), SoundChangeParseError>
+fn validate_rule_name_op<F>(
+    rule: &SoundChangeRule,
+    mut check_fn: F,
+) -> Result<(), SoundChangeParseError>
 where
     F: FnMut(&str) -> bool,
 {
@@ -165,9 +165,7 @@ fn compile_change(
     Ok(expanded)
 }
 
-fn validate_compiled_changes(
-    changes: &[CompiledRuleChange],
-) -> Result<(), SoundChangeParseError> {
+fn validate_compiled_changes(changes: &[CompiledRuleChange]) -> Result<(), SoundChangeParseError> {
     changes
         .iter()
         .try_for_each(validation::validate_compiled_rule)

@@ -32,6 +32,24 @@ pub(crate) fn find_all_matches(
     results
 }
 
+fn find_first_valid_match_op(
+    word: &WorkingWord,
+    match_part: &MatchPattern,
+    condition: Option<&crate::compiler::CompiledConditionExpr>,
+    ctx: &EvalContext<'_>,
+    positions: impl Iterator<Item = usize>,
+) -> Option<(std::ops::Range<usize>, MatchState)> {
+    for start_pos in positions {
+        if let Some((len, state)) = evaluate_match(match_part, word, start_pos, ctx) {
+            let range = start_pos..start_pos + len;
+            if let Some(final_state) = evaluate_conditions(condition, word, &range, &state, ctx) {
+                return Some((range, final_state));
+            }
+        }
+    }
+    None
+}
+
 pub(crate) fn find_next_match(
     word: &WorkingWord,
     match_part: &MatchPattern,
@@ -41,27 +59,16 @@ pub(crate) fn find_next_match(
 ) -> Option<(std::ops::Range<usize>, MatchState)> {
     let (scan_idx, is_leftward) = scan;
     if is_leftward {
-        for start_pos in (0..=scan_idx).rev() {
-            if let Some((len, state)) = evaluate_match(match_part, word, start_pos, ctx) {
-                let range = start_pos..start_pos + len;
-                if let Some(final_state) = evaluate_conditions(condition, word, &range, &state, ctx)
-                {
-                    return Some((range, final_state));
-                }
-            }
-        }
+        find_first_valid_match_op(word, match_part, condition, ctx, (0..=scan_idx).rev())
     } else {
-        for start_pos in scan_idx..=word.phonemes.len() {
-            if let Some((len, state)) = evaluate_match(match_part, word, start_pos, ctx) {
-                let range = start_pos..start_pos + len;
-                if let Some(final_state) = evaluate_conditions(condition, word, &range, &state, ctx)
-                {
-                    return Some((range, final_state));
-                }
-            }
-        }
+        find_first_valid_match_op(
+            word,
+            match_part,
+            condition,
+            ctx,
+            scan_idx..=word.phonemes.len(),
+        )
     }
-    None
 }
 
 pub(crate) struct TransparentLoopParams<'a, 'b> {
@@ -72,15 +79,41 @@ pub(crate) struct TransparentLoopParams<'a, 'b> {
     pub(crate) ctx: &'a EvalContext<'b>,
 }
 
+fn get_next_scan_idx_op(
+    is_leftward: bool,
+    range: &std::ops::Range<usize>,
+    new_range: &std::ops::Range<usize>,
+    word_len: usize,
+) -> Option<usize> {
+    if is_leftward {
+        if range.start == 0 {
+            None
+        } else {
+            Some(range.start)
+        }
+    } else {
+        let end = new_range.end;
+        if end > word_len { None } else { Some(end) }
+    }
+}
+
 pub(crate) fn evaluate_transparent_loop<F, E>(
     word: &mut WorkingWord,
     params: &TransparentLoopParams<'_, '_>,
     mut replace_fn: F,
 ) -> Result<(), E>
 where
-    F: FnMut(&mut WorkingWord, std::ops::Range<usize>, &MatchState) -> Result<std::ops::Range<usize>, E>,
+    F: FnMut(
+        &mut WorkingWord,
+        std::ops::Range<usize>,
+        &MatchState,
+    ) -> Result<std::ops::Range<usize>, E>,
 {
-    let mut scan_idx = if params.is_leftward { word.phonemes.len() } else { 0 };
+    let mut scan_idx = if params.is_leftward {
+        word.phonemes.len()
+    } else {
+        0
+    };
 
     loop {
         if params.is_leftward && scan_idx > word.phonemes.len() {
@@ -104,16 +137,12 @@ where
             break;
         }
 
-        if params.is_leftward {
-            if range.start == 0 {
-                break;
-            }
-            scan_idx = range.start;
+        if let Some(next_idx) =
+            get_next_scan_idx_op(params.is_leftward, &range, &new_range, word.phonemes.len())
+        {
+            scan_idx = next_idx;
         } else {
-            scan_idx = new_range.end;
-            if scan_idx > word.phonemes.len() {
-                break;
-            }
+            break;
         }
     }
     Ok(())
@@ -127,18 +156,8 @@ pub(crate) fn evaluate_match(
 ) -> Option<(usize, MatchState)> {
     let mut state = MatchState::default();
     let mut results = Vec::new();
-    let mctx = MatchPatternContext {
-        pattern,
-        word,
-        ctx,
-    };
-    match_pattern(
-        &mctx,
-        &pattern.elements,
-        word_idx,
-        &mut state,
-        &mut results,
-    );
+    let mctx = MatchPatternContext { pattern, word, ctx };
+    match_pattern(&mctx, &pattern.elements, word_idx, &mut state, &mut results);
 
     // Return the longest match length
     results.sort_by_key(|r| std::cmp::Reverse(r.0));
@@ -162,9 +181,7 @@ pub(crate) fn match_pattern(
     results.extend(res);
 }
 
-fn sort_element_lengths_op(
-    element_lengths: &mut [(usize, MatchState, std::ops::Range<usize>)],
-) {
+fn sort_element_lengths_op(element_lengths: &mut [(usize, MatchState, std::ops::Range<usize>)]) {
     element_lengths.sort_by_key(|(len, _, _)| std::cmp::Reverse(*len));
 }
 

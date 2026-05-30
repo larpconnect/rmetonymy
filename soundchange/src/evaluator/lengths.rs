@@ -1,7 +1,9 @@
+use super::match_base::{
+    MatchContextParams, MatchParams, MatchRepeatedContext, RepeatedState, match_base,
+};
 use crate::ast::MatchElement;
 use crate::evaluator::repeated::get_bounds_op;
 use crate::evaluator::{MatchState, repeated::match_repeated};
-use super::match_base::{MatchContextParams, MatchParams, match_base, MatchRepeatedContext, RepeatedState};
 
 pub(crate) fn get_match_element_lengths(
     el: &MatchElement,

@@ -121,10 +121,7 @@ pub const IPA_SCHEMA_JSON: &str = include_str!("../ipa_schema.json");
 ///
 /// # Errors
 /// Returns `Err` if the validation against the schema fails.
-pub fn validate_with_schema(
-    data: &Value,
-    validator: &jsonschema::Validator,
-) -> Result<(), String> {
+pub fn validate_with_schema(data: &Value, validator: &jsonschema::Validator) -> Result<(), String> {
     if !validator.is_valid(data) {
         let errors = validator.iter_errors(data);
         let err_strings: Vec<String> = errors.map(|e| e.to_string()).collect();
@@ -159,8 +156,7 @@ pub fn parse_and_validate(json_str: &str) -> Result<IpaDataset, String> {
     let raw_data: Value =
         serde_json::from_str(json_str).map_err(|e| format!("JSON parsing error: {e}"))?;
 
-    validate_ipa_data(&raw_data)
-        .map_err(|errs| format!("Schema validation failed:\n{errs}"))?;
+    validate_ipa_data(&raw_data).map_err(|errs| format!("Schema validation failed:\n{errs}"))?;
 
     serde_json::from_value(raw_data).map_err(|e| format!("Deserialization error: {e}"))
 }

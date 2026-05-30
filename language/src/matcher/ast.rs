@@ -107,7 +107,10 @@ impl BaseElement {
         write!(f, "{ipa}")
     }
 
-    fn write_optional_group_op(f: &mut Formatter<'_>, pat: &SoundMatcherPattern) -> std::fmt::Result {
+    fn write_optional_group_op(
+        f: &mut Formatter<'_>,
+        pat: &SoundMatcherPattern,
+    ) -> std::fmt::Result {
         write!(f, "({pat})")
     }
 
@@ -132,7 +135,10 @@ impl SoundMatcherPattern {
         Self::write_marker_and_quantifier_op(f, el)
     }
 
-    fn write_marker_and_quantifier_op(f: &mut Formatter<'_>, el: &PatternElement) -> std::fmt::Result {
+    fn write_marker_and_quantifier_op(
+        f: &mut Formatter<'_>,
+        el: &PatternElement,
+    ) -> std::fmt::Result {
         if let Some(m) = el.marker
             && !matches!(el.base, BaseElement::FeatureClass(_, _))
         {

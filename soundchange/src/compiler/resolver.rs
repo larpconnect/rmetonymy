@@ -1,10 +1,9 @@
 use crate::ast::{
-    ConditionExpr, MatchPattern, Operator, ParsedMatchPart,
-    ParsedSoundChange, ParsedTransformPart, PreambleItem, PreambleType, TransformElement,
-    TransformPattern,
+    ConditionExpr, MatchPattern, Operator, ParsedMatchPart, ParsedSoundChange, ParsedTransformPart,
+    PreambleItem, PreambleType, TransformElement, TransformPattern,
 };
-use crate::compiler::{CompiledConditionExpr, CompiledRuleChange};
 use crate::compiler::cond_resolver::resolve_condition_expr;
+use crate::compiler::{CompiledConditionExpr, CompiledRuleChange};
 use crate::parser::{SoundChangeParseError, parse_rule_string};
 use std::collections::HashMap;
 
@@ -264,5 +263,3 @@ pub fn expand_references(
     let mut visited = std::collections::HashSet::new();
     expand_references_rec(parsed, preamble, original, &mut visited)
 }
-
-

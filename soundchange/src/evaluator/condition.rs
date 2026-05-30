@@ -120,7 +120,11 @@ fn evaluate_binary_condition_op<F>(
     mut eval_fn: F,
 ) -> Option<MatchState>
 where
-    F: FnMut(&CompiledConditionExpr, &MatchState, &ConditionEvalContext<'_, '_>) -> Option<MatchState>,
+    F: FnMut(
+        &CompiledConditionExpr,
+        &MatchState,
+        &ConditionEvalContext<'_, '_>,
+    ) -> Option<MatchState>,
 {
     let (state, ectx) = state_ctx;
     match op {
@@ -173,8 +177,16 @@ fn split_around_placeholder_op(
         .iter()
         .position(|el| matches!(el.base, ConditionBase::MatchPlaceholder))
         .unwrap_or(0);
-    let left = pattern.elements.get(0..placeholder_idx).unwrap_or(&[]).to_vec();
-    let right = pattern.elements.get(placeholder_idx + 1..).unwrap_or(&[]).to_vec();
+    let left = pattern
+        .elements
+        .get(0..placeholder_idx)
+        .unwrap_or(&[])
+        .to_vec();
+    let right = pattern
+        .elements
+        .get(placeholder_idx + 1..)
+        .unwrap_or(&[])
+        .to_vec();
     (left, right)
 }
 
@@ -185,7 +197,13 @@ fn evaluate_condition_with_placeholder_integration(
     state: &MatchState,
 ) -> Option<MatchState> {
     let left_state = matches_ending_at(left, ectx.word, ectx.match_range.start, state, ectx.ctx)?;
-    let right_res = evaluate_match_elements_condition(right, ectx.word, ectx.match_range.end, &left_state, ectx.ctx);
+    let right_res = evaluate_match_elements_condition(
+        right,
+        ectx.word,
+        ectx.match_range.end,
+        &left_state,
+        ectx.ctx,
+    );
     extract_first_state_op(right_res)
 }
 

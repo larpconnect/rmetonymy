@@ -356,10 +356,7 @@ fn apply_patterned_main_stress_last_remainder_anchored(
     }
 }
 
-fn apply_patterned_main_stress_last_foot_anchored(
-    syllables: &mut [Syllable],
-    params: &FootParams,
-) {
+fn apply_patterned_main_stress_last_foot_anchored(syllables: &mut [Syllable], params: &FootParams) {
     let primary_foot_idx = (params.p_idx - params.remainder) / params.foot_size;
     for i in 0..params.num_complete_feet {
         if i == primary_foot_idx {
@@ -375,27 +372,15 @@ fn apply_patterned_main_stress_last_foot_anchored(
     }
 }
 
-fn apply_patterned_main_stress_last_anchored(
-    syllables: &mut [Syllable],
-    params: &FootParams,
-) {
+fn apply_patterned_main_stress_last_anchored(syllables: &mut [Syllable], params: &FootParams) {
     if params.p_idx < params.remainder {
-        apply_patterned_main_stress_last_remainder_anchored(
-            syllables,
-            params,
-        );
+        apply_patterned_main_stress_last_remainder_anchored(syllables, params);
     } else {
-        apply_patterned_main_stress_last_foot_anchored(
-            syllables,
-            params,
-        );
+        apply_patterned_main_stress_last_foot_anchored(syllables, params);
     }
 }
 
-fn apply_patterned_long_word(
-    syllables: &mut [Syllable],
-    params: &LongWordParams,
-) {
+fn apply_patterned_long_word(syllables: &mut [Syllable], params: &LongWordParams) {
     let num_complete_feet = params.num_syllables / params.foot_size;
     match params.main_stress {
         MainStress::First => {
@@ -408,7 +393,12 @@ fn apply_patterned_long_word(
                     p_idx,
                 );
             } else {
-                apply_patterned_first(syllables, num_complete_feet, params.foot_size, params.stress_loc);
+                apply_patterned_first(
+                    syllables,
+                    num_complete_feet,
+                    params.foot_size,
+                    params.stress_loc,
+                );
             }
         }
         MainStress::Last => {
@@ -421,10 +411,7 @@ fn apply_patterned_long_word(
                     remainder,
                     p_idx,
                 };
-                apply_patterned_main_stress_last_anchored(
-                    syllables,
-                    &foot_params,
-                );
+                apply_patterned_main_stress_last_anchored(syllables, &foot_params);
             } else {
                 apply_patterned_last(
                     syllables,
@@ -463,10 +450,7 @@ fn apply_patterned(
             main_stress: pat.main_stress,
             anchor_opt,
         };
-        apply_patterned_long_word(
-            syllables,
-            &long_word_params,
-        );
+        apply_patterned_long_word(syllables, &long_word_params);
     }
 }
 

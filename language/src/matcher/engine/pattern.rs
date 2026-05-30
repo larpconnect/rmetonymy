@@ -1,8 +1,6 @@
 // qual:allow(srp) - Pattern engine implementation
 use crate::config::SoundClass;
-use crate::matcher::ast::{
-    BaseElement, PatternElement, Quantifier, SoundMatcherPattern, Token,
-};
+use crate::matcher::ast::{BaseElement, PatternElement, Quantifier, SoundMatcherPattern, Token};
 use crate::sound_class::SoundClassKey;
 use std::collections::BTreeMap;
 
@@ -24,8 +22,6 @@ pub(crate) enum PatternStatus {
     Empty,
     NotEmpty,
 }
-
-
 
 impl SoundMatcherPattern {
     #[must_use]
@@ -89,7 +85,9 @@ impl SoundMatcherPattern {
     }
 
     #[inline]
-    fn split_pattern_op(pattern: &[PatternElement]) -> Option<(&PatternElement, &[PatternElement])> {
+    fn split_pattern_op(
+        pattern: &[PatternElement],
+    ) -> Option<(&PatternElement, &[PatternElement])> {
         if pattern.is_empty() {
             None
         } else {
@@ -155,9 +153,13 @@ impl SoundMatcherPattern {
     ) {
         match quantifier {
             Quantifier::None => {
-                if let Some((len, next_bindings)) =
-                    self.match_base_with_bindings(ctx.base, ctx.marker, ctx.tokens, ctx.classes, bindings)
-                {
+                if let Some((len, next_bindings)) = self.match_base_with_bindings(
+                    ctx.base,
+                    ctx.marker,
+                    ctx.tokens,
+                    ctx.classes,
+                    bindings,
+                ) {
                     results.push((len, next_bindings));
                 }
             }
@@ -185,7 +187,13 @@ impl SoundMatcherPattern {
             context,
             results,
             |tokens_slice, current_bindings| {
-                self.match_base_with_bindings(ctx.base, ctx.marker, tokens_slice, ctx.classes, current_bindings)
+                self.match_base_with_bindings(
+                    ctx.base,
+                    ctx.marker,
+                    tokens_slice,
+                    ctx.classes,
+                    current_bindings,
+                )
             },
             |next_range, next_len, next_bindings, res| {
                 self.find_repeated_matches(ctx, next_range, next_len, next_bindings, res);
@@ -201,7 +209,12 @@ impl SoundMatcherPattern {
         mut recurse_fn: G,
     ) where
         F: FnMut(&[Token], &BTreeMap<u8, Vec<Token>>) -> Option<(usize, BTreeMap<u8, Vec<Token>>)>,
-        G: FnMut((usize, usize), usize, &BTreeMap<u8, Vec<Token>>, &mut Vec<(usize, BTreeMap<u8, Vec<Token>>)>),
+        G: FnMut(
+            (usize, usize),
+            usize,
+            &BTreeMap<u8, Vec<Token>>,
+            &mut Vec<(usize, BTreeMap<u8, Vec<Token>>)>,
+        ),
     {
         let ((min, max), current_len) = state;
         let (tokens, bindings) = context;
@@ -231,7 +244,8 @@ impl SoundMatcherPattern {
         bindings: &BTreeMap<u8, Vec<Token>>,
         results: &mut Vec<(usize, BTreeMap<u8, Vec<Token>>)>,
     ) {
-        let pattern_status = Self::check_pattern_empty_op(ctx.pattern, current_len, bindings, results);
+        let pattern_status =
+            Self::check_pattern_empty_op(ctx.pattern, current_len, bindings, results);
         self.dispatch_group_match_integration(ctx, current_len, bindings, results, pattern_status);
     }
 
@@ -243,20 +257,17 @@ impl SoundMatcherPattern {
         results: &mut Vec<(usize, BTreeMap<u8, Vec<Token>>)>,
         pattern_status: PatternStatus,
     ) {
-        Self::group_match_dispatch_op(
-            pattern_status,
-            || {
-                let (el, rest_pattern) = Self::split_pattern_el_op(ctx.pattern);
-                let match_lengths = self.get_match_lengths(el, ctx.tokens, ctx.classes, bindings);
-                self.recurse_group_match_lengths_integration(
-                    ctx,
-                    rest_pattern,
-                    current_len,
-                    match_lengths,
-                    results,
-                );
-            }
-        );
+        Self::group_match_dispatch_op(pattern_status, || {
+            let (el, rest_pattern) = Self::split_pattern_el_op(ctx.pattern);
+            let match_lengths = self.get_match_lengths(el, ctx.tokens, ctx.classes, bindings);
+            self.recurse_group_match_lengths_integration(
+                ctx,
+                rest_pattern,
+                current_len,
+                match_lengths,
+                results,
+            );
+        });
     }
 
     fn group_match_dispatch_op<F>(pattern_status: PatternStatus, mut not_empty_fn: F)
@@ -267,7 +278,6 @@ impl SoundMatcherPattern {
             not_empty_fn();
         }
     }
-
 
     fn recurse_group_match_lengths_integration(
         &self,
@@ -286,12 +296,7 @@ impl SoundMatcherPattern {
                     pattern: rest_pattern,
                     classes: ctx.classes,
                 };
-                self.find_group_match_lengths(
-                    &sub_ctx,
-                    current_len + len,
-                    next_bindings,
-                    results,
-                );
+                self.find_group_match_lengths(&sub_ctx, current_len + len, next_bindings, results);
             },
         );
     }

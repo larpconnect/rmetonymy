@@ -54,34 +54,46 @@ pub struct WordPattern {
     pub elements: Vec<WordPatternElement>,
 }
 
+fn write_set_op(f: &mut Formatter<'_>, choices: &[String]) -> std::fmt::Result {
+    write!(f, "{{")?;
+    for (i, choice) in choices.iter().enumerate() {
+        if i > 0 {
+            write!(f, ",")?;
+        }
+        write!(f, "{choice}")?;
+    }
+    write!(f, "}}")
+}
+
+fn write_optional_op(f: &mut Formatter<'_>, pat: &WordPattern, prob: u8) -> std::fmt::Result {
+    write!(f, "({pat})")?;
+    if prob != DEFAULT_OPTIONAL_PROBABILITY {
+        write!(f, "{prob}%")?;
+    }
+    Ok(())
+}
+
+fn write_grammar_ref_op(
+    f: &mut Formatter<'_>,
+    primary: &str,
+    secondary: Option<&str>,
+) -> std::fmt::Result {
+    write!(f, "[{primary}")?;
+    if let Some(sec) = secondary {
+        write!(f, ".{sec}")?;
+    }
+    write!(f, "]")
+}
+
 impl Display for WordPatternElement {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::SoundClass(sc) => write!(f, "{sc}"),
             Self::Literal(s) => write!(f, "{s}"),
-            Self::Set(choices) => {
-                write!(f, "{{")?;
-                for (i, choice) in choices.iter().enumerate() {
-                    if i > 0 {
-                        write!(f, ",")?;
-                    }
-                    write!(f, "{choice}")?;
-                }
-                write!(f, "}}")
-            }
-            Self::Optional(pat, prob) => {
-                write!(f, "({pat})")?;
-                if *prob != DEFAULT_OPTIONAL_PROBABILITY {
-                    write!(f, "{prob}%")?;
-                }
-                Ok(())
-            }
+            Self::Set(choices) => write_set_op(f, choices),
+            Self::Optional(pat, prob) => write_optional_op(f, pat, *prob),
             Self::GrammarRef { primary, secondary } => {
-                write!(f, "[{primary}")?;
-                if let Some(sec) = secondary {
-                    write!(f, ".{sec}")?;
-                }
-                write!(f, "]")
+                write_grammar_ref_op(f, primary, secondary.as_deref())
             }
             Self::SyllableBreak => write!(f, "."),
             Self::StressMarker => write!(f, "ˈ"),
@@ -107,7 +119,9 @@ impl FromStr for WordPattern {
     }
 }
 
-fn parse_to_pattern_pair_integration(s: &str) -> Result<pest::iterators::Pair<'_, Rule>, GeneratorError> {
+fn parse_to_pattern_pair_integration(
+    s: &str,
+) -> Result<pest::iterators::Pair<'_, Rule>, GeneratorError> {
     let pairs = GeneratorPatternParser::parse(Rule::main, s)
         .map_err(|e| GeneratorError::ParseError(e.to_string()))?;
     crate::parser_utils::extract_pattern_pair_op(pairs, Rule::pattern)
