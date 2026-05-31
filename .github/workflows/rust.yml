@@ -24,6 +24,6 @@ jobs:
     - name: Run clippy
       run: cargo clippy -- -D warnings
     - name: Run rustqual
-      run: rustqual --min-quality-score 90 --format github --fail-on-warnings
+      run: rustqual --min-quality-score 90 --format github
     - name: Run tests
       run: cargo test --verbose

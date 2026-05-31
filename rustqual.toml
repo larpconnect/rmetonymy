@@ -6,8 +6,25 @@
 
 # ── Function Classification ──────────────────────────────────────────────
 
-ignore_functions = ["main", "test_*"]
-exclude_files = []
+# Skip test helper functions and functions called dynamically via macros that static analysis falsely flags as dead code
+ignore_functions = [
+    "main",
+    "test_*",
+    "get_test_config",
+    "init_dict",
+    "add_word_to_dict",
+    "print_dict",
+    "remove_from_dict",
+    "convert_transform_pattern"
+]
+# Cucumber integration tests register step definitions dynamically at runtime, which static analysis marks as dead code
+exclude_files = [
+    "ipa/tests/sequence_cucumber.rs",
+    "language/tests/syllabification_cucumber.rs",
+    "language/tests/sound_matcher_cucumber.rs",
+    "soundchange/tests/soundchange_cucumber.rs",
+    "metonymy/tests/cucumber.rs"
+]
 strict_closures = false
 strict_iterator_chains = false
 allow_recursion = false

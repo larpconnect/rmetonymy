@@ -2,13 +2,12 @@
 //! Prosody module for managing stress configurations and applying them to words.
 
 use crate::config::{LanguageConfig, ZipfConfig};
-use crate::generator::rng::{Rng, RngExt};
+use crate::generator::rng::{Rng, sample_zipf};
 use crate::generator::validation::ValidationError;
 use crate::syllable::{IpaWord, Syllable, SyllableStress, SyllableStructure};
 use serde::{Deserialize, Serialize};
 
 const ZERO_F64: f64 = 0.0;
-const ONE_F64: f64 = 1.0;
 const THREE_FOOT_SIZE: usize = 3;
 
 /// Options for alternating stress placement.
@@ -504,29 +503,8 @@ fn is_closed_syllable(syl: &Syllable) -> bool {
     }
 }
 
-#[expect(
-    clippy::cast_precision_loss,
-    reason = "RNG choices scaled to length of syllables"
-)]
 fn sample_zipf_index<R: Rng + ?Sized>(num_choices: usize, a: f64, b: f64, rng: &mut R) -> usize {
-    if num_choices <= 1 {
-        return 0;
-    }
-    let mut sum = ZERO_F64;
-    for i in 1..=num_choices {
-        sum += ONE_F64 / (i as f64 + b).powf(a);
-    }
-
-    let r = rng.random::<f64>() * sum;
-    let mut accum = ZERO_F64;
-    for i in 1..=num_choices {
-        let w = ONE_F64 / (i as f64 + b).powf(a);
-        accum += w;
-        if accum >= r {
-            return i - 1;
-        }
-    }
-    num_choices - 1
+    sample_zipf(num_choices, a, b, rng)
 }
 
 #[cfg(test)]

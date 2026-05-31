@@ -163,29 +163,10 @@ mod steps_impl {
         );
     }
 
-    #[expect(
-        clippy::let_underscore_must_use,
-        reason = "dummy block to keep functions in scope"
-    )]
-    pub(crate) fn register_steps() {
-        if false {
-            let mut world = MetonymyWorld::default();
-            i_have_a_basic_setup(&mut world);
-            let _ = i_run_metonymy(&mut world);
-            let _ = i_run_metonymy_with(&mut world, String::new());
-            it_should_execute_successfully(&mut world);
-            the_output_should_contain(&mut world, String::new());
-            the_output_should_contain_generated_word(&mut world, String::new(), String::new());
-            let _ = i_have_initialized_a_dictionary(&mut world);
-            let _ = i_run_dictionary_command(&mut world, String::new());
-            the_output_should_contain_escape_colored(&mut world, String::new());
-        }
-    }
 }
 
 #[tokio::main]
 async fn main() {
-    steps_impl::register_steps();
     MetonymyWorld::cucumber()
         .run_and_exit("tests/features/")
         .await;

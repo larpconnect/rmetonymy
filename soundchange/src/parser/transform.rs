@@ -10,13 +10,6 @@ use pest::iterators::Pair;
 pub(crate) fn convert_transform_part(
     pair: Pair<'_, Rule>,
 ) -> Result<ParsedTransformPart, SoundChangeParseError> {
-    if false {
-        #[expect(
-            clippy::let_underscore_must_use,
-            reason = "dummy block to keep function in scope"
-        )]
-        let _ = convert_transform_pattern(pair.clone());
-    }
     convert_part_ast!(
         pair,
         Rule::transform_pattern,

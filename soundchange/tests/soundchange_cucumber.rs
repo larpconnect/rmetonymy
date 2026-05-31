@@ -342,28 +342,7 @@ fn then_it_should_fail_orthography_validation_with_message(
 }
 
 #[tokio::main]
-#[expect(
-    clippy::let_underscore_must_use,
-    reason = "dummy block to keep functions in scope"
-)]
 async fn main() {
-    if false {
-        let mut world = SoundChangeWorld::default();
-        given_default_language_config(&mut world);
-        when_apply_sound_change_rule(&mut world, String::new(), String::new());
-        when_apply_sound_change_rule_showing_boundaries(&mut world, String::new(), String::new());
-        when_compile_sound_change_rule(&mut world, String::new());
-        when_compile_named_sound_change_rule(&mut world, String::new(), String::new());
-        let _ = then_result_should_be(&mut world, String::new());
-        let _ = then_boundary_result_should_be(&mut world, String::new());
-        let _ = then_it_should_fail_validation_with_message(&mut world, String::new());
-        when_apply_orthography_rule(&mut world, String::new(), String::new());
-        when_apply_orthography_rules_two(&mut world, String::new(), String::new(), String::new());
-        when_apply_empty_orthography(&mut world, String::new());
-        let _ = then_orthography_result_should_be(&mut world, String::new());
-        when_compile_orthography_rule(&mut world, String::new());
-        let _ = then_it_should_fail_orthography_validation_with_message(&mut world, String::new());
-    }
     SoundChangeWorld::cucumber()
         .run_and_exit("tests/features/soundchange_evaluation.feature")
         .await;

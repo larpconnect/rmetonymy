@@ -1,4 +1,3 @@
-// qual:allow(srp) - Large generator orchestration module
 //! Word generator module for the `rmetonymy` language configuration.
 //!
 //! Provides the random generation engine, routing fallbacks, and integration
@@ -14,14 +13,12 @@ pub mod rng;
 pub mod validation;
 
 pub use pattern::{GeneratorError, GeneratorPatternParser, WordPattern, WordPatternElement};
-pub use rng::{Rng, RngExt, SeedableRng, StdRng, thread_rng};
+pub use rng::{Rng, RngExt, SeedableRng, StdRng, thread_rng, sample_zipf};
 pub use validation::{
     ValidationError, resolve_generator_key, validate_generator_cycles, validate_generator_keys,
     validate_pattern_sound_classes, validate_sound_class_cycles,
 };
 
-const ZERO_F64: f64 = 0.0;
-const ONE_F64: f64 = 1.0;
 const MAX_GENERATION_DEPTH: usize = 50;
 const PERCENT_MULTIPLIER: f64 = 100.0;
 const MAX_SOUND_CLASS_DEPTH: usize = 100;
@@ -65,10 +62,6 @@ pub enum GenerationError {
 }
 
 /// Samples a random index using the configured probability distribution.
-#[expect(
-    clippy::cast_precision_loss,
-    reason = "RNG choices safely scaled to length of patterns or classes"
-)]
 pub fn sample_index<R: Rng + ?Sized>(
     num_choices: usize,
     config: &GeneratorConfig,
@@ -84,22 +77,7 @@ pub fn sample_index<R: Rng + ?Sized>(
         } => {
             let a = zipf_config.a;
             let b = zipf_config.b;
-
-            let mut sum = ZERO_F64;
-            for i in 1..=num_choices {
-                sum += ONE_F64 / (i as f64 + b).powf(a);
-            }
-
-            let r = rng.random::<f64>() * sum;
-            let mut accum = ZERO_F64;
-            for i in 1..=num_choices {
-                let w = ONE_F64 / (i as f64 + b).powf(a);
-                accum += w;
-                if accum >= r {
-                    return i - 1;
-                }
-            }
-            num_choices - 1
+            sample_zipf(num_choices, a, b, rng)
         }
     }
 }

@@ -1,11 +1,4 @@
 // qual:allow(srp) - Sequence test module
-#![expect(
-    clippy::indexing_slicing,
-    clippy::unwrap_used,
-    clippy::panic,
-    reason = "Standard test assertions and indexing"
-)]
-
 use ipa::IpaString;
 use ipa::sequence::{IpaSequence, PhonemeSequence, ProsodyMarker, SequenceElement, is_modifier};
 use std::str::FromStr;
