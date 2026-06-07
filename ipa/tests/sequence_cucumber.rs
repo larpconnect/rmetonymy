@@ -115,18 +115,7 @@ fn then_parsing_should_fail(
 }
 
 #[tokio::main]
-#[expect(unused_must_use, reason = "dummy block to keep functions in scope")]
 async fn main() {
-    if false {
-        let mut world = SequenceWorld::default();
-        when_parse_ipa_string(&mut world, String::new());
-        when_parse_invalid_ipa_string(&mut world, String::new());
-        then_sequence_should_have_elements(&mut world, 0);
-        then_element_primary_stress(&mut world, 0);
-        then_element_syllable_break(&mut world, 0);
-        then_phoneme_has_base_modifiers(&mut world, 0, String::new(), String::new());
-        then_parsing_should_fail(&mut world, String::new());
-    }
     SequenceWorld::cucumber()
         .run_and_exit("tests/features/sequence.feature")
         .await;

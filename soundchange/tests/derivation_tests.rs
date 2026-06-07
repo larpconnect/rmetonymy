@@ -1,9 +1,3 @@
-#![expect(
-    clippy::unwrap_used,
-    clippy::too_many_lines,
-    clippy::useless_vec,
-    reason = "allowances for test code patterns"
-)]
 // qual:allow(srp) - Test module with multiple test cases
 use language::config::{
     Derivation, LanguageConfig, MetadataConfig, NameConfig, PhonologyConfig, PhonotacticsConfig,
@@ -83,7 +77,7 @@ fn test_apply_derivations_prefix_suffix() {
     let config = create_test_config!(derivations);
     let word = IpaWord::try_from_sequence(&"pataka".parse().unwrap(), &config).unwrap();
 
-    let res = apply_derivations(&word, "noun", &vec!["PLURAL".to_string()], &config, 0).unwrap();
+    let res = apply_derivations(&word, "noun", &["PLURAL".to_string()], &config, 0).unwrap();
 
     assert_eq!(res.word.to_string(), "a.pa.ta.ka.i");
     assert_eq!(res.final_type, "noun.plural");
@@ -111,7 +105,7 @@ fn test_apply_derivations_sound_change() {
     let config = create_test_config!(derivations);
     let word = IpaWord::try_from_sequence(&"pataka".parse().unwrap(), &config).unwrap();
 
-    let res = apply_derivations(&word, "verb", &vec!["MUTATION".to_string()], &config, 0).unwrap();
+    let res = apply_derivations(&word, "verb", &["MUTATION".to_string()], &config, 0).unwrap();
 
     // "p" at index 0 changes to "t"
     assert_eq!(res.word.to_string(), "ta.ta.ka");
@@ -137,34 +131,16 @@ fn test_apply_derivations_type_constraints() {
 
     // noun is not matching verb, so should fail
     let err =
-        apply_derivations(&word, "noun", &vec!["GERUND".to_string()], &config, 0).unwrap_err();
+        apply_derivations(&word, "noun", &["GERUND".to_string()], &config, 0).unwrap_err();
     assert!(err.contains("does not match expected"));
 }
 
 #[test]
 fn test_apply_derivations_era_tracking_and_validation() {
     let derivations = vec![
-        Derivation {
-            name: "EARLY".to_string(),
-            era: Some(1),
-            transforms: vec!["a-".to_string()],
-            from_type: None,
-            to_type: None,
-        },
-        Derivation {
-            name: "LATE".to_string(),
-            era: Some(3),
-            transforms: vec!["-i".to_string()],
-            from_type: None,
-            to_type: None,
-        },
-        Derivation {
-            name: "OUT_OF_ORDER".to_string(),
-            era: Some(2),
-            transforms: vec!["-u".to_string()],
-            from_type: None,
-            to_type: None,
-        },
+        Derivation { name: "EARLY".to_string(), era: Some(1), transforms: vec!["a-".to_string()], from_type: None, to_type: None },
+        Derivation { name: "LATE".to_string(), era: Some(3), transforms: vec!["-i".to_string()], from_type: None, to_type: None },
+        Derivation { name: "OUT_OF_ORDER".to_string(), era: Some(2), transforms: vec!["-u".to_string()], from_type: None, to_type: None },
     ];
 
     let config = create_test_config!(derivations);
@@ -174,7 +150,7 @@ fn test_apply_derivations_era_tracking_and_validation() {
     let res = apply_derivations(
         &word,
         "noun",
-        &vec!["EARLY".to_string(), "LATE".to_string()],
+        &["EARLY".to_string(), "LATE".to_string()],
         &config,
         0,
     )
@@ -184,14 +160,14 @@ fn test_apply_derivations_era_tracking_and_validation() {
 
     // Invalid: Word era 2 > EARLY era 1
     let err1 =
-        apply_derivations(&word, "noun", &vec!["EARLY".to_string()], &config, 2).unwrap_err();
+        apply_derivations(&word, "noun", &["EARLY".to_string()], &config, 2).unwrap_err();
     assert!(err1.contains("word era 2 is after derivation era 1"));
 
     // Invalid: EARLY era 1 -> LATE era 3 -> OUT_OF_ORDER era 2 (3 > 2)
     let err2 = apply_derivations(
         &word,
         "noun",
-        &vec![
+        &[
             "EARLY".to_string(),
             "LATE".to_string(),
             "OUT_OF_ORDER".to_string(),
@@ -232,7 +208,7 @@ fn test_apply_derivations_intermediate_sound_changes() {
     // Applying LATE_DERIV (era 2) to "pataka" (era 0).
     // Word should undergo the era 1 sound change "p => t / _a" before the derivation is applied.
     let res =
-        apply_derivations(&word, "noun", &vec!["LATE_DERIV".to_string()], &config, 0).unwrap();
+        apply_derivations(&word, "noun", &["LATE_DERIV".to_string()], &config, 0).unwrap();
 
     // "pataka" -> (era 1 sound change) -> "tataka" -> (derivation suffix) -> "tatakai"
     assert_eq!(res.word.to_string(), "ta.ta.ka.i");

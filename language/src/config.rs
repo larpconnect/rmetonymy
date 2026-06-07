@@ -172,10 +172,7 @@ where
             Ok(val)
         }
 
-        #[expect(
-            clippy::cast_precision_loss,
-            reason = "Casting deserialized integer value to f64"
-        )]
+        #[expect(clippy::cast_precision_loss, reason = "Casting deserialized integer value to f64")]
         fn visit_i64<E>(self, val: i64) -> Result<Self::Value, E>
         where
             E: de::Error,
@@ -183,10 +180,7 @@ where
             Ok(val as f64)
         }
 
-        #[expect(
-            clippy::cast_precision_loss,
-            reason = "Casting deserialized unsigned integer value to f64"
-        )]
+        #[expect(clippy::cast_precision_loss, reason = "Casting deserialized unsigned integer value to f64")]
         fn visit_u64<E>(self, val: u64) -> Result<Self::Value, E>
         where
             E: de::Error,

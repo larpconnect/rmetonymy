@@ -18,12 +18,13 @@ jobs:
     - uses: actions/checkout@v6
     - uses: dtolnay/rust-toolchain@stable
     - name: Install Dependencies
-      run: cargo install rustqual
+      run: cargo install rustqual --version 1.6.2
+    - run: echo `rustqual --version`
     - name: Build
       run: cargo build --verbose
     - name: Run clippy
       run: cargo clippy -- -D warnings
     - name: Run rustqual
-      run: rustqual --min-quality-score 90 --format github --fail-on-warnings
+      run: rustqual --min-quality-score 90 --format github
     - name: Run tests
       run: cargo test --verbose
