@@ -19,6 +19,7 @@ jobs:
     - uses: dtolnay/rust-toolchain@stable
     - name: Install Dependencies
       run: cargo install rustqual
+    - run: echo `rustqual --version`
     - name: Build
       run: cargo build --verbose
     - name: Run clippy
